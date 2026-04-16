@@ -1,37 +1,15 @@
 <?php
 
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new class extends Component {
+new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Network &amp; Cybersecurity Experts')] class extends Component {
     //
 };
 ?>
 
 <div>
-    <!-- Full Website Background Video -->
-    <div class="fixed inset-0 -z-20">
-        <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('images/video-fallback.jpg') }}"
-            class="w-full h-full object-cover">
-            <source src="{{ asset('assets/videos/matrix.mp4') }}" type="video/mp4">
-        </video>
-    </div>
-
-    <!-- Global Overlay -->
-    <div
-        class="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.30),rgba(15,23,42,0.88)_55%,rgba(2,6,23,0.95)_100%)]">
-    </div>
-    <div class="fixed inset-0 -z-10 bg-slate-950/30"></div>
-
-    <!-- Decorative Blur -->
-    {{-- <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-            <div class="absolute -top-30 -left-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl">
-            </div>
-            <div class="absolute top-[20%] -right-25 w-90 h-90 bg-sky-400/20 rounded-full blur-3xl">
-            </div>
-            <div class="absolute -bottom-30 left-[10%] w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl">
-            </div>
-        </div> --}}
-
+    {{-- Hero Section --}}
     <section x-data="{ mobileMenu: false }" class="relative min-h-[100vh - 100px] md:min-h-screen overflow-hidden text-white">
 
         <div class="relative z-10">
@@ -60,8 +38,13 @@ new class extends Component {
                             </a>
 
                             <a href="#"
-                                class="inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white font-semibold hover:bg-white/15 transition">
-                                View all Service
+                                class="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white font-semibold hover:bg-white/15 transition">
+                                View all Services
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                                </svg>
                             </a>
                         </div>
                     </div>
@@ -198,7 +181,7 @@ new class extends Component {
         </div>
     </section>
 
-    <!-- Services -->
+    {{-- Services --}}
     <section class="pt-20 sm:py-24">
         <div class="max-w-350 mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-14 lg:mb-20">
@@ -357,16 +340,17 @@ new class extends Component {
             <div class="mt-10 flex justify-center">
                 <a href="#all-services" class="service-btn">
                     Show All Services
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
                     </svg>
                 </a>
             </div>
         </div>
     </section>
 
-    <!-- Company Overview -->
+    {{-- Company Overview --}}
     <section class="relative overflow-hidden py-20 md:py-15 lg:py-24">
         <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
             <div class="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
@@ -387,7 +371,8 @@ new class extends Component {
                         </span>
                     </h2>
 
-                    <p class="mt-4 md:mt-6 lg:max-w-2xl text-sm md:text-base text-blue-100/70 text-center lg:text-left">
+                    <p
+                        class="mt-4 md:mt-6 lg:max-w-2xl text-sm md:text-base text-blue-100/70 text-center lg:text-left">
                         Our team blends strategy, design, and technology to deliver scalable solutions for fast-growing
                         brands. From websites and SaaS platforms to automation and digital transformation, we prioritize
                         performance, usability, and long-term value. <br> <br>
@@ -683,8 +668,963 @@ new class extends Component {
         </div>
     </section>
 
+    <!-- Recent Projects -->
+    <section class="relative overflow-hidden py-20 sm:py-24">
+        <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
+            <!-- Heading -->
+            <div class="mb-8 md:mb-14 text-center lg:mb-18">
+                <div
+                    class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
+                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                    Recent Projects
+                </div>
 
+                <h2 class="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+                    Built to perform.
+                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                        Designed to impress.
+                    </span>
+                </h2>
 
+                <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/70 sm:text-base">
+                    A selection of recent digital solutions crafted to help businesses scale faster, operate smarter,
+                    and build stronger user experiences.
+                </p>
+            </div>
+
+            <!-- Bento Grid -->
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-6 auto-rows-[240px]">
+                <!-- Project 1 -->
+                <article
+                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.20)] md:col-span-4 md:row-span-2 cursor-pointer">
+                    <div class="absolute inset-0">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80"
+                            alt="Analytics dashboard project"
+                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/50 to-slate-900/10">
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative z-10 flex h-full flex-col justify-between rounded-[22px] border border-white/8 p-4 sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <span
+                                class="inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-cyan-200">
+                                Web Platform
+                            </span>
+
+                            <div
+                                class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white/90 backdrop-blur-xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="max-w-xl">
+                            <h3 class="text-2xl font-bold text-white sm:text-3xl">
+                                Enterprise Analytics Dashboard
+                            </h3>
+                            <p class="mt-3 max-w-lg text-sm leading-7 text-blue-100/72 sm:text-base">
+                                A modern business intelligence interface built for real-time reporting, executive
+                                visibility,
+                                and operational decision-making.
+                            </p>
+
+                            <div class="mt-5 flex flex-wrap gap-2">
+                                <span
+                                    class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">Dashboard
+                                    UI</span>
+                                <span
+                                    class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">Data
+                                    Visualization</span>
+                                <span
+                                    class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">SaaS</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 2 -->
+                <article
+                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
+                    <div class="absolute inset-0">
+                        <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=80"
+                            alt="Team planning project"
+                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
+                        <span
+                            class="mb-3 inline-flex w-fit items-center rounded-full border border-sky-300/20 bg-sky-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-200">
+                            Cyber Security
+                        </span>
+                        <h3 class="text-xl font-bold text-white">Security Operations Portal</h3>
+                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
+                            Clean monitoring and response interface for security-focused teams.
+                        </p>
+                    </div>
+                </article>
+
+                <!-- Project 3 -->
+                <article
+                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
+                    <div class="absolute inset-0">
+                        <img src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=900&q=80"
+                            alt="Laptop web development project"
+                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
+                        <span
+                            class="mb-3 inline-flex w-fit items-center rounded-full border border-indigo-300/20 bg-indigo-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-200">
+                            Development
+                        </span>
+                        <h3 class="text-xl font-bold text-white">Custom Business Website</h3>
+                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
+                            High-conversion company website with premium motion and responsive UX.
+                        </p>
+                    </div>
+                </article>
+
+                <!-- Project 4 -->
+                <article
+                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur-2xl md:col-span-2 cursor-pointer">
+                    <span
+                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent"></span>
+
+                    <div
+                        class="flex h-full flex-col justify-between rounded-[22px] border border-white/8 bg-slate-950/25 p-5">
+                        <div
+                            class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-blue-500/15 text-cyan-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.75 4.5h16.5v10.5H3.75zM7.5 20.25h9" />
+                            </svg>
+                        </div>
+
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.2em] text-blue-100/45">Featured Build</p>
+                            <h3 class="mt-2 text-xl font-bold text-white">Managed Hosting Stack</h3>
+                            <p class="mt-3 text-sm leading-6 text-blue-100/68">
+                                Secure, cloud-ready deployment architecture for performance-critical business platforms.
+                            </p>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 5 -->
+                <article
+                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
+                    <div class="absolute inset-0">
+                        <img src="https://images.unsplash.com/photo-1516321165247-4aa89a48be28?auto=format&fit=crop&w=900&q=80"
+                            alt="Email and communication project"
+                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
+                        <span
+                            class="mb-3 inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-200">
+                            Communication
+                        </span>
+                        <h3 class="text-xl font-bold text-white">Professional Email Setup</h3>
+                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
+                            Branded mail ecosystem with security, reliability, and admin control.
+                        </p>
+                    </div>
+                </article>
+
+                <!-- Project 6 -->
+                <article
+                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
+
+                    <div class="absolute inset-0">
+                        <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=900&q=80"
+                            alt="Mobile app project"
+                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
+                        <span
+                            class="mb-3 inline-flex w-fit items-center rounded-full border border-violet-300/20 bg-violet-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-violet-200">
+                            Mobile App
+                        </span>
+
+                        <h3 class="text-xl font-bold text-white">
+                            Smart Service App
+                        </h3>
+
+                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
+                            Premium mobile experience for booking, tracking, notifications, and customer engagement.
+                        </p>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span
+                                class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">
+                                UI/UX
+                            </span>
+
+                            <span
+                                class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">
+                                Mobile First
+                            </span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- bottom button -->
+            <div class="mt-10 flex justify-center">
+                <a href="#" class="service-btn">
+                    View All Projects
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="relative overflow-hidden py-20 sm:py-24" x-data="{ billing: 'monthly' }">
+        <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
+            <!-- Heading -->
+            <div class="text-center mb-14 lg:mb-18">
+                <div
+                    class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
+                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                    Pricing Plans
+                </div>
+
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
+                    Flexible IT plans for
+                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                        every stage of growth
+                    </span>
+                </h2>
+
+                <p class="mt-4 max-w-2xl mx-auto text-sm sm:text-base leading-7 text-blue-100/70">
+                    Choose the right support package for your business. From startup essentials to enterprise-grade
+                    security, infrastructure, and continuous IT operations.
+                </p>
+
+                <!-- Billing Toggle -->
+                <div class="mt-8 flex justify-center">
+                    <div class="inline-flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl">
+                        <button type="button" @click="billing = 'monthly'"
+                            :class="billing === 'monthly'
+                                ?
+                                'bg-linear-to-r from-blue-500 to-sky-400 text-white shadow-lg shadow-blue-500/25' :
+                                'text-blue-100/70 hover:text-white'"
+                            class="rounded-full px-5 py-2.5 text-sm font-semibold transition cursor-pointer">
+                            Monthly
+                        </button>
+
+                        <button type="button" @click="billing = 'yearly'"
+                            :class="billing === 'yearly'
+                                ?
+                                'bg-linear-to-r from-blue-500 to-sky-400 text-white shadow-lg shadow-blue-500/25' :
+                                'text-blue-100/70 hover:text-white'"
+                            class="rounded-full px-5 py-2.5 text-sm font-semibold transition cursor-pointer">
+                            Yearly
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards -->
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <!-- Startup IT Care -->
+                <div
+                    class="group relative rounded-[30px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
+                    <div
+                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent">
+                    </div>
+
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-medium uppercase tracking-[0.22em] text-cyan-200/80">Startup</p>
+                            <h3 class="mt-2 text-2xl font-bold text-white">Startup IT Care</h3>
+                        </div>
+
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-blue-500/15 text-cyan-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3 7.5l9-4.5 9 4.5m-18 0 9 4.5m-9-4.5V16.5l9 4.5m9-13.5v9l-9 4.5m0-9V21" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                        Perfect for startups and small offices that need reliable day-to-day IT support and setup
+                        services.
+                    </p>
+
+                    <div class="mt-6">
+                        <div x-show="billing === 'monthly'" x-transition>
+                            <div class="flex items-end gap-2">
+                                <span class="text-4xl font-bold text-white">৳ 10,000</span>
+                                <span class="pb-1 text-sm text-blue-100/60">/ month</span>
+                            </div>
+                        </div>
+
+                        <div x-show="billing === 'yearly'" x-transition style="display: none;">
+                            <div class="flex items-end gap-2">
+                                <span class="text-4xl font-bold text-white">৳ 99,000</span>
+                                <span class="pb-1 text-sm text-blue-100/60">/ year</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="#contact"
+                        class="mt-6 inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition hover:bg-white/12">
+                        Get Started
+                    </a>
+
+                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                        <li class="pricing-li">Office Networking</li>
+                        <li class="pricing-li">Office & Windows Installation</li>
+                        <li class="pricing-li">Email Client Configuration</li>
+                        <li class="pricing-li">Website Design & Development</li>
+                        <li class="pricing-li">Graphics Design</li>
+                        <li class="pricing-li">CCTV Camera Installation</li>
+                        <li class="pricing-li">Attendance Device Installation</li>
+                        <li class="pricing-li">Virus & Malware Scan</li>
+                        <li class="pricing-li">Data Recovery Services</li>
+                        <li class="pricing-li">Cloud Email Setup (Google Workspace, Microsoft 365)</li>
+                        <li class="pricing-li">Basic Firewall & Endpoint Security Setup</li>
+                        <li class="pricing-li">Social Media Business Page Setup & Security Audit</li>
+                    </ul>
+                </div>
+
+                <!-- Business IT Shield -->
+                <div
+                    class="group relative rounded-[30px] border border-cyan-300/25 bg-linear-to-b from-blue-500/10 to-white/8 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_25px_80px_rgba(0,0,0,0.24)] transition duration-300 hover:-translate-y-1">
+                    <div
+                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300 to-transparent">
+                    </div>
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                        <span
+                            class="inline-flex rounded-full border border-cyan-300 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200 backdrop-blur-xl">
+                            Most Popular
+                        </span>
+                    </div>
+
+                    <div class="flex items-start justify-between gap-4 pt-4">
+                        <div>
+                            <p class="text-sm font-medium uppercase tracking-[0.22em] text-sky-200/80">Business</p>
+                            <h3 class="mt-2 text-2xl font-bold text-white">Business IT Shield</h3>
+                        </div>
+
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-sky-500/15 text-sky-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                                <path d="m9 12 2 2 4-4" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                        Ideal for growing businesses that need structured infrastructure, stronger security, and
+                        proactive IT management.
+                    </p>
+
+                    <div class="mt-6">
+                        <div x-show="billing === 'monthly'" x-transition>
+                            <div class="flex items-end gap-2">
+                                <span class="text-4xl font-bold text-white">৳ 20,000</span>
+                                <span class="pb-1 text-sm text-blue-100/60">/ month</span>
+                            </div>
+                        </div>
+
+                        <div x-show="billing === 'yearly'" x-transition style="display: none;">
+                            <div class="flex items-end gap-2">
+                                <span class="text-4xl font-bold text-white">৳ 210,000</span>
+                                <span class="pb-1 text-sm text-blue-100/60">/ year</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="#contact"
+                        class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
+                        Choose Plan
+                    </a>
+
+                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                        <li class="pricing-li">All Features of Startup IT Care</li>
+                        <li class="pricing-li">IIS Configuration & Web Hosting</li>
+                        <li class="pricing-li">Network Policy Server (NPS) & WPA3 Enterprise Configuration</li>
+                        <li class="pricing-li">VPN Server Setup</li>
+                        <li class="pricing-li">Professional Business Email</li>
+                        <li class="pricing-li">SEO</li>
+                        <li class="pricing-li">Active Directory Management</li>
+                        <li class="pricing-li">Print Server Setup</li>
+                        <li class="pricing-li">File Server & File Sharing Solution</li>
+                        <li class="pricing-li">Cloud-Based Cybersecurity Training for Employees</li>
+                        <li class="pricing-li">Automated IT Monitoring & Alerts</li>
+                        <li class="pricing-li">DevOps & CI/CD Pipeline Implementation</li>
+                    </ul>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div
+                    class="group relative rounded-[30px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-violet-300/20">
+                    <div
+                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-violet-300/70 to-transparent">
+                    </div>
+
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-medium uppercase tracking-[0.22em] text-violet-200/80">Enterprise
+                            </p>
+                            <h3 class="mt-2 text-2xl font-bold text-white">Enterprise Plan</h3>
+                        </div>
+
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-violet-500/15 text-violet-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                        Advanced support for enterprises that need compliance, 24/7 operations, cyber defense, and
+                        multi-cloud security.
+                    </p>
+
+                    <div class="mt-6">
+                        <div x-show="billing === 'monthly'" x-transition>
+                            <div class="flex items-end gap-2">
+                                <span class="text-4xl font-bold text-white">৳ 45,000</span>
+                                <span class="pb-1 text-sm text-blue-100/60">/ month</span>
+                            </div>
+                        </div>
+
+                        <div x-show="billing === 'yearly'" x-transition style="display: none;">
+                            <div class="flex items-end gap-2">
+                                <span class="text-4xl font-bold text-white">৳ 480,000</span>
+                                <span class="pb-1 text-sm text-blue-100/60">/ year</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="#contact"
+                        class="mt-6 inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition hover:bg-white/12">
+                        Contact Sales
+                    </a>
+
+                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                        <li class="pricing-li">All Features of Startup IT Care</li>
+                        <li class="pricing-li">All Features of Business IT Shield</li>
+                        <li class="pricing-li">DataGuard Backup & Recovery Service Solution (Based on Duplicati/Bacula)
+                        </li>
+                        <li class="pricing-li">VAPT</li>
+                        <li class="pricing-li">Digital Marketing</li>
+                        <li class="pricing-li">SecureMail Server Solution</li>
+                        <li class="pricing-li">24/7/365 Support</li>
+                        <li class="pricing-li">Zero Trust Security Implementation</li>
+                        <li class="pricing-li">AI-Powered Threat Detection & Response</li>
+                        <li class="pricing-li">Multi-Cloud Security & Compliance</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section class="relative overflow-hidden py-20 sm:py-24">
+        <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
+            <!-- Heading -->
+            <div class="mb-10 md:mb-14 text-center lg:mb-18">
+                <div
+                    class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
+                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                    Latest Blog
+                </div>
+
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
+                    Insights that help you
+                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                        stay ahead
+                    </span>
+                </h2>
+
+                <p class="mx-auto mt-4 max-w-2xl text-sm sm:text-base leading-7 text-blue-100/70">
+                    Explore practical ideas, expert guidance, and modern technology insights for growing businesses.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <!-- Blog Card 1 -->
+                <article
+                    class="group overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
+                    <div class="overflow-hidden rounded-[22px]">
+                        <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80"
+                            alt="Blog cover"
+                            class="h-60 w-full object-cover transition duration-700 group-hover:scale-105">
+                    </div>
+
+                    <div class="p-3 sm:p-4">
+                        <div class="flex items-center gap-3 text-xs text-blue-100/55">
+                            <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1">Cyber
+                                Security</span>
+                            <span>May 2026</span>
+                        </div>
+
+                        <h3 class="mt-4 text-xl font-bold text-white leading-snug">
+                            7 essential cybersecurity practices every business should follow
+                        </h3>
+
+                        <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                            Learn the practical steps businesses can take to reduce risk, protect data, and build a
+                            stronger security posture.
+                        </p>
+
+                        <a href="#"
+                            class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white">
+                            Read More
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Blog Card 2 -->
+                <article
+                    class="group overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-sky-300/20">
+                    <div class="overflow-hidden rounded-[22px]">
+                        <img src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=1200&q=80"
+                            alt="Blog cover"
+                            class="h-60 w-full object-cover transition duration-700 group-hover:scale-105">
+                    </div>
+
+                    <div class="p-3 sm:p-4">
+                        <div class="flex items-center gap-3 text-xs text-blue-100/55">
+                            <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1">Web
+                                Development</span>
+                            <span>May 2026</span>
+                        </div>
+
+                        <h3 class="mt-4 text-xl font-bold text-white leading-snug">
+                            Why modern websites need performance, security, and clear UX
+                        </h3>
+
+                        <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                            A strong website is more than design. It should load fast, feel smooth, and support business
+                            growth.
+                        </p>
+
+                        <a href="#"
+                            class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white">
+                            Read More
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Blog Card 3 -->
+                <article
+                    class="group overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-violet-300/20">
+                    <div class="overflow-hidden rounded-[22px]">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80"
+                            alt="Blog cover"
+                            class="h-60 w-full object-cover transition duration-700 group-hover:scale-105">
+                    </div>
+
+                    <div class="p-3 sm:p-4">
+                        <div class="flex items-center gap-3 text-xs text-blue-100/55">
+                            <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1">Cloud & IT</span>
+                            <span>May 2026</span>
+                        </div>
+
+                        <h3 class="mt-4 text-xl font-bold text-white leading-snug">
+                            How cloud-based IT support improves flexibility and business continuity
+                        </h3>
+
+                        <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                            Discover how cloud-first tools and smarter support systems can reduce downtime and improve
+                            efficiency.
+                        </p>
+
+                        <a href="#"
+                            class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white">
+                            Read More
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+            </div>
+
+            <div class="mt-10 flex justify-center">
+                <a href="#"
+                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12">
+                    View All Blogs
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {{-- Testimonials --}}
+    <section class="relative overflow-hidden py-20 sm:py-24" x-data="reviewCarousel()" x-init="init()">
+        <div>
+            <div class="mb-10 text-center">
+                <div
+                    class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
+                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                    Client Reviews
+                </div>
+
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
+                    Trusted by businesses that
+                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                        expect more
+                    </span>
+                </h2>
+
+                <p class="mx-auto mt-4 max-w-2xl text-sm sm:text-base leading-7 text-blue-100/70">
+                    Real feedback from clients who value reliability, execution quality, and long-term IT partnership.
+                </p>
+            </div>
+
+            <div class="relative">
+                <div class="overflow-hidden" x-ref="viewport" @mouseenter="pause()" @mouseleave="play()">
+                    <div x-ref="track"
+                        class="flex items-stretch gap-4 sm:gap-5 lg:gap-6 will-change-transform transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]">
+
+                        <!-- Card 1 -->
+                        <article
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            <div
+                                class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
+                            </div>
+
+                            <div class="relative z-10 flex h-full flex-col">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-1 text-cyan-300 text-base sm:text-lg">
+                                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    </div>
+
+                                    <div
+                                        class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-cyan-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M7.5 8.25h9m-9 3h6m-9 8.25h12A2.25 2.25 0 0018.75 17.25V6.75A2.25 2.25 0 0016.5 4.5h-9A2.25 2.25 0 005.25 6.75v10.5A2.25 2.25 0 007.5 19.5z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/10"
+                                        fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M7.17 6A5.001 5.001 0 002 11v7h7v-7H5.08A3.001 3.001 0 017.17 8.17V6zm9 0A5.001 5.001 0 0011 11v7h7v-7h-3.92a3.001 3.001 0 012.09-2.83V6z" />
+                                    </svg>
+
+                                    <p class="mt-4 text-sm sm:text-base leading-7 sm:leading-8 text-blue-50/88">
+                                        Their support quality and response time have been excellent. From website work
+                                        to
+                                        day-to-day IT support, everything feels structured, polished, and highly
+                                        professional.
+                                    </p>
+                                </div>
+
+                                <div class="mt-auto pt-6">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="flex h-13 w-13 items-center justify-center rounded-full border border-white/10 bg-blue-500/20 text-white font-bold text-base">
+                                            A
+                                        </div>
+
+                                        <div class="min-w-0">
+                                            <h4 class="text-sm sm:text-base font-semibold text-white">Ahsan Rahman</h4>
+                                            <p class="text-xs sm:text-sm text-blue-100/55">Managing Director</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- Card 2 -->
+                        <article
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            <div
+                                class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
+                            </div>
+
+                            <div class="relative z-10 flex h-full flex-col">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-1 text-cyan-300 text-base sm:text-lg">
+                                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    </div>
+
+                                    <div
+                                        class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-cyan-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M7.5 8.25h9m-9 3h6m-9 8.25h12A2.25 2.25 0 0018.75 17.25V6.75A2.25 2.25 0 0016.5 4.5h-9A2.25 2.25 0 005.25 6.75v10.5A2.25 2.25 0 007.5 19.5z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/10"
+                                        fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M7.17 6A5.001 5.001 0 002 11v7h7v-7H5.08A3.001 3.001 0 017.17 8.17V6zm9 0A5.001 5.001 0 0011 11v7h7v-7h-3.92a3.001 3.001 0 012.09-2.83V6z" />
+                                    </svg>
+
+                                    <p class="mt-4 text-sm sm:text-base leading-7 sm:leading-8 text-blue-50/88">
+                                        We needed secure infrastructure, email, networking, and monitoring. Their team
+                                        handled
+                                        everything smoothly and gave us confidence from the very beginning.
+                                    </p>
+                                </div>
+
+                                <div class="mt-auto pt-6">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="flex h-13 w-13 items-center justify-center rounded-full border border-white/10 bg-sky-500/20 text-white font-bold text-base">
+                                            N
+                                        </div>
+
+                                        <div class="min-w-0">
+                                            <h4 class="text-sm sm:text-base font-semibold text-white">Nafis Ahmed</h4>
+                                            <p class="text-xs sm:text-sm text-blue-100/55">Operations Lead</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- Card 3 -->
+                        <article
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            <div
+                                class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
+                            </div>
+
+                            <div class="relative z-10 flex h-full flex-col">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-1 text-cyan-300 text-base sm:text-lg">
+                                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    </div>
+
+                                    <div
+                                        class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-cyan-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M7.5 8.25h9m-9 3h6m-9 8.25h12A2.25 2.25 0 0018.75 17.25V6.75A2.25 2.25 0 0016.5 4.5h-9A2.25 2.25 0 005.25 6.75v10.5A2.25 2.25 0 007.5 19.5z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/10"
+                                        fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M7.17 6A5.001 5.001 0 002 11v7h7v-7H5.08A3.001 3.001 0 017.17 8.17V6zm9 0A5.001 5.001 0 0011 11v7h7v-7h-3.92a3.001 3.001 0 012.09-2.83V6z" />
+                                    </svg>
+
+                                    <p class="mt-4 text-sm sm:text-base leading-7 sm:leading-8 text-blue-50/88">
+                                        Their blend of technical expertise and business understanding made a big
+                                        difference.
+                                        The final result was practical, modern, and clearly built for growth.
+                                    </p>
+                                </div>
+
+                                <div class="mt-auto pt-6">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="flex h-13 w-13 items-center justify-center rounded-full border border-white/10 bg-violet-500/20 text-white font-bold text-base">
+                                            S
+                                        </div>
+
+                                        <div class="min-w-0">
+                                            <h4 class="text-sm sm:text-base font-semibold text-white">Sarah Khan</h4>
+                                            <p class="text-xs sm:text-sm text-blue-100/55">Founder & CEO</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- Card 4 -->
+                        <article
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            <div
+                                class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
+                            </div>
+
+                            <div class="relative z-10 flex h-full flex-col">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-1 text-cyan-300 text-base sm:text-lg">
+                                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    </div>
+
+                                    <div
+                                        class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-cyan-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M7.5 8.25h9m-9 3h6m-9 8.25h12A2.25 2.25 0 0018.75 17.25V6.75A2.25 2.25 0 0016.5 4.5h-9A2.25 2.25 0 005.25 6.75v10.5A2.25 2.25 0 007.5 19.5z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/10"
+                                        fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M7.17 6A5.001 5.001 0 002 11v7h7v-7H5.08A3.001 3.001 0 017.17 8.17V6zm9 0A5.001 5.001 0 0011 11v7h7v-7h-3.92a3.001 3.001 0 012.09-2.83V6z" />
+                                    </svg>
+
+                                    <p class="mt-4 text-sm sm:text-base leading-7 sm:leading-8 text-blue-50/88">
+                                        Their team helped us streamline our systems and improve stability across the
+                                        office.
+                                        Communication was clear, and the whole process felt dependable.
+                                    </p>
+                                </div>
+
+                                <div class="mt-auto pt-6">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="flex h-13 w-13 items-center justify-center rounded-full border border-white/10 bg-emerald-500/20 text-white font-bold text-base">
+                                            R
+                                        </div>
+
+                                        <div class="min-w-0">
+                                            <h4 class="text-sm sm:text-base font-semibold text-white">Rifat Hasan</h4>
+                                            <p class="text-xs sm:text-sm text-blue-100/55">Business Owner</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- Card 5 -->
+                        <article
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            <div
+                                class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
+                            </div>
+
+                            <div class="relative z-10 flex h-full flex-col">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-1 text-cyan-300 text-base sm:text-lg">
+                                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    </div>
+
+                                    <div
+                                        class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-cyan-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M7.5 8.25h9m-9 3h6m-9 8.25h12A2.25 2.25 0 0018.75 17.25V6.75A2.25 2.25 0 0016.5 4.5h-9A2.25 2.25 0 005.25 6.75v10.5A2.25 2.25 0 007.5 19.5z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/10"
+                                        fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M7.17 6A5.001 5.001 0 002 11v7h7v-7H5.08A3.001 3.001 0 017.17 8.17V6zm9 0A5.001 5.001 0 0011 11v7h7v-7h-3.92a3.001 3.001 0 012.09-2.83V6z" />
+                                    </svg>
+
+                                    <p class="mt-4 text-sm sm:text-base leading-7 sm:leading-8 text-blue-50/88">
+                                        From email migration to network improvements, everything was done with care. We
+                                        now
+                                        have a much more stable, secure, and efficient setup.
+                                    </p>
+                                </div>
+
+                                <div class="mt-auto pt-6">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="flex h-13 w-13 items-center justify-center rounded-full border border-white/10 bg-pink-500/20 text-white font-bold text-base">
+                                            T
+                                        </div>
+
+                                        <div class="min-w-0">
+                                            <h4 class="text-sm sm:text-base font-semibold text-white">Tanvir Hossain
+                                            </h4>
+                                            <p class="text-xs sm:text-sm text-blue-100/55">Admin Manager</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex items-center justify-center gap-3">
+                    <button type="button" @click="prev()"
+                        class="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 transition group-hover:-translate-x-0.5" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                        </svg>
+                    </button>
+
+                    <div class="flex items-center gap-2" x-ref="dots"></div>
+
+                    <button type="button" @click="next()"
+                        class="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition group-hover:translate-x-0.5"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5 15.75 12l-7.5 7.5" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
 
 
     @push('scripts')
@@ -808,6 +1748,182 @@ new class extends Component {
                         };
 
                         step();
+                    }
+                }
+            }
+
+
+            // Review slider
+            function reviewCarousel() {
+                return {
+                    active: 0,
+                    timer: null,
+                    cards: [],
+                    originals: 0,
+                    gap: 0,
+                    transitioning: true,
+
+                    init() {
+                        this.$nextTick(() => {
+                            const track = this.$refs.track;
+                            this.cards = Array.from(track.children);
+                            this.originals = this.cards.length;
+
+                            if (this.originals < 2) return;
+
+                            const firstClone = this.cards[0].cloneNode(true);
+                            const lastClone = this.cards[this.cards.length - 1].cloneNode(true);
+
+                            firstClone.setAttribute('data-clone', 'true');
+                            lastClone.setAttribute('data-clone', 'true');
+
+                            track.insertBefore(lastClone, track.firstChild);
+                            track.appendChild(firstClone);
+
+                            this.cards = Array.from(track.children);
+                            this.active = 1;
+
+                            this.buildDots();
+                            this.updateActiveClasses();
+                            this.center(false);
+                            this.bindResize();
+                            this.play();
+                        });
+                    },
+
+                    bindResize() {
+                        let resizeTimer;
+                        window.addEventListener('resize', () => {
+                            clearTimeout(resizeTimer);
+                            resizeTimer = setTimeout(() => {
+                                this.center(false);
+                            }, 120);
+                        });
+                    },
+
+                    buildDots() {
+                        const dots = this.$refs.dots;
+                        dots.innerHTML = '';
+
+                        for (let i = 0; i < this.originals; i++) {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'h-2.5 rounded-full transition-all duration-300';
+                            btn.addEventListener('click', () => {
+                                this.goTo(i + 1);
+                            });
+                            dots.appendChild(btn);
+                        }
+
+                        this.updateDots();
+                    },
+
+                    updateDots() {
+                        const realIndex = this.getRealIndex();
+                        Array.from(this.$refs.dots.children).forEach((dot, i) => {
+                            dot.className = 'h-2.5 rounded-full transition-all duration-300 ' +
+                                (i === realIndex ?
+                                    'w-8 bg-cyan-300 shadow-[0_0_18px_rgba(103,232,249,0.65)]' :
+                                    'w-2.5 bg-white/20 hover:bg-white/35');
+                        });
+                    },
+
+                    getRealIndex() {
+                        if (this.active === 0) return this.originals - 1;
+                        if (this.active === this.cards.length - 1) return 0;
+                        return this.active - 1;
+                    },
+
+                    updateActiveClasses() {
+                        this.cards.forEach((card, index) => {
+                            card.classList.remove('is-active', 'scale-100', 'opacity-100', 'z-20', 'border-cyan-300/20',
+                                'shadow-[0_25px_80px_rgba(0,0,0,0.22)]');
+                            card.classList.remove('scale-[0.94]', 'opacity-55', 'z-10');
+
+                            if (index === this.active) {
+                                card.classList.add('is-active', 'scale-100', 'opacity-100', 'z-20',
+                                    'border-cyan-300/20', 'shadow-[0_25px_80px_rgba(0,0,0,0.22)]');
+                            } else {
+                                card.classList.add('scale-[0.94]', 'opacity-55', 'z-10');
+                            }
+                        });
+
+                        this.updateDots();
+                    },
+
+                    center(withAnimation = true) {
+                        const viewport = this.$refs.viewport;
+                        const track = this.$refs.track;
+                        const card = this.cards[this.active];
+                        if (!card) return;
+
+                        this.transitioning = withAnimation;
+                        track.style.transitionDuration = withAnimation ? '700ms' : '0ms';
+
+                        const viewportWidth = viewport.offsetWidth;
+                        const cardLeft = card.offsetLeft;
+                        const cardWidth = card.offsetWidth;
+                        const target = cardLeft - ((viewportWidth - cardWidth) / 2);
+
+                        track.style.transform = `translate3d(${-target}px,0,0)`;
+                        this.updateActiveClasses();
+                    },
+
+                    next() {
+                        this.pause();
+                        this.active++;
+                        this.center(true);
+                        this.afterMove();
+                    },
+
+                    prev() {
+                        this.pause();
+                        this.active--;
+                        this.center(true);
+                        this.afterMove();
+                    },
+
+                    goTo(index) {
+                        this.pause();
+                        this.active = index;
+                        this.center(true);
+                        this.afterMove();
+                    },
+
+                    afterMove() {
+                        const track = this.$refs.track;
+
+                        const handler = () => {
+                            track.removeEventListener('transitionend', handler);
+
+                            if (this.active === this.cards.length - 1) {
+                                this.active = 1;
+                                this.center(false);
+                            } else if (this.active === 0) {
+                                this.active = this.cards.length - 2;
+                                this.center(false);
+                            }
+
+                            this.play();
+                        };
+
+                        track.addEventListener('transitionend', handler, {
+                            once: true
+                        });
+                    },
+
+                    play() {
+                        this.pause();
+                        this.timer = setInterval(() => {
+                            this.next();
+                        }, 4200);
+                    },
+
+                    pause() {
+                        if (this.timer) {
+                            clearInterval(this.timer);
+                            this.timer = null;
+                        }
                     }
                 }
             }
