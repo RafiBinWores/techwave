@@ -1604,7 +1604,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
                 <div class="mt-8 flex items-center justify-center gap-3">
                     <button type="button" @click="prev()"
-                        class="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12">
+                        class="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12 cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg"
                             class="h-5 w-5 transition group-hover:-translate-x-0.5" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1615,7 +1615,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                     <div class="flex items-center gap-2" x-ref="dots"></div>
 
                     <button type="button" @click="next()"
-                        class="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12">
+                        class="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12 cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition group-hover:translate-x-0.5"
                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5 15.75 12l-7.5 7.5" />
