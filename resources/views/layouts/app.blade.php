@@ -32,6 +32,9 @@
     </main>
 
 
+    {{-- Footer --}}
+    <x-layouts::partials.footer />
+
     @stack('scripts')
 
     @livewireScripts
