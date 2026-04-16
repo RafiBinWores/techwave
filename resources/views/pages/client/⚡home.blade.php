@@ -199,7 +199,7 @@ new class extends Component {
     </section>
 
     <!-- Services -->
-    <section class="py-20 sm:py-24">
+    <section class="pt-20 sm:py-24">
         <div class="max-w-350 mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-14 lg:mb-20">
                 <div
@@ -339,7 +339,7 @@ new class extends Component {
                     </div>
 
                     <div
-                        class="relative z-10 flex-shrink-0 w-32 h-32 rounded-3xl glass-soft flex items-center justify-center border border-white/10">
+                        class="hidden md:relative z-10 shrink-0 w-32 h-32 rounded-3xl glass-soft md:flex items-center justify-center border border-white/10">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-blue-200" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round">
@@ -367,25 +367,27 @@ new class extends Component {
     </section>
 
     <!-- Company Overview -->
-    <section class="relative overflow-hidden py-10 md:py-15 lg:py-24">
+    <section class="relative overflow-hidden py-20 md:py-15 lg:py-24">
         <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
             <div class="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
                 <!-- Left Content -->
                 <div class="relative order-2 lg:order-1">
-                    <div
-                        class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-blue-100/80 backdrop-blur-xl">
-                        <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                        Get To Know Us
+                    <div class="mb-5 flex justify-center lg:justify-start">
+                        <div
+                            class="inline-flex items-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
+                            <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                            Get To Know Us
+                        </div>
                     </div>
 
-                    <h2 class="mt-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+                    <h2 class="md:mt-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl text-center lg:text-left">
                         We build modern digital experiences
                         <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
                             that move businesses forward
                         </span>
                     </h2>
 
-                    <p class="mt-6 max-w-2xl text-base text-blue-100/70">
+                    <p class="mt-4 md:mt-6 lg:max-w-2xl text-sm md:text-base text-blue-100/70 text-center lg:text-left">
                         Our team blends strategy, design, and technology to deliver scalable solutions for fast-growing
                         brands. From websites and SaaS platforms to automation and digital transformation, we prioritize
                         performance, usability, and long-term value. <br> <br>
@@ -429,7 +431,7 @@ new class extends Component {
                     </div> --}}
 
                     <!-- Stats -->
-                    <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="mt-8 grid grid-cols-3 gap-4 text-center md:text-left">
                         <div class="rounded-2xl border border-white/10 bg-white/6 px-5 py-4 backdrop-blur-xl">
                             <p class="text-2xl sm:text-3xl font-bold text-white">120+</p>
                             <p class="mt-1 text-xs sm:text-sm text-blue-100/60">Projects delivered</p>
@@ -449,240 +451,240 @@ new class extends Component {
 
                 <!-- Right Animated Images -->
                 <div class="relative order-2 lg:order-2">
+                    <div
+                        class="relative bg-white/10 backdrop-blur-xl rounded-[20px] sm:rounded-[28px] p-2.5 sm:p-5 md:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-white/20 max-w155 mx-auto overflow-hidden">
+
+                        <!-- soft glow -->
                         <div
-                            class="relative bg-white/10 backdrop-blur-xl rounded-[20px] sm:rounded-[28px] p-2.5 sm:p-5 md:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-white/20 max-w155 mx-auto overflow-hidden">
+                            class="absolute top-4 left-4 sm:top-10 sm:left-10 w-20 sm:w-32 h-20 sm:h-32 bg-blue-300/20 rounded-full blur-3xl animate-pulse">
+                        </div>
+                        <div
+                            class="absolute bottom-4 right-4 sm:bottom-10 sm:right-10 w-24 sm:w-40 h-24 sm:h-40 bg-sky-300/20 rounded-full blur-3xl animate-pulse">
+                        </div>
 
-                            <!-- soft glow -->
+                        <div
+                            class="relative rounded-[18px] sm:rounded-[22px] bg-slate-900/30 backdrop-blur-md p-2.5 sm:p-5 md:p-8 border border-white/10 min-h-65 sm:min-h-105 md:min-h-117.5 flex items-center justify-center overflow-hidden">
+
                             <div
-                                class="absolute top-4 left-4 sm:top-10 sm:left-10 w-20 sm:w-32 h-20 sm:h-32 bg-blue-300/20 rounded-full blur-3xl animate-pulse">
-                            </div>
-                            <div
-                                class="absolute bottom-4 right-4 sm:bottom-10 sm:right-10 w-24 sm:w-40 h-24 sm:h-40 bg-sky-300/20 rounded-full blur-3xl animate-pulse">
-                            </div>
+                                class="relative w-full max-w-[320px] sm:max-w-115 h-57.5 sm:h-85 md:h-90 scale-[0.84] xs:scale-[0.9] sm:scale-100 origin-center">
 
-                            <div
-                                class="relative rounded-[18px] sm:rounded-[22px] bg-slate-900/30 backdrop-blur-md p-2.5 sm:p-5 md:p-8 border border-white/10 min-h-65 sm:min-h-105 md:min-h-117.5 flex items-center justify-center overflow-hidden">
+                                <!-- SVG lines -->
+                                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 460 360" fill="none"
+                                    aria-hidden="true">
+                                    <path d="M230 180 L110 80" stroke="#93C5FD" stroke-width="2"
+                                        stroke-dasharray="8 8">
+                                        <animate attributeName="stroke-dashoffset" from="16" to="0"
+                                            dur="1.5s" repeatCount="indefinite" />
+                                    </path>
+                                    <path d="M230 180 L350 90" stroke="#93C5FD" stroke-width="2"
+                                        stroke-dasharray="8 8">
+                                        <animate attributeName="stroke-dashoffset" from="16" to="0"
+                                            dur="1.8s" repeatCount="indefinite" />
+                                    </path>
+                                    <path d="M230 180 L120 280" stroke="#93C5FD" stroke-width="2"
+                                        stroke-dasharray="8 8">
+                                        <animate attributeName="stroke-dashoffset" from="16" to="0"
+                                            dur="1.7s" repeatCount="indefinite" />
+                                    </path>
+                                    <path d="M230 180 L355 270" stroke="#93C5FD" stroke-width="2"
+                                        stroke-dasharray="8 8">
+                                        <animate attributeName="stroke-dashoffset" from="16" to="0"
+                                            dur="2s" repeatCount="indefinite" />
+                                    </path>
+                                    <path d="M230 180 L230 50" stroke="#BFDBFE" stroke-width="2"
+                                        stroke-dasharray="8 8">
+                                        <animate attributeName="stroke-dashoffset" from="16" to="0"
+                                            dur="1.6s" repeatCount="indefinite" />
+                                    </path>
+                                </svg>
 
-                                <div
-                                    class="relative w-full max-w-[320px] sm:max-w-115 h-57.5 sm:h-85 md:h-90 scale-[0.84] xs:scale-[0.9] sm:scale-100 origin-center">
-
-                                    <!-- SVG lines -->
-                                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 460 360" fill="none"
-                                        aria-hidden="true">
-                                        <path d="M230 180 L110 80" stroke="#93C5FD" stroke-width="2"
-                                            stroke-dasharray="8 8">
-                                            <animate attributeName="stroke-dashoffset" from="16" to="0"
-                                                dur="1.5s" repeatCount="indefinite" />
-                                        </path>
-                                        <path d="M230 180 L350 90" stroke="#93C5FD" stroke-width="2"
-                                            stroke-dasharray="8 8">
-                                            <animate attributeName="stroke-dashoffset" from="16" to="0"
-                                                dur="1.8s" repeatCount="indefinite" />
-                                        </path>
-                                        <path d="M230 180 L120 280" stroke="#93C5FD" stroke-width="2"
-                                            stroke-dasharray="8 8">
-                                            <animate attributeName="stroke-dashoffset" from="16" to="0"
-                                                dur="1.7s" repeatCount="indefinite" />
-                                        </path>
-                                        <path d="M230 180 L355 270" stroke="#93C5FD" stroke-width="2"
-                                            stroke-dasharray="8 8">
-                                            <animate attributeName="stroke-dashoffset" from="16" to="0"
-                                                dur="2s" repeatCount="indefinite" />
-                                        </path>
-                                        <path d="M230 180 L230 50" stroke="#BFDBFE" stroke-width="2"
-                                            stroke-dasharray="8 8">
-                                            <animate attributeName="stroke-dashoffset" from="16" to="0"
-                                                dur="1.6s" repeatCount="indefinite" />
-                                        </path>
-                                    </svg>
-
-                                    <!-- center -->
-                                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                                        <div class="relative flex items-center justify-center">
-                                            <div
-                                                class="absolute w-20 sm:w-32 md:w-36 h-20 sm:h-32 md:h-36 rounded-full bg-blue-200/20 blur-2xl animate-pulse">
-                                            </div>
-                                            <div
-                                                class="absolute w-16 sm:w-24 h-16 sm:h-24 rounded-full border border-blue-300/40 animate-spin [animation-duration:10s]">
-                                            </div>
-                                            <div
-                                                class="absolute w-11 sm:w-16 h-11 sm:h-16 rounded-full border border-sky-300/50 animate-spin [animation-duration:7s] [animation-direction:reverse]">
-                                            </div>
-
-                                            <div
-                                                class="relative z-10 w-11 sm:w-18 md:w-20 h-11 sm:h-18 md:h-20 rounded-2xl bg-linear-to-br from-blue-600 to-sky-400 shadow-xl flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="w-6 sm:w-5 md:w-10 h-6 sm:h-5 md:h-10 text-white"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                    stroke-width="1.8">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M9.75 3v2.25m4.5-2.25v2.25M4.5 9.75h15M6.75 19.5h10.5A2.25 2.25 0 0019.5 17.25V8.25A2.25 2.25 0 0017.25 6H6.75A2.25 2.25 0 004.5 8.25v9A2.25 2.25 0 006.75 19.5z" />
-                                                </svg>
-                                            </div>
+                                <!-- center -->
+                                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                                    <div class="relative flex items-center justify-center">
+                                        <div
+                                            class="absolute w-20 sm:w-32 md:w-36 h-20 sm:h-32 md:h-36 rounded-full bg-blue-200/20 blur-2xl animate-pulse">
                                         </div>
-                                    </div>
-
-                                    <!-- top -->
-                                    <div
-                                        class="absolute left-1/2 top-0 -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-5 py-2 sm:py-4 animate-bounce [animation-duration:3s] max-w-33 sm:max-w-none">
-                                        <div class="flex items-center gap-2 sm:gap-3">
-                                            <div
-                                                class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-blue-600" viewBox="0 0 24 24"
-                                                    fill="none" stroke="currentColor" stroke-width="2"
-                                                    stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-                                                </svg>
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p
-                                                    class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
-                                                    Cloud Ready</p>
-                                                <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">
-                                                    Modern
-                                                    infrastructure</p>
-                                            </div>
+                                        <div
+                                            class="absolute w-16 sm:w-24 h-16 sm:h-24 rounded-full border border-blue-300/40 animate-spin [animation-duration:10s]">
                                         </div>
-                                    </div>
-
-                                    <!-- left -->
-                                    <div
-                                        class="absolute left-0 top-12 sm:top-14 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-pulse max-w-31.5 sm:max-w-none">
-                                        <div class="flex items-center gap-2 sm:gap-3">
-                                            <div
-                                                class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-sky-600" viewBox="0 0 24 24"
-                                                    fill="none" stroke="currentColor" stroke-width="2"
-                                                    stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" />
-                                                    <path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
-                                                    <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" />
-                                                    <path d="M2 12a10 10 0 0 1 18-6" />
-                                                    <path d="M2 16h.01" />
-                                                    <path d="M21.8 16c.2-2 .131-5.354 0-6" />
-                                                    <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" />
-                                                    <path d="M8.65 22c.21-.66.45-1.32.57-2" />
-                                                    <path d="M9 6.8a6 6 0 0 1 9 5.2v2" />
-                                                </svg>
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p
-                                                    class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
-                                                    Secure System</p>
-                                                <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">
-                                                    Protected
-                                                    workflow</p>
-                                            </div>
+                                        <div
+                                            class="absolute w-11 sm:w-16 h-11 sm:h-16 rounded-full border border-sky-300/50 animate-spin [animation-duration:7s] [animation-direction:reverse]">
                                         </div>
-                                    </div>
 
-                                    <!-- right -->
-                                    <div
-                                        class="absolute right-0 top-14 sm:top-16 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-pulse max-w-31.5 sm:max-w-none">
-                                        <div class="flex items-center gap-2 sm:gap-3">
-                                            <div
-                                                class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-indigo-600" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M7.5 14.25l4.5-4.5 4.5 4.5" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M7.5 9.75l4.5 4.5 4.5-4.5" />
-                                                </svg>
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p
-                                                    class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
-                                                    Scalable Stack</p>
-                                                <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">Built
-                                                    to
-                                                    grow</p>
-                                            </div>
+                                        <div
+                                            class="relative z-10 w-11 sm:w-18 md:w-20 h-11 sm:h-18 md:h-20 rounded-2xl bg-linear-to-br from-blue-600 to-sky-400 shadow-xl flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="w-6 sm:w-5 md:w-10 h-6 sm:h-5 md:h-10 text-white"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M9.75 3v2.25m4.5-2.25v2.25M4.5 9.75h15M6.75 19.5h10.5A2.25 2.25 0 0019.5 17.25V8.25A2.25 2.25 0 0017.25 6H6.75A2.25 2.25 0 004.5 8.25v9A2.25 2.25 0 006.75 19.5z" />
+                                            </svg>
                                         </div>
-                                    </div>
-
-                                    <!-- bottom left -->
-                                    <div
-                                        class="absolute left-1 sm:left-4 bottom-1 sm:bottom-4 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-bounce [animation-duration:3.5s] max-w-31.5 sm:max-w-none">
-                                        <div class="flex items-center gap-2 sm:gap-3">
-                                            <div
-                                                class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-emerald-600" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M9 12l2 2 4-4" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-                                                </svg>
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p
-                                                    class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
-                                                    Reliable Support</p>
-                                                <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">
-                                                    Always
-                                                    connected</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- bottom right -->
-                                    <div
-                                        class="absolute right-1 sm:right-2 bottom-4 sm:bottom-8 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-bounce [animation-duration:4s] max-w-31.5 sm:max-w-none">
-                                        <div class="flex items-center gap-2 sm:gap-3">
-                                            <div
-                                                class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-violet-600" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                </svg>
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p
-                                                    class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
-                                                    Fast Delivery</p>
-                                                <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">Quick
-                                                    implementation</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Dots -->
-                                    <div
-                                        class="absolute left-[23%] top-[32%] w-2 sm:w-3 h-2 sm:h-3 bg-blue-500 rounded-full animate-ping">
-                                    </div>
-                                    <div
-                                        class="absolute right-[25%] top-[35%] w-2 sm:w-3 h-2 sm:h-3 bg-sky-400 rounded-full animate-ping [animation-delay:0.4s]">
-                                    </div>
-                                    <div
-                                        class="absolute left-[26%] bottom-[24%] w-2 sm:w-3 h-2 sm:h-3 bg-indigo-400 rounded-full animate-ping [animation-delay:0.7s]">
-                                    </div>
-                                    <div
-                                        class="absolute right-[24%] bottom-[25%] w-2 sm:w-3 h-2 sm:h-3 bg-emerald-400 rounded-full animate-ping [animation-delay:1s]">
                                     </div>
                                 </div>
-                            </div>
 
-                            <div
-                                class="absolute -top-5 -right-5 w-14 sm:w-16 h-14 sm:h-16 bg-blue-200/30 rounded-2xl blur-xl opacity-70 animate-pulse">
-                            </div>
-                            <div
-                                class="absolute -bottom-4 -left-4 w-16 sm:w-20 h-16 sm:h-20 bg-sky-200/30 rounded-full blur-2xl opacity-80 animate-pulse">
+                                <!-- top -->
+                                <div
+                                    class="absolute left-1/2 top-0 -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-5 py-2 sm:py-4 animate-bounce [animation-duration:3s] max-w-33 sm:max-w-none">
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div
+                                            class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-blue-600" viewBox="0 0 24 24"
+                                                fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+                                            </svg>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p
+                                                class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
+                                                Cloud Ready</p>
+                                            <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">
+                                                Modern
+                                                infrastructure</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- left -->
+                                <div
+                                    class="absolute left-0 top-12 sm:top-14 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-pulse max-w-31.5 sm:max-w-none">
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div
+                                            class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-sky-600" viewBox="0 0 24 24"
+                                                fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" />
+                                                <path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
+                                                <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" />
+                                                <path d="M2 12a10 10 0 0 1 18-6" />
+                                                <path d="M2 16h.01" />
+                                                <path d="M21.8 16c.2-2 .131-5.354 0-6" />
+                                                <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" />
+                                                <path d="M8.65 22c.21-.66.45-1.32.57-2" />
+                                                <path d="M9 6.8a6 6 0 0 1 9 5.2v2" />
+                                            </svg>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p
+                                                class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
+                                                Secure System</p>
+                                            <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">
+                                                Protected
+                                                workflow</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- right -->
+                                <div
+                                    class="absolute right-0 top-14 sm:top-16 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-pulse max-w-31.5 sm:max-w-none">
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div
+                                            class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-indigo-600" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M7.5 14.25l4.5-4.5 4.5 4.5" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M7.5 9.75l4.5 4.5 4.5-4.5" />
+                                            </svg>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p
+                                                class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
+                                                Scalable Stack</p>
+                                            <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">Built
+                                                to
+                                                grow</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- bottom left -->
+                                <div
+                                    class="absolute left-1 sm:left-4 bottom-1 sm:bottom-4 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-bounce [animation-duration:3.5s] max-w-31.5 sm:max-w-none">
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div
+                                            class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-emerald-600" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M9 12l2 2 4-4" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+                                            </svg>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p
+                                                class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
+                                                Reliable Support</p>
+                                            <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">
+                                                Always
+                                                connected</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- bottom right -->
+                                <div
+                                    class="absolute right-1 sm:right-2 bottom-4 sm:bottom-8 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-md border border-white/70 px-2.5 sm:px-4 py-2 sm:py-4 animate-bounce [animation-duration:4s] max-w-31.5 sm:max-w-none">
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div
+                                            class="w-7 sm:w-10 h-7 sm:h-10 rounded-lg sm:rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="w-3.5 sm:w-5 h-3.5 sm:h-5 text-violet-600" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p
+                                                class="text-[10px] sm:text-sm font-semibold text-slate-800 leading-tight">
+                                                Fast Delivery</p>
+                                            <p class="text-[9px] sm:text-xs text-slate-500 leading-tight">Quick
+                                                implementation</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Dots -->
+                                <div
+                                    class="absolute left-[23%] top-[32%] w-2 sm:w-3 h-2 sm:h-3 bg-blue-500 rounded-full animate-ping">
+                                </div>
+                                <div
+                                    class="absolute right-[25%] top-[35%] w-2 sm:w-3 h-2 sm:h-3 bg-sky-400 rounded-full animate-ping [animation-delay:0.4s]">
+                                </div>
+                                <div
+                                    class="absolute left-[26%] bottom-[24%] w-2 sm:w-3 h-2 sm:h-3 bg-indigo-400 rounded-full animate-ping [animation-delay:0.7s]">
+                                </div>
+                                <div
+                                    class="absolute right-[24%] bottom-[25%] w-2 sm:w-3 h-2 sm:h-3 bg-emerald-400 rounded-full animate-ping [animation-delay:1s]">
+                                </div>
                             </div>
                         </div>
+
+                        <div
+                            class="absolute -top-5 -right-5 w-14 sm:w-16 h-14 sm:h-16 bg-blue-200/30 rounded-2xl blur-xl opacity-70 animate-pulse">
+                        </div>
+                        <div
+                            class="absolute -bottom-4 -left-4 w-16 sm:w-20 h-16 sm:h-20 bg-sky-200/30 rounded-full blur-2xl opacity-80 animate-pulse">
+                        </div>
                     </div>
+                </div>
             </div>
         </div>
     </section>
 
 
-    
+
 
 
     @push('scripts')
