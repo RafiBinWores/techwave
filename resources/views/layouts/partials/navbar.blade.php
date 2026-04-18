@@ -1,14 +1,14 @@
 <!-- Navbar -->
 <nav class="glass-panel rounded-2xl px-4 sm:px-6 py-4 " x-data="{ mobileMenu: false }">
     <div class="flex items-center justify-between gap-4">
-        <a href="/" class="flex items-center gap-3">
+        <a href="/" wire:navigate class="flex items-center gap-3">
             <img src="https://techwave.asia/storage/services/light-logo-142x75.png" alt="Logo"
                 class="h-10 rounded-xl">
         </a>
 
         <div class="hidden lg:flex items-center gap-8 text-sm font-medium text-blue-50/85">
-            <a href="#" class="hover:text-white transition">Home</a>
-            <a href="#" class="hover:text-white transition">Services</a>
+            <a href="{{ route('home') }}" wire:navigate class="hover:text-white transition">Home</a>
+            <a href="{{ route('client.services') }}" wire:navigate class="hover:text-white transition">Services</a>
             <a href="#" class="hover:text-white transition">Tools</a>
             <a href="#" class="hover:text-white transition">Pricing</a>
             <a href="#" class="hover:text-white transition">Blogs</a>
@@ -38,8 +38,8 @@
     <!-- Mobile Menu -->
     <div x-show="mobileMenu" x-transition class="lg:hidden mt-4 pt-4 border-t border-white/10">
         <div class="flex flex-col gap-3 text-sm text-blue-50/85">
-            <a href="#" class="px-4 py-3 rounded-xl glass-soft">Home</a>
-            <a href="#" class="px-4 py-3 rounded-xl glass-soft">Services</a>
+            <a href="{{ route('home') }}" wire:navigate class="px-4 py-3 rounded-xl glass-soft">Home</a>
+            <a href="{{ route('client.services') }}" wire:navigate class="px-4 py-3 rounded-xl glass-soft">Services</a>
             <a href="#" class="px-4 py-3 rounded-xl glass-soft">Tools</a>
             <a href="#" class="px-4 py-3 rounded-xl glass-soft">Pricing</a>
             <a href="#" class="px-4 py-3 rounded-xl glass-soft">Blogs</a>

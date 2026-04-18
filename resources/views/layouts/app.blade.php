@@ -44,10 +44,12 @@
             </div>
         </div> --}}
 
-        
+
     {{-- Navbar --}}
     <div class="max-w-350 mx-auto px-4 sm:px-6 lg:px-8 py-4">
-    <x-layouts::partials.navbar />
+        @persist('site-navbar')
+            <livewire:shared.navbar />
+        @endpersist
     </div>
 
 

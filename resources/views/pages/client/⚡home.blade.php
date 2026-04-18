@@ -32,12 +32,12 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                         </p>
 
                         <div class="mt-8 sm:mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4">
-                            <a href="#"
-                                class="inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-blue-500 to-sky-400 text-white font-semibold shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition">
+                            <a href="#services"
+                                class="inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-white font-semibold shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition">
                                 Get Started
                             </a>
 
-                            <a href="#"
+                            <a href="{{ route('client.services') }}" wire:navigate
                                 class="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white font-semibold hover:bg-white/15 transition">
                                 View all Services
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
@@ -182,7 +182,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
     </section>
 
     {{-- Services --}}
-    <section class="pt-20 sm:py-24">
+    <section class="pt-20 sm:py-24" id="services">
         <div class="max-w-350 mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-14 lg:mb-20">
                 <div
@@ -338,7 +338,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
             <!-- Show All Services Button -->
             <div class="mt-10 flex justify-center">
-                <a href="#all-services" class="service-btn">
+                <a href="{{ route('client.services') }}" wire:navigate class="service-btn">
                     Show All Services
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2">

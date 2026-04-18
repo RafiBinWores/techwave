@@ -38,7 +38,7 @@
                         Contact Us
                     </a>
 
-                    <a href="#services"
+                    <a href="{{ route('client.services') }}" wire:navigate
                         class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition hover:bg-white/12">
                         View Services
                     </a>
