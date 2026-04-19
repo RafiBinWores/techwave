@@ -304,6 +304,162 @@
     color: white;
 }
 
+
+/* service details page */
+.service-detail-card {
+    @apply rounded-[30px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)];
+}
+
+.benefit-box {
+    @apply rounded-[22px] border border-white/10 bg-white/6 p-5 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20;
+}
+
+.feature-line {
+    @apply relative rounded-2xl border border-white/10 bg-white/6 px-5 py-4 pl-12 text-sm font-medium text-blue-50/88 backdrop-blur-xl;
+}
+
+.feature-line::before {
+    content: "";
+    position: absolute;
+    left: 1.2rem;
+    top: 50%;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 9999px;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, rgba(103, 232, 249, 1), rgba(59, 130, 246, 1));
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+}
+
+.sidebar-service-card {
+    @apply rounded-[30px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)];
+}
+
+.contact-side-box {
+    @apply rounded-2xl border border-white/10 bg-white/6 px-4 py-4 backdrop-blur-xl;
+}
+
+.other-service-card {
+    @apply rounded-[24px] border border-white/10 bg-white/6 p-5 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/8;
+}
+
+.other-service-icon {
+    @apply flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10;
+}
+
+/* tools index page */
+.tool-mini-card {
+    @apply rounded-[22px] border border-white/10 bg-white/6 p-4 backdrop-blur-xl;
+}
+
+.tool-mini-icon {
+    @apply flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-sm font-bold;
+}
+
+.tool-feature-card {
+    @apply relative overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/8;
+}
+
+.tool-pill {
+    @apply inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-cyan-200;
+}
+
+.tool-tag {
+    @apply rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75;
+}
+
+.tool-category-card {
+    @apply rounded-[28px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20;
+}
+
+.tool-category-icon {
+    @apply flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 text-sm font-bold;
+}
+
+.tool-bullet {
+    @apply relative pl-6;
+}
+
+.tool-bullet::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.42rem;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, rgba(103, 232, 249, 1), rgba(59, 130, 246, 1));
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+}
+
+
+/* Tools index */
+.tool-grid-card {
+    @apply rounded-[28px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/8;
+}
+
+.tool-grid-top {
+    @apply flex items-center justify-between gap-4;
+}
+
+.tool-grid-icon {
+    @apply flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-sm font-bold;
+}
+
+.tool-small-pill {
+    @apply inline-flex rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-100/65;
+}
+
+.tool-link {
+    @apply inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white;
+}
+
+.tool-flow-card {
+    @apply rounded-[28px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20;
+}
+
+.tool-flow-step {
+    @apply inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-blue-500/15 text-base font-bold text-cyan-200;
+}
+
+
+/* Blogs page */
+.blog-card {
+    @apply rounded-[30px] border border-white/10 bg-white/6 p-4 sm:p-5 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/8;
+}
+
+.blog-chip {
+    @apply rounded-full border border-white/10 bg-white/8 px-3 py-1 text-blue-100/70;
+}
+
+.blog-link {
+    @apply inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white;
+}
+
+.blog-sidebar-card {
+    @apply rounded-[30px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.18)];
+}
+
+.blog-category-item {
+    @apply flex items-center justify-between rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-blue-50/82 backdrop-blur-xl transition duration-300 hover:bg-white/10 hover:text-white;
+}
+
+.recent-post-item {
+    @apply flex items-start gap-4 rounded-[24px] border border-white/10 bg-white/6 p-3 backdrop-blur-xl transition duration-300 hover:bg-white/10;
+}
+
+.pagination-btn {
+    @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/8 px-4 py-2.5 text-sm font-medium text-blue-50/80 backdrop-blur-xl transition duration-300 hover:bg-white/12 hover:text-white;
+}
+
+.pagination-btn-active {
+    @apply border-cyan-300/20 bg-gradient-to-r from-blue-500/20 to-sky-400/20 text-white shadow-[0_10px_30px_rgba(59,130,246,0.18)];
+}
+.blog-search-input {
+    @apply w-full rounded-[22px] border border-white/10 bg-white/8 px-4 py-3.5 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl transition focus:border-cyan-300/30 focus:bg-white/10;
+}
+
+
 [x-cloak] {
     display: none !important;
 }

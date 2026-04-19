@@ -19,9 +19,9 @@ new class extends Component {
             <div class="hidden lg:flex items-center gap-8 text-sm font-medium text-blue-50/85">
                 <a href="{{ route('home') }}" wire:navigate class="hover:text-white transition">Home</a>
                 <a href="{{ route('client.services') }}" wire:navigate class="hover:text-white transition">Services</a>
-                <a href="#" class="hover:text-white transition">Tools</a>
-                <a href="#" class="hover:text-white transition">Pricing</a>
-                <a href="#" class="hover:text-white transition">Blogs</a>
+                <a href="{{ route('client.tools.index') }}" wire:navigate class="hover:text-white transition">Tools</a>
+                {{-- <a href="#" class="hover:text-white transition">Pricing</a> --}}
+                <a href="{{ route('client.blogs.index') }}" wire:navigate class="hover:text-white transition">Blogs</a>
                 <a href="#" class="hover:text-white transition">About</a>
                 <a href="#" class="hover:text-white transition">Contact</a>
             </div>
@@ -52,7 +52,7 @@ new class extends Component {
                 <a href="{{ route('client.services') }}" wire:navigate
                     class="px-4 py-3 rounded-xl glass-soft">Services</a>
                 <a href="#" class="px-4 py-3 rounded-xl glass-soft">Tools</a>
-                <a href="#" class="px-4 py-3 rounded-xl glass-soft">Pricing</a>
+                {{-- <a href="#" class="px-4 py-3 rounded-xl glass-soft">Pricing</a> --}}
                 <a href="#" class="px-4 py-3 rounded-xl glass-soft">Blogs</a>
                 <a href="#" class="px-4 py-3 rounded-xl glass-soft">About</a>
                 <a href="#" class="px-4 py-3 rounded-xl glass-soft">Contact</a>
