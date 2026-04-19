@@ -85,8 +85,8 @@ new class extends Component {
                             monitoring, and user awareness can reduce long-term risk.
                         </p>
 
-                        <a href="#"
-                            class="mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-sky-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5">
+                        <a href="{{ route('client.blogs.details', ['slug' => 'cyber-security']) }}"
+                            class="mt-7 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5">
                             Read Full Article
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor" stroke-width="2">
@@ -370,7 +370,7 @@ new class extends Component {
                         </p>
 
                         <a href="#contact"
-                            class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-sky-400 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5">
+                            class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5">
                             Contact Us
                         </a>
                     </div>

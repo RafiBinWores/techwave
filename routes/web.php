@@ -11,3 +11,4 @@ Route::livewire('/tools', 'pages::client.tools.index')->name('client.tools.index
 
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs.index');
+Route::livewire('/blogs/{slug}', 'pages::client.blogs.details')->name('client.blogs.details');
