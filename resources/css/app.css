@@ -453,7 +453,7 @@
 }
 
 .pagination-btn-active {
-    @apply border-cyan-300/20 bg-gradient-to-r from-blue-500/20 to-sky-400/20 text-white shadow-[0_10px_30px_rgba(59,130,246,0.18)];
+    @apply border-cyan-300/20 bg-linear-to-r from-blue-500/20 to-sky-400/20 text-white shadow-[0_10px_30px_rgba(59,130,246,0.18)];
 }
 .blog-search-input {
     @apply w-full rounded-[22px] border border-white/10 bg-white/8 px-4 py-3.5 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl transition focus:border-cyan-300/30 focus:bg-white/10;
@@ -533,7 +533,156 @@
 }
 
 
+/* About us page */
+.about-panel {
+    @apply rounded-[34px] border border-white/10 bg-white/6 p-6 sm:p-8 backdrop-blur-2xl shadow-[0_20px_70px_rgba(0,0,0,0.18)];
+}
 
+.about-text {
+    @apply text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8;
+}
+
+.about-stat-card {
+    @apply rounded-[26px] border border-white/10 bg-white/6 px-5 py-5 text-center backdrop-blur-2xl shadow-[0_14px_45px_rgba(0,0,0,0.15)];
+}
+
+.about-mv-card {
+    @apply rounded-[30px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20;
+}
+
+.about-mv-icon {
+    @apply flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10;
+}
+
+.why-upgrade-card {
+    @apply rounded-[28px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/8;
+}
+
+.why-upgrade-card-featured {
+    @apply border-cyan-300/20 bg-linear-to-b from-blue-500/10 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.20)];
+}
+
+.why-upgrade-title {
+    @apply text-xl font-bold text-white;
+}
+
+.why-upgrade-text {
+    @apply mt-3 text-sm leading-7 text-blue-100/68;
+}
+
+.expertise-card {
+    @apply rounded-[28px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/8;
+}
+
+.expertise-title {
+    @apply text-xl font-bold text-white;
+}
+
+.expertise-text {
+    @apply mt-3 text-sm leading-7 text-blue-100/68;
+}
+
+.timeline-card {
+    @apply relative rounded-[28px] border border-white/10 bg-white/6 p-6 pl-10 backdrop-blur-2xl shadow-[0_16px_55px_rgba(0,0,0,0.16)];
+}
+
+.timeline-dot {
+    @apply absolute left-4 top-7 h-3 w-3 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(103,232,249,0.7)];
+}
+
+.timeline-year {
+    @apply text-xs uppercase tracking-[0.22em] text-blue-100/45;
+}
+
+.timeline-title {
+    @apply mt-3 text-2xl font-bold text-white;
+}
+
+.timeline-text {
+    @apply mt-3 text-sm leading-7 text-blue-100/68;
+}
+
+.about-gallery-img {
+    @apply h-72 w-full rounded-[28px] border border-white/10 object-cover bg-white/6 p-2 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-1;
+}
+
+.contact-about-card {
+    @apply rounded-[34px] border border-white/10 bg-white/6 px-6 py-8 sm:px-8 backdrop-blur-2xl shadow-[0_20px_70px_rgba(0,0,0,0.18)];
+}
+
+.contact-mini-btn {
+    @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/8 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/12;
+}
+
+.contact-main-btn {
+    @apply inline-flex items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5;
+}
+
+.team-card {
+    @apply rounded-[28px] border border-white/10 bg-white/6 p-5 text-center backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20;
+}
+
+.team-img {
+    @apply h-60 w-full rounded-[22px] object-cover;
+}
+
+.team-name {
+    @apply mt-5 text-xl font-bold text-white;
+}
+
+.team-role {
+    @apply mt-2 text-sm text-blue-100/65;
+}
+
+
+/* Contact page */
+.contact-info-premium-card {
+    @apply rounded-[30px] border border-white/10 bg-white/6 p-6 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/8;
+}
+
+.contact-info-premium-icon {
+    @apply flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10;
+}
+
+.contact-input {
+    @apply w-full rounded-2xl border border-white/10 bg-white/8 px-4 py-3.5 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl transition focus:border-cyan-300/30 focus:bg-white/10;
+}
+
+.contact-select {
+    color-scheme: dark;
+}
+
+.contact-select option {
+    background: rgba(15, 23, 42, 0.96);
+    color: white;
+}
+
+.contact-select option:checked {
+    background: rgba(59, 130, 246, 0.85);
+    color: white;
+}
+
+/* Auth Modal */
+.auth-input {
+    @apply w-full rounded-2xl border border-white/10 bg-white/8 px-4 py-3.5 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl transition focus:border-cyan-300/30 focus:bg-white/10;
+}
+
+.auth-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.auth-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.auth-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 9999px;
+}
+
+.auth-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.55);
+}
 
 [x-cloak] {
     display: none !important;

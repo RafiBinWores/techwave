@@ -47,9 +47,10 @@
 
     {{-- Navbar --}}
     <div class="max-w-350 mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        @persist('site-navbar')
-            <livewire:shared.navbar />
-        @endpersist
+        {{-- @persist('site-navbar')
+            
+        @endpersist --}}
+        <livewire:shared.navbar />
     </div>
 
 
@@ -61,6 +62,9 @@
 
     {{-- Footer --}}
     <x-layouts::partials.footer />
+
+    {{-- Auth Modal --}}
+    <livewire:auth.auth-modal wire:key="global-auth-modal" />
 
     @stack('scripts')
 

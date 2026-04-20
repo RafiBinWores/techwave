@@ -22,18 +22,18 @@ new class extends Component {
                 <a href="{{ route('client.tools.index') }}" wire:navigate class="hover:text-white transition">Tools</a>
                 {{-- <a href="#" class="hover:text-white transition">Pricing</a> --}}
                 <a href="{{ route('client.blogs.index') }}" wire:navigate class="hover:text-white transition">Blogs</a>
-                <a href="#" class="hover:text-white transition">About</a>
-                <a href="#" class="hover:text-white transition">Contact</a>
+                <a href="{{ route('client.about') }}" wire:navigate class="hover:text-white transition">About</a>
+                <a href="{{ route('client.contact') }}" wire:navigate class="hover:text-white transition">Contact</a>
             </div>
 
             <div class="hidden lg:flex items-center gap-3">
-                <a href="#"
-                    class="px-5 py-2.5 rounded-full glass-chip text-blue-50 font-medium hover:bg-white/20 transition">Sign
-                    In</a>
-                <a href="#"
-                    class="px-5 py-2.5 rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-white font-semibold shadow-lg shadow-blue-500/25 hover:scale-[1.02] transition">
+                <button @click="window.dispatchEvent(new CustomEvent('open-auth', { detail: { mode: 'login' } }))"
+                    class="px-5 py-2.5 rounded-full glass-chip text-blue-50 font-medium hover:bg-white/20 transition cursor-pointer">Sign
+                    In</button>
+                <button @click="window.dispatchEvent(new CustomEvent('open-auth', { detail: { mode: 'register' } }))"
+                    class="px-5 py-2.5 rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-white font-semibold shadow-lg shadow-blue-500/25 hover:scale-[1.02] transition cursor-pointer">
                     Get Started
-                </a>
+                </button>
             </div>
 
             <button @click="mobileMenu = !mobileMenu"
@@ -51,16 +51,17 @@ new class extends Component {
                 <a href="{{ route('home') }}" wire:navigate class="px-4 py-3 rounded-xl glass-soft">Home</a>
                 <a href="{{ route('client.services') }}" wire:navigate
                     class="px-4 py-3 rounded-xl glass-soft">Services</a>
-                <a href="#" class="px-4 py-3 rounded-xl glass-soft">Tools</a>
+                <a href="{{ route('client.tools.index') }}" wire:navigate class="px-4 py-3 rounded-xl glass-soft">Tools</a>
                 {{-- <a href="#" class="px-4 py-3 rounded-xl glass-soft">Pricing</a> --}}
-                <a href="#" class="px-4 py-3 rounded-xl glass-soft">Blogs</a>
-                <a href="#" class="px-4 py-3 rounded-xl glass-soft">About</a>
-                <a href="#" class="px-4 py-3 rounded-xl glass-soft">Contact</a>
+                <a href="{{ route('client.blogs.index') }}" wire:navigate class="px-4 py-3 rounded-xl glass-soft">Blogs</a>
+                <a href="{{ route('client.about') }}" wire:navigate class="px-4 py-3 rounded-xl glass-soft">About</a>
+                <a href="{{ route('client.contact') }}" wire:navigate class="px-4 py-3 rounded-xl glass-soft">Contact</a>
                 <div class="grid grid-cols-2 gap-3 pt-2">
-                    <a href="#" class="text-center px-4 py-3 rounded-xl glass-soft font-medium">Sign In</a>
-                    <a href="#"
+                    <button @click="window.dispatchEvent(new CustomEvent('open-auth', { detail: { mode: 'login' } }))"
+                        class="text-center px-4 py-3 rounded-xl glass-soft font-medium">Sign In</button>
+                    <button @click="window.dispatchEvent(new CustomEvent('open-auth', { detail: { mode: 'register' } }))"
                         class="text-center px-4 py-3 rounded-xl bg-linear-to-r from-blue-500 to-sky-400 font-semibold">Get
-                        Started</a>
+                        Started</button>
                 </div>
             </div>
         </div>

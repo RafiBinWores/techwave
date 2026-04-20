@@ -12,3 +12,9 @@ Route::livewire('/tools', 'pages::client.tools.index')->name('client.tools.index
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs.index');
 Route::livewire('/blogs/{slug}', 'pages::client.blogs.details')->name('client.blogs.details');
+
+//About
+Route::livewire('/about', 'pages::client.about')->name('client.about');
+
+// Contact
+Route::livewire('/contact', 'pages::client.contact')->name('client.contact');
