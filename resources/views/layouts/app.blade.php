@@ -15,7 +15,6 @@
         rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
     @livewireStyles
 </head>
 
@@ -53,6 +52,18 @@
         <livewire:shared.navbar />
     </div>
 
+    <div x-data="{ show: false, message: '' }"
+        x-on:auth-success.window="
+        show=true;
+        message=$event.detail.message;
+        setTimeout(() => show=false, 3000)
+    "
+        x-show="show" x-transition
+        class="fixed top-5 right-5 z-9999 rounded-2xl bg-emerald-500 px-5 py-3 text-white shadow-xl"
+        style="display:none;">
+        <span x-text="message"></span>
+    </div>
+
 
     {{-- Main content --}}
     <main>
@@ -65,6 +76,20 @@
 
     {{-- Auth Modal --}}
     <livewire:auth.auth-modal wire:key="global-auth-modal" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.get('openAuth') === 'login') {
+                window.dispatchEvent(new CustomEvent('open-auth', {
+                    detail: {
+                        mode: 'login'
+                    }
+                }));
+            }
+        });
+    </script>
 
     @stack('scripts')
 

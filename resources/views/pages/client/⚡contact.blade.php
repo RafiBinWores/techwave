@@ -211,7 +211,7 @@ new class extends Component
                             </a>
 
                             <a href="https://wa.me/8801000000000"
-                                class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-green-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5">
+                                class="inline-flex items-center justify-center rounded-full bg-linear-to-r from-emerald-500 to-green-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5">
                                 WhatsApp Now
                             </a>
                         </div>

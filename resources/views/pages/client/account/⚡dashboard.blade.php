@@ -9,5 +9,5 @@ new class extends Component
 ?>
 
 <div>
-   Hi hoow r u
+   Hi im dashbaord
 </div>

@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\User;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::livewire('/', 'pages::client.home')->name('home');
@@ -18,3 +22,69 @@ Route::livewire('/about', 'pages::client.about')->name('client.about');
 
 // Contact
 Route::livewire('/contact', 'pages::client.contact')->name('client.contact');
+
+/*
+|--------------------------------------------------------------------------
+| Email verification
+|--------------------------------------------------------------------------
+*/
+
+Route::livewire('/email/verify', 'pages::client.auth.verify-email')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (Request $request, string $id, string $hash) {
+    $user = User::findOrFail($id);
+
+    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403);
+    }
+
+    if (! $request->hasValidSignature()) {
+        abort(403);
+    }
+
+    if (! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+    }
+
+    return redirect()->route('verified.success');
+})->middleware('signed')->name('verification.verify');
+
+Route::post('/email/verification-notification', function (Request $request) {
+    if (! auth()->check()) {
+        return redirect()->route('home')->with('auth_error', 'Please login first to resend the verification email.');
+    }
+
+    if ($request->user()->hasVerifiedEmail()) {
+        return redirect()->route('verified.success');
+    }
+
+    $request->user()->sendEmailVerificationNotification();
+
+    return back()->with('auth_success', 'A fresh verification link has been sent to your email address.');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
+Route::view('/verified-success', 'auth.verified-success')->name('verified.success');
+
+
+/*
+|--------------------------------------------------------------------------
+| Client protected routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified', 'role:client'])->prefix('account')->name('account.account.')->group(function () {
+    Route::get('/dashboard', 'pages::client.account.dashboard')->name('dashboard');
+});
+
+
+Route::livewire('/admin/login', 'pages::admin.auth.login')->name('admin.login');
+
+/*
+|--------------------------------------------------------------------------
+| Admin protected routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,staff,admin_manager'])->group(function () {
+
+    Route::livewire('/admin/dashboard', 'pages::admin.dashboard')->name('admin.dashboard');
+});
