@@ -46,9 +46,6 @@
 
     {{-- Navbar --}}
     <div class="max-w-350 mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {{-- @persist('site-navbar')
-            
-        @endpersist --}}
         <livewire:shared.navbar />
     </div>
 

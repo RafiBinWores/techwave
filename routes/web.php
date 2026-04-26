@@ -64,7 +64,7 @@ Route::post('/email/verification-notification', function (Request $request) {
     return back()->with('auth_success', 'A fresh verification link has been sent to your email address.');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
-Route::view('/verified-success', 'auth.verified-success')->name('verified.success');
+Route::livewire('/verified-success', 'pages::client.auth.verified-success')->name('verified.success');
 
 
 /*
@@ -72,10 +72,16 @@ Route::view('/verified-success', 'auth.verified-success')->name('verified.succes
 | Client protected routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'role:client'])->prefix('account')->name('account.account.')->group(function () {
-    Route::get('/dashboard', 'pages::client.account.dashboard')->name('dashboard');
-});
+Route::middleware(['auth', 'verified', 'role:client'])->prefix('account')->name('account.')->group(function () {
+    Route::livewire('/dashboard', 'pages::client.account.dashboard')->name('dashboard');
 
+    Route::livewire('/services', 'pages::client.account.services')->name('services');
+    Route::livewire('/tickets', 'pages::client.account.tickets')->name('tickets');
+    Route::livewire('/proposals', 'pages::client.account.proposals')->name('proposals');
+    Route::livewire('/profile', 'pages::client.account.profile')->name('profile');
+    Route::livewire('/change-password', 'pages::client.account.change-password')->name('password');
+});
+    
 
 Route::livewire('/admin/login', 'pages::admin.auth.login')->name('admin.login');
 

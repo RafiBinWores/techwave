@@ -27,6 +27,9 @@ new class extends Component {
     public string $registerPassword = '';
     public string $registerPasswordConfirmation = '';
 
+    public string $mode = 'login';
+    public string $returnUrl = '/';
+
     // Forgot
     public string $forgotEmail = '';
 
@@ -52,12 +55,17 @@ new class extends Component {
             return;
         }
 
+        // Auth::login($user, $this->remember);
+        // request()->session()->regenerate();
+
+        // $this->dispatch('close-auth');
+        // $this->dispatch('auth-success', message: 'Welcome back!');
+        // $this->closeAuth();
         Auth::login($user, $this->remember);
+
         request()->session()->regenerate();
 
-        $this->dispatch('close-auth');
-        $this->dispatch('auth-success', message: 'Welcome back!');
-        $this->closeAuth();
+        $this->redirect($this->returnUrl ?: route('home'), navigate: false);
     }
 
     public function register(): void
@@ -109,12 +117,18 @@ new class extends Component {
 
         event(new Registered($user));
 
+        // Auth::login($user);
+        // request()->session()->regenerate();
+
+        // $this->dispatch('close-auth');
+        // $this->dispatch('auth-success', message: 'Account created successfully!');
+        // $this->closeAuth();
+
         Auth::login($user);
+
         request()->session()->regenerate();
 
-        $this->dispatch('close-auth');
-        $this->dispatch('auth-success', message: 'Account created successfully!');
-        $this->closeAuth();
+        $this->redirect($this->returnUrl ?: route('home'), navigate: false);
     }
 
     public function sendResetLink(): void
@@ -152,8 +166,10 @@ new class extends Component {
     public function closeAuth(): void
     {
         $this->resetValidation();
+
         $this->reset(['loginEmail', 'loginPassword', 'remember', 'companyName', 'companyLogo', 'registerEmail', 'registerPassword', 'registerPasswordConfirmation', 'forgotEmail']);
 
+        $this->mode = 'login';
         $this->accountType = 'personal';
     }
 };
@@ -168,9 +184,10 @@ new class extends Component {
     showRegisterConfirmPassword: false
 }"
     x-on:open-auth.window="
-        openAuth = true;
-        mode = $event.detail?.mode ?? 'login';
-    "
+    openAuth = true;
+    mode = $event.detail?.mode ?? 'login';
+    $wire.set('returnUrl', window.location.href);
+"
     x-on:close-auth.window="
         openAuth = false;
     ">
@@ -357,9 +374,16 @@ new class extends Component {
                             </button>
                         </div>
 
-                        <button type="submit"
-                            class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer">
-                            Sign In
+                        <button type="submit" wire:loading.attr="disabled" wire:target="login"
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer">
+
+                            <span wire:loading.remove wire:target="login">Sign In</span>
+
+                            <span wire:loading wire:target="login" class="inline-flex items-center gap-2">
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
+                                Signing in...
+                            </span>
                         </button>
                     </form>
 
@@ -392,9 +416,16 @@ new class extends Component {
                             Enter your account email and we’ll send a secure reset link.
                         </p>
 
-                        <button type="submit"
-                            class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer">
-                            Send Reset Link
+                        <button type="submit" wire:loading.attr="disabled" wire:target="sendResetLink"
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer">
+
+                            <span wire:loading.remove wire:target="sendResetLink">Send Reset Link</span>
+
+                            <span wire:loading wire:target="sendResetLink" class="inline-flex items-center gap-2">
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
+                                Sending...
+                            </span>
                         </button>
 
                         <button type="button" @click="mode = 'login'"
@@ -528,9 +559,16 @@ new class extends Component {
                             and account rules.
                         </p>
 
-                        <button type="submit"
-                            class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer">
-                            Create Account
+                        <button type="submit" wire:loading.attr="disabled" wire:target="register"
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer">
+
+                            <span wire:loading.remove wire:target="register">Create Account</span>
+
+                            <span wire:loading wire:target="register" class="inline-flex items-center gap-2">
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
+                                Creating account...
+                            </span>
                         </button>
                     </form>
 
