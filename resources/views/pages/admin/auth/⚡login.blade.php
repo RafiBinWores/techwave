@@ -152,7 +152,7 @@ new #[Layout('layouts.admin-auth')] class extends Component
                             </label>
 
                             <a
-                                href=""
+                                href="{{ route('admin.password.request') }}"
                                 class="text-sm font-medium text-blue-600 transition hover:text-blue-500 dark:text-blue-400"
                             >
                                 Forgot password?
@@ -210,7 +210,7 @@ new #[Layout('layouts.admin-auth')] class extends Component
 
                     <button
                         type="submit"
-                        class="inline-flex h-13 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+                        class="inline-flex h-13 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 cursor-pointer"
                     >
                         Sign In
                     </button>

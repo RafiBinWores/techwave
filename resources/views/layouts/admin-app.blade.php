@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ $title ?? config('app.name') }}</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-manrope {
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+
+    @livewireStyles
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+
+<body x-data="{ sidebarOpen: false, sidebarCollapsed: false }" class="bg-background text-on-background min-h-screen">
+
+    <!-- Mobile Overlay -->
+    <div x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false"
+        class="fixed inset-0 bg-black/40 z-40 lg:hidden"></div>
+
+
+
+    <!-- Main Wrapper -->
+    <div :class="sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'"
+        class="flex flex-col min-h-screen transition-all duration-300">
+
+        {{-- Sidebar --}}
+        <livewire:admin.shared.sidebar />
+
+        <!-- Topbar -->
+        <livewire:admin.shared.header />
+
+        <!-- Content -->
+        <main class="p-4 sm:p-6 lg:p-stack-lg max-w-350 mx-auto w-full">
+            {{ $slot }}
+        </main>
+
+
+        {{-- Toast Notifications --}}
+        <livewire:common.toast-notification />
+    </div>
+
+</body>
+
+</html>

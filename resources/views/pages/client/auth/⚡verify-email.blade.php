@@ -25,8 +25,8 @@ new class extends Component
 };
 ?>
 
-<div class="min-h-screen bg-slate-950 px-4 py-12 text-white">
-    <div class="mx-auto max-w-2xl rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
+<div class="px-4 py-12 text-white">
+    <div class="mx-auto max-w-2xl rounded-4xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
         <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200">
             Email Verification Required
         </div>

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use App\Enums\UserRole;
+use App\Notifications\AdminResetPasswordNotification;
+use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'type', 'role', 'company_id'])]
+#[Fillable(['name', 'email', 'password', 'type', 'role', 'company_id', 'department_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -40,6 +40,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Company::class);
     }
 
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
     public function isCompanyAccount(): bool
     {
         return $this->type === 'company';
@@ -50,8 +55,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->type === 'personal';
     }
 
-        public function sendEmailVerificationNotification(): void
+    public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmail);
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        if (in_array($this->role, [
+        UserRole::ADMIN,
+        UserRole::MANAGER,
+        UserRole::STAFF,
+        UserRole::ADMIN_MANAGER,
+    ])) {
+        $this->notify(new AdminResetPasswordNotification($token));
+        return;
+    }
+
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

@@ -6,6 +6,12 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Client guest routes
+|--------------------------------------------------------------------------
+*/
+
 Route::livewire('/', 'pages::client.home')->name('home');
 Route::livewire('/services', 'pages::client.services.index')->name('client.services');
 Route::livewire('/services/{slug}', 'pages::client.services.details')->name('client.services.details');
@@ -69,6 +75,23 @@ Route::livewire('/verified-success', 'pages::client.auth.verified-success')->nam
 
 /*
 |--------------------------------------------------------------------------
+| Reset Password
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+
+    // Client password reset
+    Route::livewire('/reset-password/{token}', 'pages::client.auth.reset-password')
+        ->name('password.reset');
+
+    // Admin password reset
+    Route::livewire('/admin/reset-password/{token}', 'pages::admin.auth.reset-password')
+        ->name('admin.password.reset');
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | Client protected routes
 |--------------------------------------------------------------------------
 */
@@ -81,9 +104,22 @@ Route::middleware(['auth', 'verified', 'role:client'])->prefix('account')->name(
     Route::livewire('/profile', 'pages::client.account.profile')->name('profile');
     Route::livewire('/change-password', 'pages::client.account.change-password')->name('password');
 });
-    
 
-Route::livewire('/admin/login', 'pages::admin.auth.login')->name('admin.login');
+
+/*
+|--------------------------------------------------------------------------
+| Admin guest routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+
+    Route::livewire('/admin/login', 'pages::admin.auth.login')->name('admin.login');
+    Route::livewire('/admin/forgot-password', 'pages::admin.auth.forgot-password')
+        ->name('admin.password.request');
+
+    Route::livewire('/admin/reset-password/{token}', 'pages::admin.auth.reset-password')
+        ->name('admin.password.reset');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -92,5 +128,15 @@ Route::livewire('/admin/login', 'pages::admin.auth.login')->name('admin.login');
 */
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,staff,admin_manager'])->group(function () {
 
-    Route::livewire('/admin/dashboard', 'pages::admin.dashboard')->name('admin.dashboard');
+    Route::livewire('/dashboard', 'pages::admin.dashboard')->name('dashboard');
+
+    // User management
+    Route::livewire('/users', 'pages::admin.users.index')->name('users.index');
+    Route::livewire('/users/create', 'pages::admin.users.create')->name('users.create');
+    // Route::livewire('/users/{id}/edit', 'pages::admin.users.edit')->name('users.edit');
+
+    // Department management
+    Route::livewire('/departments', 'pages::admin.departments.index')->name('departments.index');
+    Route::livewire('/departments/create', 'pages::admin.departments.create')->name('departments.create');
+    Route::livewire('/departments/{department}/edit', 'pages::admin.departments.edit')->name('departments.edit');
 });
