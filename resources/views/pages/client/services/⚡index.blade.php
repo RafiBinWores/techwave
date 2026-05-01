@@ -13,153 +13,319 @@ new #[Title('Services | Techwave')] class extends Component {
     <!-- Main Services -->
     <section id="service-list" class="relative overflow-hidden py-20 sm:py-24">
         <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
-            <div class="mb-14 text-center lg:mb-18">
-                <div
-                    class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
-                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                    Core Service Areas
+    <div class="mb-14 text-center lg:mb-18">
+        <div
+            class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
+            <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+            Core Service Areas
+        </div>
+
+        <h2 class="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+            Tailored services for
+            <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                growth, security, and stability
+            </span>
+        </h2>
+
+        <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/70 sm:text-base">
+            From foundational IT support to advanced enterprise protection, we design solutions that fit
+            your business stage and operational needs.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+
+        <!-- Cyber Security -->
+        <a href="{{ route('client.services.details', ['slug' => 'cyber-security']) }}"
+            wire:navigate
+            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
+
+            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80"
+                alt="Cyber Security"
+                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-cyan-500/20 via-transparent to-blue-700/20"></div>
+
+            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <span
+                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur-md">
+                        Security
+                    </span>
+
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-cyan-200 backdrop-blur-md">
+                        <span class="material-symbols-outlined">shield</span>
+                    </div>
                 </div>
 
-                <h2 class="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-                    Tailored services for
-                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
-                        growth, security, and stability
-                    </span>
-                </h2>
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Cyber Security</h3>
 
-                <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/70 sm:text-base">
-                    From foundational IT support to advanced enterprise protection, we design solutions that fit
-                    your
-                    business stage and operational needs.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                <a href="{{ route('client.services.details', ['slug' => 'cyber-security']) }}" wire:navigate class="service-page-card">
-                    <div class="service-page-icon bg-cyan-500/15 text-cyan-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-                            <path d="m9 12 2 2 4-4" />
-                        </svg>
-                    </div>
-                    <h3 class="mt-6 text-2xl font-bold text-white">Cyber Security</h3>
-                    <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
                         Secure your business with proactive protection, endpoint defense, vulnerability reviews, and
                         modern security architecture.
                     </p>
+
                     <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                         <li class="service-bullet">Firewall & endpoint security</li>
                         <li class="service-bullet">Threat monitoring & hardening</li>
                         <li class="service-bullet">Security audits & best practices</li>
                     </ul>
-                </a>
 
-                <article class="service-page-card">
-                    <div class="service-page-icon bg-blue-500/15 text-blue-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
+                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-100">
+                        Explore Service
+                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                            arrow_forward
+                        </span>
                     </div>
-                    <h3 class="mt-6 text-2xl font-bold text-white">Managed IT Support</h3>
-                    <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                </div>
+            </div>
+        </a>
+
+        <!-- Managed IT Support -->
+        <a href="#"
+            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-blue-300/30 hover:shadow-blue-950/30">
+
+            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1200&q=80"
+                alt="Managed IT Support"
+                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-blue-500/20 via-transparent to-cyan-700/20"></div>
+
+            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <span
+                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-blue-100 backdrop-blur-md">
+                        IT Support
+                    </span>
+
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-blue-200 backdrop-blur-md">
+                        <span class="material-symbols-outlined">support_agent</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Managed IT Support</h3>
+
+                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
                         Keep your business running smoothly with responsive support, troubleshooting, system setup,
-                        and
-                        day-to-day IT assistance.
+                        and day-to-day IT assistance.
                     </p>
+
                     <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                         <li class="service-bullet">Office networking support</li>
                         <li class="service-bullet">Windows & device setup</li>
                         <li class="service-bullet">Monitoring and issue resolution</li>
                     </ul>
-                </article>
 
-                <article class="service-page-card">
-                    <div class="service-page-icon bg-sky-500/15 text-sky-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3.75 4.5h16.5v10.5H3.75zM7.5 20.25h9" />
-                        </svg>
+                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-100">
+                        Explore Service
+                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                            arrow_forward
+                        </span>
                     </div>
-                    <h3 class="mt-6 text-2xl font-bold text-white">Website & Web Apps</h3>
-                    <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                </div>
+            </div>
+        </a>
+
+        <!-- Website & Web Apps -->
+        <a href="#"
+            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-sky-300/30 hover:shadow-sky-950/30">
+
+            <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80"
+                alt="Website and Web Apps"
+                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-sky-500/20 via-transparent to-blue-700/20"></div>
+
+            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <span
+                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-sky-100 backdrop-blur-md">
+                        Web Solution
+                    </span>
+
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-sky-200 backdrop-blur-md">
+                        <span class="material-symbols-outlined">desktop_windows</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Website & Web Apps</h3>
+
+                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
                         We design and build modern websites and business systems that are fast, secure, and crafted
-                        to
-                        support real growth.
+                        to support real growth.
                     </p>
+
                     <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                         <li class="service-bullet">Company websites</li>
                         <li class="service-bullet">Custom business systems</li>
                         <li class="service-bullet">Responsive premium UI/UX</li>
                     </ul>
-                </article>
 
-                <article class="service-page-card">
-                    <div class="service-page-icon bg-violet-500/15 text-violet-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3 7.5l9-4.5 9 4.5m-18 0 9 4.5m-9-4.5V16.5l9 4.5m9-13.5v9l-9 4.5m0-9V21" />
-                        </svg>
+                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-100">
+                        Explore Service
+                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                            arrow_forward
+                        </span>
                     </div>
-                    <h3 class="mt-6 text-2xl font-bold text-white">Cloud & Email Systems</h3>
-                    <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                </div>
+            </div>
+        </a>
+
+        <!-- Cloud & Email Systems -->
+        <a href="#"
+            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-violet-300/30 hover:shadow-violet-950/30">
+
+            <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80"
+                alt="Cloud and Email Systems"
+                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-violet-500/20 via-transparent to-blue-700/20"></div>
+
+            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <span
+                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-violet-100 backdrop-blur-md">
+                        Cloud
+                    </span>
+
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-violet-200 backdrop-blur-md">
+                        <span class="material-symbols-outlined">cloud</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Cloud & Email Systems</h3>
+
+                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
                         Build scalable communication and collaboration systems with professional cloud email and
-                        secure
-                        hosted infrastructure.
+                        secure hosted infrastructure.
                     </p>
+
                     <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                         <li class="service-bullet">Google Workspace / Microsoft 365</li>
                         <li class="service-bullet">Business email setup</li>
                         <li class="service-bullet">Hosting and cloud services</li>
                     </ul>
-                </article>
 
-                <article class="service-page-card">
-                    <div class="service-page-icon bg-emerald-500/15 text-emerald-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-                        </svg>
+                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-violet-100">
+                        Explore Service
+                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                            arrow_forward
+                        </span>
                     </div>
-                    <h3 class="mt-6 text-2xl font-bold text-white">Office Infrastructure</h3>
-                    <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                </div>
+            </div>
+        </a>
+
+        <!-- Office Infrastructure -->
+        <a href="#"
+            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300/30 hover:shadow-emerald-950/30">
+
+            <img src="https://images.unsplash.com/photo-1597852074816-d933c7d2b988?auto=format&fit=crop&w=1200&q=80"
+                alt="Office Infrastructure"
+                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-emerald-500/20 via-transparent to-cyan-700/20"></div>
+
+            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <span
+                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-emerald-100 backdrop-blur-md">
+                        Infrastructure
+                    </span>
+
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-emerald-200 backdrop-blur-md">
+                        <span class="material-symbols-outlined">settings_input_component</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Office Infrastructure</h3>
+
+                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
                         Create dependable physical and network foundations with office systems, CCTV, attendance
                         devices, and structured connectivity.
                     </p>
+
                     <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                         <li class="service-bullet">CCTV camera installation</li>
                         <li class="service-bullet">Attendance device setup</li>
                         <li class="service-bullet">Network and print solutions</li>
                     </ul>
-                </article>
 
-                <article class="service-page-card">
-                    <div class="service-page-icon bg-pink-500/15 text-pink-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-100">
+                        Explore Service
+                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                            arrow_forward
+                        </span>
                     </div>
-                    <h3 class="mt-6 text-2xl font-bold text-white">Growth & Digital Presence</h3>
-                    <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                </div>
+            </div>
+        </a>
+
+        <!-- Growth & Digital Presence -->
+        <a href="#"
+            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-pink-300/30 hover:shadow-pink-950/30">
+
+            <img src="https://images.unsplash.com/photo-1556155092-490a1ba16284?auto=format&fit=crop&w=1200&q=80"
+                alt="Growth and Digital Presence"
+                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-pink-500/20 via-transparent to-blue-700/20"></div>
+
+            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <span
+                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-pink-100 backdrop-blur-md">
+                        Growth
+                    </span>
+
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-pink-200 backdrop-blur-md">
+                        <span class="material-symbols-outlined">rocket_launch</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Growth & Digital Presence</h3>
+
+                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
                         Expand your digital reach through branding, social media setup, SEO, and business-facing
-                        design
-                        systems.
+                        design systems.
                     </p>
+
                     <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                         <li class="service-bullet">Graphics and visual content</li>
                         <li class="service-bullet">SEO and online visibility</li>
                         <li class="service-bullet">Social media business setup</li>
                     </ul>
-                </article>
+
+                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-pink-100">
+                        Explore Service
+                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                            arrow_forward
+                        </span>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
+
+    </div>
+</div>
     </section>
 
     <!-- Process -->

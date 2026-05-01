@@ -133,10 +133,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // User management
     Route::livewire('/users', 'pages::admin.users.index')->name('users.index');
     Route::livewire('/users/create', 'pages::admin.users.create')->name('users.create');
-    // Route::livewire('/users/{id}/edit', 'pages::admin.users.edit')->name('users.edit');
+    Route::livewire('/users/{user}/edit', 'pages::admin.users.edit')->name('users.edit');
 
     // Department management
     Route::livewire('/departments', 'pages::admin.departments.index')->name('departments.index');
     Route::livewire('/departments/create', 'pages::admin.departments.create')->name('departments.create');
     Route::livewire('/departments/{department}/edit', 'pages::admin.departments.edit')->name('departments.edit');
+
+    // Service management
+    Route::livewire('/services', 'pages::admin.services.index')->name('services.index');
+    Route::livewire('/services/create', 'pages::admin.services.create')->name('services.create');
+    Route::livewire('/services/{service}/edit', 'pages::admin.services.edit')->name('services.edit');
 });

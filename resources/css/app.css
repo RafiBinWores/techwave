@@ -353,23 +353,20 @@
 }
 
 .service-bullet {
-    @apply relative pl-7;
+    position: relative;
+    padding-left: 1.25rem;
 }
 
 .service-bullet::before {
     content: "";
     position: absolute;
     left: 0;
-    top: 0.45rem;
-    width: 0.7rem;
-    height: 0.7rem;
+    top: 0.65rem;
+    width: 0.4rem;
+    height: 0.4rem;
     border-radius: 9999px;
-    background: linear-gradient(
-        135deg,
-        rgba(103, 232, 249, 1),
-        rgba(59, 130, 246, 1)
-    );
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+    background: rgb(103 232 249 / 0.9);
+    box-shadow: 0 0 18px rgb(103 232 249 / 0.75);
 }
 
 .process-premium-card {
@@ -852,6 +849,41 @@
 
 .client-badge-yellow {
     @apply border border-amber-300/30 bg-amber-400/10 text-amber-300;
+}
+
+
+/* Quill js text editor */
+.ql-toolbar.ql-snow {
+    border: 0 !important;
+    border-bottom: 1px solid rgb(226 232 240) !important;
+    background: rgb(248 250 252);
+    padding: 10px 12px;
+}
+
+.ql-container.ql-snow {
+    border: 0 !important;
+    font-family: inherit;
+}
+
+.ql-editor {
+    min-height: 220px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgb(15 23 42);
+}
+
+.ql-editor.ql-blank::before {
+    color: rgb(148 163 184);
+    font-style: normal;
+}
+
+.ql-toolbar button {
+    border-radius: 8px;
+}
+
+.ql-toolbar button:hover,
+.ql-toolbar button.ql-active {
+    background: white;
 }
 
 [x-cloak] {

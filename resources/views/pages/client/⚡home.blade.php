@@ -199,142 +199,141 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-6 gap-6">
-                <!-- Card 1 -->
-                <div class="md:col-span-3 service-card group">
-                    <span class="shine-border"></span>
-                    <span class="service-glow -top-14 -left-12"></span>
+             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 auto-rows-[260px] gap-5">
+            
+            <!-- Large Card -->
+            <a href="#"
+                class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white md:col-span-2 xl:col-span-2 xl:row-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
+                
+                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
+                    alt="Website Design & Development"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                    <div class="relative z-10">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-6 border border-white/10">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-cyan-200" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path
-                                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-                                <path d="m9 12 2 2 4-4" />
-                            </svg>
-                        </div>
+                <div class="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-900/45 to-blue-900/40"></div>
 
-                        <h3 class="text-2xl font-bold text-white mb-4">Ironclad Security</h3>
-                        <p class="text-blue-100/70 mb-6 leading-7">
-                            Protect your systems with advanced security layers, stable cloud architecture, and
-                            premium performance monitoring.
+                <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
+                    <div class="flex items-start justify-between gap-4">
+                        <span class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                            Featured Service
+                        </span>
+
+                        <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white">
+                            <span class="material-symbols-outlined">language</span>
+                        </span>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl sm:text-3xl font-bold text-white font-manrope">
+                            Website Design & Development
+                        </h3>
+                        <p class="mt-3 max-w-xl text-sm sm:text-base leading-6 text-white/80">
+                            Modern, responsive, and conversion-focused websites tailored for startups, brands, and growing businesses.
                         </p>
 
-                        <ul class="space-y-3 text-sm font-medium text-blue-50/90">
-                            <li class="flex items-center gap-3">
-                                <span class="w-2.5 h-2.5 rounded-full bg-cyan-300"></span>
-                                256-bit data protection
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <span class="w-2.5 h-2.5 rounded-full bg-cyan-300"></span>
-                                Smart access control
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <span class="w-2.5 h-2.5 rounded-full bg-cyan-300"></span>
-                                Real-time system monitoring
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="md:col-span-3 service-card group">
-                    <span class="shine-border"></span>
-                    <span class="service-glow -bottom-14 -right-10"></span>
-
-                    <div class="relative z-10">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-sky-500/20 flex items-center justify-center mb-6 border border-white/10">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-cyan-200" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <line x1="22" x2="2" y1="6" y2="6" />
-                                <line x1="22" x2="2" y1="18" y2="18" />
-                                <line x1="6" x2="6" y1="2" y2="22" />
-                                <line x1="18" x2="18" y1="2" y2="22" />
-                            </svg>
+                        <div class="mt-5 flex flex-wrap gap-2">
+                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Responsive UI</span>
+                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Laravel</span>
+                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">SEO Friendly</span>
                         </div>
 
-                        <h3 class="text-2xl font-bold text-white mb-4">Avant-Garde Web Design</h3>
-                        <p class="text-blue-100/70 mb-6 leading-7">
-                            Create a memorable digital presence with premium layouts, smooth motion, and
-                            futuristic glassmorphism styling.
-                        </p>
-
-                        <a href="#" class="inline-flex items-center gap-2 text-cyan-200 font-semibold">
-                            Explore Portfolio
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
+                        <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                            Learn More
+                            <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                                arrow_forward
+                            </span>
+                        </div>
                     </div>
                 </div>
+            </a>
 
-                <!-- Card 3 -->
-                <div class="md:col-span-2 service-card group">
-                    <span class="shine-border"></span>
+            <!-- Card -->
+            <a href="#"
+                class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
+                
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80"
+                    alt="Cyber Security"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                    <div class="relative z-10">
-                        <div
-                            class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-5 border border-white/10">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-indigo-200"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <rect width="20" height="8" x="2" y="2" rx="2" ry="2" />
-                                <rect width="20" height="8" x="2" y="14" rx="2" ry="2" />
-                                <line x1="6" x2="6.01" y1="6" y2="6" />
-                                <line x1="6" x2="6.01" y1="18" y2="18" />
-                            </svg>
-                        </div>
+                <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10"></div>
 
-                        <h3 class="text-xl font-bold text-white mb-2">Managed Hosting</h3>
-                        <p class="text-sm text-blue-100/70 leading-7">
-                            Fast infrastructure, CDN-ready setup, and modern deployment support.
+                <div class="relative z-10 flex h-full flex-col justify-between p-6">
+                    <div class="flex items-center justify-between">
+                        <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                            Security
+                        </span>
+                        <span class="material-symbols-outlined text-white">shield</span>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-white font-manrope">
+                            VAPT & Penetration Testing
+                        </h3>
+                        <p class="mt-2 text-sm text-white/75 leading-6">
+                            Identify vulnerabilities and strengthen your digital infrastructure.
                         </p>
                     </div>
                 </div>
+            </a>
 
-                <!-- Card 4 -->
-                <div class="md:col-span-4 service-card group flex flex-col md:flex-row gap-8 items-center">
-                    <span class="shine-border"></span>
-                    <span class="service-glow bottom-0 right-6"></span>
+            <!-- Card -->
+            <a href="#"
+                class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
+                
+                <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800&q=80"
+                    alt="AI Automation"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                    <div class="relative z-10 flex-1">
-                        <div
-                            class="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center mb-5 border border-white/10">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-cyan-200" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M16 7h6v6" />
-                                <path d="m22 7-8.5 8.5-5-5L2 17" />
-                            </svg>
-                        </div>
+                <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10"></div>
 
-                        <h3 class="text-xl font-bold text-white mb-2">Growth & Marketing</h3>
-                        <p class="text-sm text-blue-100/70 leading-7">
-                            Data-driven visuals, conversion-focused layouts, and modern user journeys that
-                            help brands grow faster.
+                <div class="relative z-10 flex h-full flex-col justify-between p-6">
+                    <div class="flex items-center justify-between">
+                        <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                            Automation
+                        </span>
+                        <span class="material-symbols-outlined text-white">smart_toy</span>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-white font-manrope">
+                            AI Chatbot Integration
+                        </h3>
+                        <p class="mt-2 text-sm text-white/75 leading-6">
+                            Automate support and business workflows with smart AI systems.
                         </p>
                     </div>
+                </div>
+            </a>
 
-                    <div
-                        class="hidden md:relative z-10 shrink-0 w-32 h-32 rounded-3xl glass-soft md:flex items-center justify-center border border-white/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-blue-200" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M11 13H7" />
-                            <path d="M19 9h-4" />
-                            <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-                            <rect x="15" y="5" width="4" height="12" rx="1" />
-                            <rect x="7" y="8" width="4" height="9" rx="1" />
-                        </svg>
+            <!-- Wide Card -->
+            <a href="#"
+                class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 md:col-span-2 xl:col-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
+                
+                <img src="https://images.unsplash.com/photo-1556155092-490a1ba16284?auto=format&fit=crop&w=1200&q=80"
+                    alt="Digital Marketing"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+
+                <div class="absolute inset-0 bg-linear-to-r from-slate-950/85 via-slate-900/45 to-slate-900/20"></div>
+
+                <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
+                    <div class="flex items-center justify-between">
+                        <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                            Growth
+                        </span>
+                        <span class="material-symbols-outlined text-white">trending_up</span>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-white font-manrope">
+                            SEO & Digital Marketing
+                        </h3>
+                        <p class="mt-2 text-sm sm:text-base text-white/75 max-w-lg leading-6">
+                            Boost traffic, engagement, and conversions through data-driven digital growth strategies.
+                        </p>
                     </div>
                 </div>
-            </div>
+            </a>
+
+        </div>
 
             <!-- Show All Services Button -->
             <div class="mt-10 flex justify-center">

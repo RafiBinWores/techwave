@@ -19,7 +19,10 @@ return new class extends Migration
             $table->enum('role', ['client', 'admin', 'manager', 'staff', 'admin_manager'])->default('client');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('avatar')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->rememberToken();
+            $table->timestamp('last_interaction_at')->nullable();
             $table->timestamps();
         });
 

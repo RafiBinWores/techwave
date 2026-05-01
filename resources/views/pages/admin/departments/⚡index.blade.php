@@ -72,7 +72,6 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
 };
 ?>
 
-<div>
     <div class="mx-auto w-full max-w-7xl space-y-stack-lg">
         <!-- Header Section -->
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -149,7 +148,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                             </th>
 
                             <th class="px-6 py-4 text-right text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Action
+                                Actions
                             </th>
                         </tr>
                     </thead>
@@ -312,4 +311,3 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
             </div>
         </div>
     </div>
-</div>

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'type', 'role', 'company_id', 'department_id'])]
+#[Fillable(['name', 'email', 'password', 'type', 'role', 'company_id', 'department_id', 'avatar', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -32,6 +32,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'is_active' => 'boolean',
         ];
     }
 
@@ -63,14 +64,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendPasswordResetNotification($token)
     {
         if (in_array($this->role, [
-        UserRole::ADMIN,
-        UserRole::MANAGER,
-        UserRole::STAFF,
-        UserRole::ADMIN_MANAGER,
-    ])) {
-        $this->notify(new AdminResetPasswordNotification($token));
-        return;
-    }
+            UserRole::ADMIN,
+            UserRole::MANAGER,
+            UserRole::STAFF,
+            UserRole::ADMIN_MANAGER,
+        ])) {
+            $this->notify(new AdminResetPasswordNotification($token));
+            return;
+        }
 
         $this->notify(new ResetPasswordNotification($token));
     }
