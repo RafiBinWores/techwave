@@ -67,8 +67,8 @@ new class extends Component {
             <span class="material-symbols-outlined shrink-0">handyman</span>
             <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">Services</span>
         </a>
-
-        <a href="#"
+        <a href="{{ route('admin.pricing.index') }}" wire:navigate
+            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
             class="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-150">
             <span class="material-symbols-outlined shrink-0">payments</span>
             <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">Pricing</span>

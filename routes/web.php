@@ -144,4 +144,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/services', 'pages::admin.services.index')->name('services.index');
     Route::livewire('/services/create', 'pages::admin.services.create')->name('services.create');
     Route::livewire('/services/{service}/edit', 'pages::admin.services.edit')->name('services.edit');
+
+    // Pricing management
+    Route::livewire('/pricing', 'pages::admin.pricing.index')->name('pricing.index');
 });

@@ -224,12 +224,12 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
 
                                 <td class="px-6 py-4">
                                     <button type="button" wire:click="toggleFeatured({{ $service->id }})"
-                                        class="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-label-sm uppercase transition"
+                                        class="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-label-sm uppercase transition "
                                         @class([
                                             'bg-amber-100 text-amber-700 hover:bg-amber-200' => $service->is_featured,
                                             'bg-slate-100 text-slate-500 hover:bg-slate-200' => !$service->is_featured,
                                         ])>
-                                        <span class="material-symbols-outlined text-[15px]">
+                                        <span class="material-symbols-outlined text-[12px]">
                                             {{ $service->is_featured ? 'stars' : 'star' }}
                                         </span>
 
@@ -349,4 +349,4 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
             </div>
         </div>
     </div>
-</div>
+
