@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Service;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -9,6 +10,8 @@ use Livewire\WithFileUploads;
 
 new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Component {
     use WithFileUploads;
+
+    public ?int $category_id = null;
 
     public string $card_title = '';
     public string $detail_title = '';
@@ -45,6 +48,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
     protected function rules(): array
     {
         return [
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+
             'card_title' => ['required', 'string', 'max:160'],
             'detail_title' => ['required', 'string', 'max:180'],
             'icon' => ['nullable', 'string', 'max:80'],
@@ -79,6 +84,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
     protected function messages(): array
     {
         return [
+            'category_id.required' => 'Please select a service category.',
+
             'benefits.required' => 'Please add at least one key benefit.',
             'benefits.min' => 'Please add at least one key benefit.',
             'benefits.*.title.required' => 'Benefit title is required.',
@@ -90,6 +97,20 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
             'audience_title.required' => 'Please enter who this service is for.',
             'audience_detail.required' => 'Please enter the audience requirement detail.',
         ];
+    }
+
+    public function categories()
+    {
+        return Category::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+    }
+
+    public function selectedCategory()
+    {
+        if (!$this->category_id) {
+            return null;
+        }
+
+        return $this->categories()->firstWhere('id', (int) $this->category_id);
     }
 
     public function updated($property): void
@@ -195,6 +216,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
             ->toArray();
 
         Service::create([
+            'category_id' => $validated['category_id'],
+
             'card_title' => $validated['card_title'],
             'detail_title' => $validated['detail_title'],
             'slug' => $this->uniqueSlug($validated['card_title']),
@@ -230,7 +253,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
     public function discard(): void
     {
-        $this->reset(['card_title', 'detail_title', 'icon', 'short_description', 'overview', 'audience_title', 'audience_detail', 'meta_title', 'meta_description', 'meta_keywords', 'image', 'included_items', 'included_item', 'tags', 'tag']);
+        $this->reset(['category_id', 'card_title', 'detail_title', 'icon', 'short_description', 'overview', 'audience_title', 'audience_detail', 'meta_title', 'meta_description', 'meta_keywords', 'image', 'included_items', 'included_item', 'tags', 'tag']);
 
         $this->benefits = [
             [
@@ -250,7 +273,6 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 ?>
 
 <div>
-    <!-- Header Section -->
     <div class="mb-10 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <h1 class="text-h1 font-h1 text-on-surface">Create Service</h1>
@@ -268,8 +290,6 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
     <form wire:submit.prevent="save">
         <div class="grid grid-cols-12 gap-6">
-
-
             <!-- Main Form -->
             <div class="col-span-12 space-y-6 lg:col-span-8">
                 <!-- Service Information -->
@@ -280,10 +300,37 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                     </h3>
 
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <!-- Category -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="block font-label-md text-on-surface">Service Category</label>
+
+                            <div class="relative">
+                                <select wire:model.live="category_id"
+                                    class="w-full appearance-none rounded border border-outline-variant bg-white px-4 py-2.5 pr-10 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10">
+                                    <option value="">Select a category</option>
+
+                                    @foreach ($this->categories() as $category)
+                                        <option value="{{ $category->id }}">
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                <span
+                                    class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                    expand_more
+                                </span>
+                            </div>
+
+                            @error('category_id')
+                                <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Service Card Title</label>
 
-                            <input wire:model="card_title"
+                            <input wire:model.live="card_title"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
                                 placeholder="e.g., Managed Kubernetes Node" type="text" />
 
@@ -295,7 +342,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Detail Page Title</label>
 
-                            <input wire:model="detail_title"
+                            <input wire:model.live="detail_title"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
                                 placeholder="e.g., Enterprise Kubernetes Solutions" type="text" />
 
@@ -309,16 +356,16 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         <label class="block font-label-md text-on-surface">Service Icon</label>
 
                         <div class="flex gap-3">
-                            <input wire:model="icon"
+                            <div
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <span class="material-symbols-outlined text-[24px]">
+                                    {{ $icon ?: 'design_services' }}
+                                </span>
+                            </div>
+
+                            <input wire:model.live="icon"
                                 class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
                                 placeholder="e.g., cloud, settings, lock" type="text" />
-
-                            <button
-                                class="flex items-center gap-2 rounded border border-outline-variant bg-surface px-4 text-sm font-medium hover:bg-surface-container"
-                                type="button" wire:click="$set('icon', 'design_services')">
-                                <span class="material-symbols-outlined text-lg">auto_fix_high</span>
-                                Default
-                            </button>
                         </div>
 
                         <p class="text-[10px] font-bold uppercase tracking-tight text-on-surface-variant">
@@ -333,7 +380,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                     <div class="mt-6 space-y-2">
                         <label class="block font-label-md text-on-surface">Short Description</label>
 
-                        <textarea wire:model="short_description"
+                        <textarea wire:model.live="short_description"
                             class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
                             placeholder="Enter a brief summary for the catalog card..." rows="2"></textarea>
 
@@ -348,7 +395,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
                         <div wire:ignore x-data="{
                             quill: null,
-                            value: @entangle('overview'),
+                            value: @entangle('overview').live,
                         
                             init() {
                                 this.quill = new Quill(this.$refs.editor, {
@@ -411,7 +458,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                                 class="rounded-lg border border-slate-100 bg-surface p-4">
                                 <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                                     <div class="md:col-span-4">
-                                        <input wire:model="benefits.{{ $index }}.title"
+                                        <input wire:model.live="benefits.{{ $index }}.title"
                                             class="w-full rounded border border-outline-variant bg-white px-4 py-2 text-sm"
                                             placeholder="Benefit Title" type="text" />
 
@@ -421,7 +468,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                                     </div>
 
                                     <div class="md:col-span-7">
-                                        <input wire:model="benefits.{{ $index }}.description"
+                                        <input wire:model.live="benefits.{{ $index }}.description"
                                             class="w-full rounded border border-outline-variant bg-white px-4 py-2 text-sm"
                                             placeholder="Brief description of the value proposition" type="text" />
 
@@ -446,7 +493,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                     @enderror
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <!-- Included Items -->
                     <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                         <label class="mb-4 flex items-center gap-2 font-label-md text-on-surface">
@@ -454,7 +501,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         </label>
 
                         <div class="mb-4 flex gap-3">
-                            <input wire:model="included_item" wire:keydown.enter.prevent="addIncludedItem"
+                            <input wire:model.live="included_item" wire:keydown.enter.prevent="addIncludedItem"
                                 class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
                                 placeholder="e.g., 24/7 Monitoring" type="text" />
 
@@ -496,7 +543,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         <label class="mb-4 block font-label-md text-on-surface">Service Tags</label>
 
                         <div class="mb-4 flex gap-3">
-                            <input wire:model="tag" wire:keydown.enter.prevent="addTag"
+                            <input wire:model.live="tag" wire:keydown.enter.prevent="addTag"
                                 class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
                                 placeholder="e.g., Infrastructure" type="text" />
 
@@ -538,7 +585,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                             <div class="space-y-1.5">
                                 <label class="text-xs font-label-sm text-on-surface-variant">Profile Title</label>
 
-                                <input wire:model="audience_title"
+                                <input wire:model.live="audience_title"
                                     class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm"
                                     placeholder="e.g., System Architects" type="text" />
 
@@ -550,7 +597,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                             <div class="space-y-1.5">
                                 <label class="text-xs font-label-sm text-on-surface-variant">Requirement Detail</label>
 
-                                <textarea wire:model="audience_detail"
+                                <textarea wire:model.live="audience_detail"
                                     class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm"
                                     placeholder="Describe the ideal user profile for this specific service..." rows="2"></textarea>
 
@@ -593,16 +640,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                     <div class="grid grid-cols-1 gap-6">
                         <div class="space-y-2">
                             <div class="flex items-center justify-between gap-3">
-                                <label class="block font-label-md text-on-surface">
-                                    Meta Title
-                                </label>
+                                <label class="block font-label-md text-on-surface">Meta Title</label>
 
                                 <span class="text-xs text-secondary">
                                     {{ strlen($meta_title) }}/180
                                 </span>
                             </div>
 
-                            <input wire:model="meta_title"
+                            <input wire:model.live="meta_title"
                                 class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
                                 placeholder="e.g., Managed IT Services in Bangladesh | TechWave" type="text" />
 
@@ -613,16 +658,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
                         <div class="space-y-2">
                             <div class="flex items-center justify-between gap-3">
-                                <label class="block font-label-md text-on-surface">
-                                    Meta Description
-                                </label>
+                                <label class="block font-label-md text-on-surface">Meta Description</label>
 
                                 <span class="text-xs text-secondary">
                                     {{ strlen($meta_description) }}/500
                                 </span>
                             </div>
 
-                            <textarea wire:model="meta_description"
+                            <textarea wire:model.live="meta_description"
                                 class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
                                 placeholder="Write a short SEO-friendly description for this service..." rows="3"></textarea>
 
@@ -633,22 +676,18 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
                         <div class="space-y-2">
                             <div class="flex items-center justify-between gap-3">
-                                <label class="block font-label-md text-on-surface">
-                                    Meta Keywords
-                                </label>
+                                <label class="block font-label-md text-on-surface">Meta Keywords</label>
 
                                 <span class="text-xs text-secondary">
                                     {{ strlen($meta_keywords) }}/500
                                 </span>
                             </div>
 
-                            <textarea wire:model="meta_keywords"
+                            <textarea wire:model.live="meta_keywords"
                                 class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
                                 placeholder="e.g., managed IT service, cyber security, cloud server, business email" rows="2"></textarea>
 
-                            <p class="text-xs text-secondary">
-                                Separate keywords with commas.
-                            </p>
+                            <p class="text-xs text-secondary">Separate keywords with commas.</p>
 
                             @error('meta_keywords')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -686,8 +725,6 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                     <h3 class="mb-6 text-h3 font-h2">Service Media</h3>
 
                     <div class="space-y-3">
-                        {{-- <label class="block font-label-md text-on-surface">Service Image</label> --}}
-
                         <label for="image"
                             class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
                             @if ($image)
@@ -727,7 +764,6 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         Service Settings
                     </h3>
 
-                    <!-- Active Toggle -->
                     <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
                         <div class="flex items-center gap-3">
                             <div @class([
@@ -748,7 +784,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         </div>
 
                         <label class="relative inline-flex cursor-pointer items-center">
-                            <input type="checkbox" wire:model="is_active" class="peer sr-only" />
+                            <input type="checkbox" wire:model.live="is_active" class="peer sr-only" />
 
                             <div
                                 class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100">
@@ -756,7 +792,6 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         </label>
                     </div>
 
-                    <!-- Featured Toggle -->
                     <div
                         class="mt-3 flex items-center justify-between rounded-lg border border-amber-100 bg-amber-50/50 p-3">
                         <div class="flex items-center gap-3">
@@ -780,7 +815,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         </div>
 
                         <label class="relative inline-flex cursor-pointer items-center">
-                            <input type="checkbox" wire:model="is_featured" class="peer sr-only" />
+                            <input type="checkbox" wire:model.live="is_featured" class="peer sr-only" />
 
                             <div
                                 class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-100">
@@ -806,6 +841,16 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         </div>
 
                         <div class="mb-3 flex flex-wrap items-center gap-2">
+                            @if ($this->selectedCategory())
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                    <span class="material-symbols-outlined text-[14px]">
+                                        {{ $this->selectedCategory()->icon ?: 'category' }}
+                                    </span>
+                                    {{ $this->selectedCategory()->name }}
+                                </span>
+                            @endif
+
                             @if ($is_featured)
                                 <span
                                     class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">

@@ -312,7 +312,7 @@ new #[Layout('layouts.admin-app')] #[Title('Pricing Management')] class extends 
 };
 ?>
 
-<div class="mx-auto max-w-7xl space-y-stack-lg">
+<div class="mx-auto space-y-stack-lg">
     <!-- Page Heading -->
     <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
@@ -386,7 +386,7 @@ new #[Layout('layouts.admin-app')] #[Title('Pricing Management')] class extends 
                                 </span>
                             </div>
 
-                            <input wire:model="icon"
+                            <input wire:model.live="icon"
                                 class="w-full rounded border border-outline bg-white px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
                                 placeholder="e.g. rocket_launch, business_center, shield" type="text" />
                         </div>
@@ -528,7 +528,7 @@ new #[Layout('layouts.admin-app')] #[Title('Pricing Management')] class extends 
                     </button>
 
                     <button
-                        class="w-2/3 rounded-lg bg-primary-container py-3 font-label-md text-white shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
+                        class="w-2/3 rounded-lg bg-primary-container py-3 font-label-md text-white shadow-sm transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
                         type="submit" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="{{ $editingId ? 'update' : 'save' }}">
                             {{ $editingId ? 'Update Plan' : 'Save Plan' }}

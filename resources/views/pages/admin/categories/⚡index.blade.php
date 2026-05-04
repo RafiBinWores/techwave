@@ -1,12 +1,13 @@
 <?php
 
-use App\Models\Department;
+use App\Models\Category;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends Component {
+new #[Layout('layouts.admin-app')] #[Title('Category Management')] class extends Component {
     use WithPagination;
 
     public string $search = '';
@@ -28,60 +29,70 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
         $this->resetPage();
     }
 
-    public function toggleStatus(int $departmentId): void
+    public function categories()
     {
-        $department = Department::findOrFail($departmentId);
+        $search = trim($this->search);
 
-        $department->update([
-            'is_active' => ! $department->is_active,
-        ]);
-
-        $this->dispatch('toast', message: 'Department status updated successfully.', type: 'success');
-    }
-
-    public function delete(int $departmentId): void
-    {
-        $department = Department::withCount('users')->findOrFail($departmentId);
-
-        if ($department->users_count > 0) {
-            session()->flash('error', 'This department has assigned users. Please move users before deleting.');
-            return;
-        }
-
-        $department->delete();
-
-        $this->dispatch('toast', message: 'Department status updated successfully.', type: 'success');
-    }
-
-    public function departments()
-    {
-        return Department::query()
-            ->withCount('users')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('slug', 'like', '%' . $this->search . '%');
+        return Category::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('slug', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%');
                 });
             })
             ->when($this->status !== 'all', function ($query) {
                 $query->where('is_active', $this->status === 'active');
             })
+            ->orderBy('sort_order')
             ->latest()
             ->paginate($this->perPage);
+    }
+
+    public function toggleStatus(int $categoryId): void
+    {
+        $category = Category::findOrFail($categoryId);
+
+        $category->update([
+            'is_active' => ! $category->is_active,
+        ]);
+
+        $this->dispatch(
+            'toast',
+            message: 'Category status updated successfully.',
+            type: 'success'
+        );
+    }
+
+    public function delete(int $categoryId): void
+    {
+        $category = Category::findOrFail($categoryId);
+
+        if ($category->image && Storage::disk('public')->exists($category->image)) {
+            Storage::disk('public')->delete($category->image);
+        }
+
+        $category->delete();
+
+        $this->dispatch(
+            'toast',
+            message: 'Category deleted successfully.',
+            type: 'success'
+        );
     }
 };
 ?>
 
+<div>
     <div class="mx-auto w-full space-y-stack-lg">
-        <!-- Header Section -->
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
                 <h2 class="text-xl font-semibold text-on-surface md:text-h1 md:font-h1">
-                    Department Management
+                    Category Management
                 </h2>
 
                 <p class="text-xs font-body-md text-secondary md:text-body-md">
-                    Manage departments and assign them dynamically to system users.
+                    Manage categories for services, pricing, content, or website sections.
                 </p>
             </div>
 
@@ -94,7 +105,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                     <input
                         type="search"
                         wire:model.live.debounce.400ms="search"
-                        placeholder="Search department..."
+                        placeholder="Search category..."
                         class="w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-10 pr-4 text-label-md font-label-md text-on-surface transition-colors placeholder:text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10 sm:w-64"
                     />
                 </div>
@@ -115,7 +126,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                 </div>
 
                 <a
-                    href="{{ route('admin.departments.create') }}"
+                    href="{{ route('admin.categories.create') }}"
                     wire:navigate
                     class="flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-label-md font-label-md text-on-primary transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98]"
                 >
@@ -125,18 +136,21 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
             </div>
         </div>
 
-        <!-- Table Container -->
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse text-left">
                     <thead>
                         <tr class="border-b border-slate-200 bg-slate-50/50">
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Department
+                                Category
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Assigned Users
+                                Slug
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Sort
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
@@ -148,48 +162,62 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                             </th>
 
                             <th class="px-6 py-4 text-right text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Actions
+                                Action
                             </th>
                         </tr>
                     </thead>
 
                     <tbody class="divide-y divide-slate-100">
-                        @forelse ($this->departments() as $department)
+                        @forelse ($this->categories() as $category)
                             <tr
-                                wire:key="department-{{ $department->id }}"
+                                wire:key="category-{{ $category->id }}"
                                 class="transition-colors hover:bg-slate-50/80"
                             >
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold uppercase text-primary">
-                                            {{ str($department->name)->substr(0, 1) }}
+                                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                                            @if ($category->image)
+                                                <img
+                                                    src="{{ Storage::url($category->image) }}"
+                                                    alt="{{ $category->name }}"
+                                                    class="h-full w-full object-cover"
+                                                />
+                                            @else
+                                                <div class="flex h-full w-full items-center justify-center bg-primary/10 text-primary">
+                                                    <span class="material-symbols-outlined text-[24px]">
+                                                        {{ $category->icon ?: 'category' }}
+                                                    </span>
+                                                </div>
+                                            @endif
                                         </div>
 
-                                        <div class="flex flex-col">
-                                            <span class="text-label-md font-label-md text-on-surface">
-                                                {{ $department->name }}
+                                        <div class="min-w-0">
+                                            <span class="block text-label-md font-label-md text-on-surface">
+                                                {{ $category->name }}
                                             </span>
 
-                                            <span class="text-body-sm font-body-sm text-secondary">
-                                                {{ $department->slug }}
+                                            <span class="block max-w-md truncate text-body-sm font-body-sm text-secondary">
+                                                {{ $category->description ?: 'No description added.' }}
                                             </span>
                                         </div>
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4">
-                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-label-sm uppercase text-slate-600">
-                                        {{ $department->users_count }} Users
-                                    </span>
+                                <td class="px-6 py-4 font-mono text-body-sm text-secondary">
+                                    {{ $category->slug }}
+                                </td>
+
+                                <td class="px-6 py-4 font-mono text-body-sm text-secondary">
+                                    {{ $category->sort_order }}
                                 </td>
 
                                 <td class="px-6 py-4">
                                     <button
                                         type="button"
-                                        wire:click="toggleStatus({{ $department->id }})"
+                                        wire:click="toggleStatus({{ $category->id }})"
                                         class="flex items-center gap-2"
                                     >
-                                        @if ($department->is_active)
+                                        @if ($category->is_active)
                                             <span class="h-2 w-2 animate-pulse rounded-full bg-green-500"></span>
                                             <span class="text-body-md font-body-md text-on-surface">Active</span>
                                         @else
@@ -200,7 +228,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                                 </td>
 
                                 <td class="px-6 py-4 font-mono text-body-sm text-secondary">
-                                    {{ $department->created_at?->format('M d, Y') }}
+                                    {{ $category->created_at?->format('M d, Y') }}
                                 </td>
 
                                 <td class="px-6 py-4 text-right">
@@ -224,7 +252,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                                             class="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
                                         >
                                             <a
-                                                href="{{ route('admin.departments.edit', $department->id) }}"
+                                                href="{{ route('admin.categories.edit', $category) }}"
                                                 wire:navigate
                                                 class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
                                             >
@@ -234,19 +262,20 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
 
                                             <button
                                                 type="button"
-                                                wire:click="toggleStatus({{ $department->id }})"
+                                                wire:click="toggleStatus({{ $category->id }})"
                                                 class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                                             >
                                                 <span class="material-symbols-outlined text-[18px]">
-                                                    {{ $department->is_active ? 'block' : 'check_circle' }}
+                                                    {{ $category->is_active ? 'visibility_off' : 'visibility' }}
                                                 </span>
-                                                {{ $department->is_active ? 'Make Inactive' : 'Make Active' }}
+
+                                                {{ $category->is_active ? 'Make Inactive' : 'Make Active' }}
                                             </button>
 
                                             <button
                                                 type="button"
-                                                wire:click="delete({{ $department->id }})"
-                                                wire:confirm="Are you sure you want to delete this department?"
+                                                wire:click="delete({{ $category->id }})"
+                                                wire:confirm="Are you sure you want to delete this category?"
                                                 class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50"
                                             >
                                                 <span class="material-symbols-outlined text-[18px]">delete</span>
@@ -258,26 +287,26 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-14 text-center">
+                                <td colspan="6" class="px-6 py-14 text-center">
                                     <div class="mx-auto flex max-w-sm flex-col items-center">
                                         <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                                            <span class="material-symbols-outlined">business</span>
+                                            <span class="material-symbols-outlined">category</span>
                                         </div>
 
                                         <h3 class="text-base font-semibold text-on-surface">
-                                            No departments found
+                                            No categories found
                                         </h3>
 
                                         <p class="mt-1 text-sm text-secondary">
-                                            Create your first department to assign users dynamically.
+                                            Create your first category to organize your content.
                                         </p>
 
                                         <a
-                                            href="{{ route('admin.departments.create') }}"
+                                            href="{{ route('admin.categories.create') }}"
                                             wire:navigate
                                             class="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
                                         >
-                                            Create Department
+                                            Create Category
                                         </a>
                                     </div>
                                 </td>
@@ -287,7 +316,6 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                 </table>
             </div>
 
-            <!-- Pagination -->
             <div class="flex flex-col gap-4 border-t border-slate-100 bg-slate-50/30 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-3">
                     <span class="text-body-sm font-body-sm text-secondary">
@@ -306,8 +334,9 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Departments')] class extends 
                 </div>
 
                 <div>
-                    {{ $this->departments()->links() }}
+                    {{ $this->categories()->links() }}
                 </div>
             </div>
         </div>
     </div>
+</div>

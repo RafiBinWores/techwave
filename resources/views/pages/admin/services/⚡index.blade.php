@@ -94,7 +94,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
 ?>
 
 <div>
-    <div class="mx-auto w-full max-w-7xl space-y-stack-lg">
+    <div class="mx-auto w-full space-y-stack-lg">
         <!-- Header Section -->
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
@@ -163,6 +163,9 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                                 Service
                             </th>
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Category
+                            </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                                 Featured
@@ -223,9 +226,14 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
                                 </td>
 
                                 <td class="px-6 py-4">
+                                    <span
+                                        class="text-body-md font-body-md text-on-surface">{{ $service->category->name }}</span>
+                                </td>
+
+                                <td class="px-6 py-4">
                                     <button type="button" wire:click="toggleFeatured({{ $service->id }})"
-                                        class="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-label-sm uppercase transition "
                                         @class([
+                                            'inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-label-sm uppercase transition',
                                             'bg-amber-100 text-amber-700 hover:bg-amber-200' => $service->is_featured,
                                             'bg-slate-100 text-slate-500 hover:bg-slate-200' => !$service->is_featured,
                                         ])>
@@ -349,4 +357,3 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
             </div>
         </div>
     </div>
-

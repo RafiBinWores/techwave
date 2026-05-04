@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['card_title', 'detail_title', 'slug', 'icon', 'image', 'short_description', 'overview', 'benefits', 'included_items', 'tags', 'audience_title', 'audience_detail', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords'])]
+#[Fillable(['category_id', 'card_title', 'detail_title', 'slug', 'icon', 'image', 'short_description', 'overview', 'benefits', 'included_items', 'tags', 'audience_title', 'audience_detail', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords'])]
 class Service extends Model
 {
-     protected $casts = [
+    protected $casts = [
         'benefits' => 'array',
         'included_items' => 'array',
         'tags' => 'array',
@@ -30,5 +30,10 @@ class Service extends Model
                 $service->slug = Str::slug($service->card_title);
             }
         });
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 }

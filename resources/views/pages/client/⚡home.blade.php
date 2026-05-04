@@ -1,10 +1,14 @@
 <?php
 
+use App\Models\CompanyLogo;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Network &amp; Cybersecurity Experts')] class extends Component {
-    //
+    public function companyLogos()
+    {
+        return CompanyLogo::query()->where('is_active', true)->orderBy('sort_order')->latest()->get();
+    }
 };
 ?>
 
@@ -141,40 +145,27 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
                 <!-- right fade -->
                 <div
-                    class="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-slate-950/90 to-transparent">
+                    class="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-linear-to-l from-slate-950/90 to-transparent">
                 </div>
 
                 <div class="">
                     <div x-ref="track" class="flex w-max items-center gap-4 will-change-transform">
 
-                        <div class="logo-card group">
+                        @foreach ($this->companyLogos() as $logo)
+                            <div class="logo-card group">
+                                <img src="{{ Storage::url($logo->logo) }}" alt="{{ $logo->name }}"
+                                    class="logo-img" />
+
+                                @if ($logo->website_url)
+                                    <a href="{{ $logo->website_url }}" target="_blank"
+                                        class="absolute inset-0 z-10"></a>
+                                @endif
+                            </div>
+                        @endforeach
+                        {{-- <div class="logo-card group">
                             <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/google/wordmark.svg"
                                 alt="Google" class="logo-img">
-                        </div>
-                        <div class="logo-card group">
-                            <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/medium/default.svg"
-                                alt="Medium" class="logo-img">
-                        </div>
-                        <div class="logo-card group">
-                            <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/meta/default.svg"
-                                alt="Meta" class="logo-img">
-                        </div>
-                        <div class="logo-card group">
-                            <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/microsoft/default.svg"
-                                alt="Microsoft" class="logo-img">
-                        </div>
-                        <div class="logo-card group">
-                            <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/stripe/default.svg"
-                                alt="Stripe" class="logo-img">
-                        </div>
-                        <div class="logo-card group">
-                            <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/amazon/default.svg"
-                                alt="Amazon" class="logo-img">
-                        </div>
-                        <div class="logo-card group">
-                            <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/discord/default.svg"
-                                alt="Discord" class="logo-img">
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
             </div>
@@ -199,141 +190,158 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                 </p>
             </div>
 
-             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 auto-rows-[260px] gap-5">
-            
-            <!-- Large Card -->
-            <a href="#"
-                class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white md:col-span-2 xl:col-span-2 xl:row-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
-                
-                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
-                    alt="Website Design & Development"
-                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 auto-rows-[260px] gap-5">
 
-                <div class="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-900/45 to-blue-900/40"></div>
+                <!-- Large Card -->
+                <a href="#"
+                    class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white md:col-span-2 xl:col-span-2 xl:row-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
 
-                <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
-                    <div class="flex items-start justify-between gap-4">
-                        <span class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-                            Featured Service
-                        </span>
+                    <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
+                        alt="Website Design & Development"
+                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                        <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white">
-                            <span class="material-symbols-outlined">language</span>
-                        </span>
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-900/45 to-blue-900/40">
                     </div>
 
-                    <div>
-                        <h3 class="text-2xl sm:text-3xl font-bold text-white font-manrope">
-                            Website Design & Development
-                        </h3>
-                        <p class="mt-3 max-w-xl text-sm sm:text-base leading-6 text-white/80">
-                            Modern, responsive, and conversion-focused websites tailored for startups, brands, and growing businesses.
-                        </p>
+                    <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
+                        <div class="flex items-start justify-between gap-4">
+                            <span
+                                class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                                Featured Service
+                            </span>
 
-                        <div class="mt-5 flex flex-wrap gap-2">
-                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Responsive UI</span>
-                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Laravel</span>
-                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">SEO Friendly</span>
-                        </div>
-
-                        <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                            Learn More
-                            <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                                arrow_forward
+                            <span
+                                class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white">
+                                <span class="material-symbols-outlined">language</span>
                             </span>
                         </div>
+
+                        <div>
+                            <h3 class="text-2xl sm:text-3xl font-bold text-white font-manrope">
+                                Website Design & Development
+                            </h3>
+                            <p class="mt-3 max-w-xl text-sm sm:text-base leading-6 text-white/80">
+                                Modern, responsive, and conversion-focused websites tailored for startups, brands, and
+                                growing businesses.
+                            </p>
+
+                            <div class="mt-5 flex flex-wrap gap-2">
+                                <span
+                                    class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Responsive
+                                    UI</span>
+                                <span
+                                    class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Laravel</span>
+                                <span
+                                    class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">SEO
+                                    Friendly</span>
+                            </div>
+
+                            <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                                Learn More
+                                <span
+                                    class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                                    arrow_forward
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </a>
+                </a>
 
-            <!-- Card -->
-            <a href="#"
-                class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
-                
-                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80"
-                    alt="Cyber Security"
-                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                <!-- Card -->
+                <a href="#"
+                    class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
 
-                <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10"></div>
+                    <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80"
+                        alt="Cyber Security"
+                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                <div class="relative z-10 flex h-full flex-col justify-between p-6">
-                    <div class="flex items-center justify-between">
-                        <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                            Security
-                        </span>
-                        <span class="material-symbols-outlined text-white">shield</span>
-                    </div>
-
-                    <div>
-                        <h3 class="text-lg font-bold text-white font-manrope">
-                            VAPT & Penetration Testing
-                        </h3>
-                        <p class="mt-2 text-sm text-white/75 leading-6">
-                            Identify vulnerabilities and strengthen your digital infrastructure.
-                        </p>
-                    </div>
-                </div>
-            </a>
-
-            <!-- Card -->
-            <a href="#"
-                class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
-                
-                <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800&q=80"
-                    alt="AI Automation"
-                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
-
-                <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10"></div>
-
-                <div class="relative z-10 flex h-full flex-col justify-between p-6">
-                    <div class="flex items-center justify-between">
-                        <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                            Automation
-                        </span>
-                        <span class="material-symbols-outlined text-white">smart_toy</span>
+                    <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10">
                     </div>
 
-                    <div>
-                        <h3 class="text-lg font-bold text-white font-manrope">
-                            AI Chatbot Integration
-                        </h3>
-                        <p class="mt-2 text-sm text-white/75 leading-6">
-                            Automate support and business workflows with smart AI systems.
-                        </p>
+                    <div class="relative z-10 flex h-full flex-col justify-between p-6">
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                                Security
+                            </span>
+                            <span class="material-symbols-outlined text-white">shield</span>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-bold text-white font-manrope">
+                                VAPT & Penetration Testing
+                            </h3>
+                            <p class="mt-2 text-sm text-white/75 leading-6">
+                                Identify vulnerabilities and strengthen your digital infrastructure.
+                            </p>
+                        </div>
                     </div>
-                </div>
-            </a>
+                </a>
 
-            <!-- Wide Card -->
-            <a href="#"
-                class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 md:col-span-2 xl:col-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
-                
-                <img src="https://images.unsplash.com/photo-1556155092-490a1ba16284?auto=format&fit=crop&w=1200&q=80"
-                    alt="Digital Marketing"
-                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                <!-- Card -->
+                <a href="#"
+                    class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
 
-                <div class="absolute inset-0 bg-linear-to-r from-slate-950/85 via-slate-900/45 to-slate-900/20"></div>
+                    <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800&q=80"
+                        alt="AI Automation"
+                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
-                    <div class="flex items-center justify-between">
-                        <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                            Growth
-                        </span>
-                        <span class="material-symbols-outlined text-white">trending_up</span>
+                    <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10">
                     </div>
 
-                    <div>
-                        <h3 class="text-xl sm:text-2xl font-bold text-white font-manrope">
-                            SEO & Digital Marketing
-                        </h3>
-                        <p class="mt-2 text-sm sm:text-base text-white/75 max-w-lg leading-6">
-                            Boost traffic, engagement, and conversions through data-driven digital growth strategies.
-                        </p>
-                    </div>
-                </div>
-            </a>
+                    <div class="relative z-10 flex h-full flex-col justify-between p-6">
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                                Automation
+                            </span>
+                            <span class="material-symbols-outlined text-white">smart_toy</span>
+                        </div>
 
-        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white font-manrope">
+                                AI Chatbot Integration
+                            </h3>
+                            <p class="mt-2 text-sm text-white/75 leading-6">
+                                Automate support and business workflows with smart AI systems.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Wide Card -->
+                <a href="#"
+                    class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 md:col-span-2 xl:col-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
+
+                    <img src="https://images.unsplash.com/photo-1556155092-490a1ba16284?auto=format&fit=crop&w=1200&q=80"
+                        alt="Digital Marketing"
+                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+
+                    <div class="absolute inset-0 bg-linear-to-r from-slate-950/85 via-slate-900/45 to-slate-900/20">
+                    </div>
+
+                    <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                                Growth
+                            </span>
+                            <span class="material-symbols-outlined text-white">trending_up</span>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl sm:text-2xl font-bold text-white font-manrope">
+                                SEO & Digital Marketing
+                            </h3>
+                            <p class="mt-2 text-sm sm:text-base text-white/75 max-w-lg leading-6">
+                                Boost traffic, engagement, and conversions through data-driven digital growth
+                                strategies.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
 
             <!-- Show All Services Button -->
             <div class="mt-10 flex justify-center">

@@ -70,7 +70,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
 };
 ?>
 
-<div class="mx-auto w-full max-w-7xl space-y-stack-lg">
+<div class="mx-auto w-full space-y-stack-lg">
     <!-- Header Section -->
     <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>

@@ -92,11 +92,17 @@ new class extends Component {
                 @auth
                     <div class="relative">
                         <button type="button" @click="userMenu = !userMenu"
-                            class="flex items-center gap-3 rounded-full px-2 py-1.5 text-white transition hover:bg-white/5">
-                            <div
+                            class="flex items-center gap-3 rounded-full px-2 py-1.5 text-white transition hover:bg-white/5 cursor-pointer">
+                            @if (auth()->user()->avatar)
+                                            <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
+                                                class="object-cover h-10 w-10 rounded-full" />
+                                        @else
+                                        <div
                                 class="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-sm font-bold text-white">
                                 {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                             </div>
+                                        @endif
+                            
 
                             <div class="text-sm font-semibold leading-none text-white">
                                 {{ auth()->user()->name }}
@@ -111,7 +117,7 @@ new class extends Component {
 
                         <div x-show="userMenu" x-transition @click.outside="userMenu = false" @click.stop
                             style="display: none;"
-                            class="absolute right-0 top-full z-50 mt-0 w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl">
+                            class="absolute right-0 top-full z-999 mt-0 w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl">
                             <a href="{{ route('account.dashboard') }}"
                                 class="block rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/10">
                                 Profile

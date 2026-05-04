@@ -147,4 +147,24 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Pricing management
     Route::livewire('/pricing', 'pages::admin.pricing.index')->name('pricing.index');
+
+    // Company Logo management
+    Route::livewire('/company-logos', 'pages::admin.company-logos.index')->name('company-logos.index');
+    Route::livewire('/company-logos/create', 'pages::admin.company-logos.create')->name('company-logos.create');
+    Route::livewire('/company-logos/{companyLogo}/edit', 'pages::admin.company-logos.edit')->name('company-logos.edit');
+
+    // Category management
+    Route::livewire('/categories', 'pages::admin.categories.index')->name('categories.index');
+    Route::livewire('/categories/create', 'pages::admin.categories.create')->name('categories.create');
+    Route::livewire('/categories/{category}/edit', 'pages::admin.categories.edit')->name('categories.edit');
+
+    // Project management
+    Route::livewire('/projects', 'pages::admin.projects.index')->name('projects.index');
+    Route::livewire('/projects/create', 'pages::admin.projects.create')->name('projects.create');
+    Route::livewire('/projects/{project}/edit', 'pages::admin.projects.edit')->name('projects.edit');
+
+    // Blog management
+    Route::livewire('/blogs', 'pages::admin.blogs.index')->name('blogs.index');
+    Route::livewire('/blogs/create', 'pages::admin.blogs.create')->name('blogs.create');
+    Route::livewire('/blogs/{blog}/edit', 'pages::admin.blogs.edit')->name('blogs.edit');
 });
