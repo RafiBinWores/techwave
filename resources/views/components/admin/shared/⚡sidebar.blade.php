@@ -42,6 +42,17 @@ new class extends Component {
             </div>
         </div>
 
+        {{-- <div class="h-16 shrink-0 border-b border-slate-200 px-4 flex items-center justify-between">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <img src="{{ asset('assets/images/logo/logo.png') }}" alt="Logo"
+                    class="p-1 w-full object-contain lg:h-14">
+            </div>
+
+            <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div> --}}
+
         <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
             <span class="material-symbols-outlined">close</span>
         </button>
@@ -49,177 +60,138 @@ new class extends Component {
 
 
 
-   <!-- Scrollable Nav -->
-<nav class="sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4">
+    <!-- Scrollable Nav -->
+    <nav class="sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4">
 
-    <!-- Main -->
-    <div class="space-y-1">
-        <p
-            x-show="!sidebarCollapsed"
-            class="px-4 pb-2 pt-4 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500"
-        >
-            Main
-        </p>
+        <!-- Main -->
+        <div class="space-y-1">
+            <p x-show="!sidebarCollapsed"
+                class="px-4 pb-2 pt-4 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Main
+            </p>
 
-        <a
-            href="{{ route('admin.dashboard') }}"
-            wire:navigate
-            wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">dashboard</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Dashboard
-            </span>
-        </a>
-    </div>
+            <a href="{{ route('admin.dashboard') }}" wire:navigate
+                wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">dashboard</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Dashboard
+                </span>
+            </a>
+        </div>
 
-    <!-- Website Content -->
-    <div class="mt-4 space-y-1">
-        <p
-            x-show="!sidebarCollapsed"
-            class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500"
-        >
-            Website Content
-        </p>
+        <!-- Website Content -->
+        <div class="mt-4 space-y-1">
+            <p x-show="!sidebarCollapsed"
+                class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Website Content
+            </p>
 
-        <a
-            href="{{ route('admin.services.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">handyman</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Services
-            </span>
-        </a>
+            <a href="{{ route('admin.services.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">handyman</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Services
+                </span>
+            </a>
 
-        <a
-            href="{{ route('admin.pricing.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">payments</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Pricing
-            </span>
-        </a>
+            <a href="{{ route('admin.pricing.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">payments</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Pricing
+                </span>
+            </a>
 
-        <a
-            href="{{ route('admin.categories.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">category</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Categories
-            </span>
-        </a>
+            <a href="{{ route('admin.categories.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">category</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Categories
+                </span>
+            </a>
 
-        <a
-            href="{{ route('admin.company-logos.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">handshake</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Company Logos
-            </span>
-        </a>
-    </div>
+            <a href="{{ route('admin.company-logos.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">handshake</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Company Logos
+                </span>
+            </a>
+        </div>
 
-    <!-- Portfolio & Blog -->
-    <div class="mt-4 space-y-1">
-        <p
-            x-show="!sidebarCollapsed"
-            class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500"
-        >
-            Portfolio & Blog
-        </p>
+        <!-- Portfolio & Blog -->
+        <div class="mt-4 space-y-1">
+            <p x-show="!sidebarCollapsed"
+                class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Portfolio & Blog
+            </p>
 
-        <a
-            href="{{ route('admin.projects.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">account_tree</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Projects
-            </span>
-        </a>
+            <a href="{{ route('admin.projects.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">account_tree</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Projects
+                </span>
+            </a>
 
-        <a
-            href="{{ route('admin.blogs.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">article</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Blogs
-            </span>
-        </a>
-    </div>
+            <a href="{{ route('admin.blogs.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">article</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Blogs
+                </span>
+            </a>
+        </div>
 
-    <!-- Support -->
-    <div class="mt-4 space-y-1">
-        <p
-            x-show="!sidebarCollapsed"
-            class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500"
-        >
-            Support
-        </p>
+        <!-- Support -->
+        <div class="mt-4 space-y-1">
+            <p x-show="!sidebarCollapsed"
+                class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Support
+            </p>
 
-        <a
-            href="#"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">confirmation_number</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Tickets
-            </span>
-        </a>
-    </div>
+            <a href="#"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">confirmation_number</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Tickets
+                </span>
+            </a>
+        </div>
 
-    <!-- System Management -->
-    <div class="mt-4 space-y-1">
-        <p
-            x-show="!sidebarCollapsed"
-            class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500"
-        >
-            System Management
-        </p>
+        <!-- System Management -->
+        <div class="mt-4 space-y-1">
+            <p x-show="!sidebarCollapsed"
+                class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500">
+                System Management
+            </p>
 
-        <a
-            href="{{ route('admin.users.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">group</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Users
-            </span>
-        </a>
+            <a href="{{ route('admin.users.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">group</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Users
+                </span>
+            </a>
 
-        <a
-            href="{{ route('admin.departments.index') }}"
-            wire:navigate
-            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900"
-        >
-            <span class="material-symbols-outlined shrink-0">business</span>
-            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                Departments
-            </span>
-        </a>
-    </div>
-</nav>
+            <a href="{{ route('admin.departments.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">business</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Departments
+                </span>
+            </a>
+        </div>
+    </nav>
 
     <!-- Fixed Bottom Logout -->
     <div class="shrink-0 border-t border-slate-200 bg-slate-50 px-3 py-4">

@@ -17,22 +17,14 @@ new class extends Component {
             <span class="material-symbols-outlined">menu</span>
         </button>
 
-            <!-- Desktop Collapse Button -->
-    <div class="hidden shrink-0 px-3 py-3 lg:flex">
-        <button
-            @click="sidebarCollapsed = !sidebarCollapsed"
-            class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-slate-600 transition hover:bg-slate-100"
-        >
-            <span
-                class="material-symbols-outlined text-[20px]"
-                x-text="sidebarCollapsed ? 'chevron_right' : 'chevron_left'"
-            ></span>
-
-            <span x-show="!sidebarCollapsed" class="text-sm font-medium">
-                Collapse
-            </span>
-        </button>
-    </div>
+        <!-- Desktop Collapse Button -->
+        <div class="hidden shrink-0 lg:flex">
+            <button @click="sidebarCollapsed = !sidebarCollapsed"
+                class="flex cursor-pointer items-center justify-center px-2 rounded-lg border border-slate-200 bg-white py-1.5 text-slate-600 transition hover:bg-slate-100">
+                <span class="material-symbols-outlined text-[20px]"
+                    x-text="sidebarCollapsed ? 'chevron_right' : 'chevron_left'"></span>
+            </button>
+        </div>
 
         <div class="relative hidden sm:block w-full max-w-md">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
