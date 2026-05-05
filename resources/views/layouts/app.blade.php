@@ -5,6 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <link rel="shortcut icon" href="{{ asset('assets/images/logo/logo.png') }}" type="image/x-icon">
+
     <title>{{ $title ?? config('app.name') }}</title>
 
     <link
@@ -21,7 +23,7 @@
 <body>
     <!-- Full Website Background Video -->
     <div class="fixed inset-0 -z-20">
-        <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('images/video-fallback.jpg') }}"
+        <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/images/logo/logo.png') }}"
             class="w-full h-full object-cover">
             <source src="{{ asset('assets/videos/matrix1.mp4') }}" type="video/mp4">
         </video>

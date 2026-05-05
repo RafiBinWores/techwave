@@ -36,4 +36,16 @@ class Service extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function servicePlans()
+    {
+        return $this->hasMany(ServicePlan::class);
+    }
+
+    public function activePlans()
+    {
+        return $this->hasMany(ServicePlan::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order');
+    }
 }

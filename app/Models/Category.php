@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable('name', 'slug', 'icon', 'image', 'description', 'sort_order', 'is_active')]
+#[Fillable(['name', 'slug', 'icon', 'image', 'description', 'sort_order', 'is_active'])]
 class Category extends Model
 {
     protected $casts = [

@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\CompanyLogo;
+use App\Models\Service;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -8,6 +10,11 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
     public function companyLogos()
     {
         return CompanyLogo::query()->where('is_active', true)->orderBy('sort_order')->latest()->get();
+    }
+
+    public function services()
+    {
+        return Service::query()->with('category')->where('is_active', true)->where('is_featured', true)->latest()->take(4)->get();
     }
 };
 ?>
@@ -151,21 +158,23 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                 <div class="">
                     <div x-ref="track" class="flex w-max items-center gap-4 will-change-transform">
 
-                        @foreach ($this->companyLogos() as $logo)
+                        @forelse ($this->companyLogos() as $logo)
                             <div class="logo-card group">
-                                <img src="{{ Storage::url($logo->logo) }}" alt="{{ $logo->name }}"
-                                    class="logo-img" />
+                                <img src="{{ Storage::url($logo->logo) }}" alt="{{ $logo->name }}" class="logo-img" />
 
                                 @if ($logo->website_url)
                                     <a href="{{ $logo->website_url }}" target="_blank"
                                         class="absolute inset-0 z-10"></a>
                                 @endif
                             </div>
-                        @endforeach
-                        {{-- <div class="logo-card group">
-                            <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/google/wordmark.svg"
-                                alt="Google" class="logo-img">
-                        </div> --}}
+
+                        @empty
+                            <div class="logo-card group">
+                                <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/google/wordmark.svg"
+                                    alt="Google" class="logo-img">
+                            </div>
+                        @endforelse
+
                     </div>
                 </div>
             </div>
@@ -190,158 +199,108 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 auto-rows-[260px] gap-5">
+            @php
+    $featuredServices = $this->services();
+    $mainService = $featuredServices->first();
+    $otherServices = $featuredServices->skip(1);
+@endphp
 
-                <!-- Large Card -->
-                <a href="#"
-                    class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white md:col-span-2 xl:col-span-2 xl:row-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 auto-rows-[260px] gap-5">
 
-                    <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
-                        alt="Website Design & Development"
-                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+    {{-- Large Featured Card --}}
+    @if ($mainService)
+        <a href="{{ route('client.services.details', $mainService->slug) }}"
+           wire:navigate
+           class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white md:col-span-2 xl:col-span-2 xl:row-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
 
-                    <div class="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-900/45 to-blue-900/40">
-                    </div>
+            <img src="{{ $mainService->image ? asset('storage/' . $mainService->image) : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80' }}"
+                 alt="{{ $mainService->title }}"
+                 class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                    <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
-                        <div class="flex items-start justify-between gap-4">
-                            <span
-                                class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-                                Featured Service
-                            </span>
+            <div class="absolute inset-0 bg-linear-to-br from-slate-950/75 via-slate-900/45 to-blue-900/40"></div>
 
-                            <span
-                                class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white">
-                                <span class="material-symbols-outlined">language</span>
-                            </span>
-                        </div>
+            <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
+                <div class="flex items-start justify-between gap-4">
+                    <span class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                        {{ $mainService->category->name ?? 'Service' }}
+                    </span>
 
-                        <div>
-                            <h3 class="text-2xl sm:text-3xl font-bold text-white font-manrope">
-                                Website Design & Development
-                            </h3>
-                            <p class="mt-3 max-w-xl text-sm sm:text-base leading-6 text-white/80">
-                                Modern, responsive, and conversion-focused websites tailored for startups, brands, and
-                                growing businesses.
-                            </p>
+                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white">
+                        <span class="material-symbols-outlined">
+                            {{ $mainService->icon ?? 'language' }}
+                        </span>
+                    </span>
+                </div>
 
-                            <div class="mt-5 flex flex-wrap gap-2">
-                                <span
-                                    class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Responsive
-                                    UI</span>
-                                <span
-                                    class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">Laravel</span>
-                                <span
-                                    class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">SEO
-                                    Friendly</span>
-                            </div>
+                <div>
+                    <h3 class="text-2xl sm:text-3xl font-bold text-white font-manrope">
+                        {{ $mainService->card_title }}
+                    </h3>
 
-                            <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                                Learn More
-                                <span
-                                    class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                                    arrow_forward
+                    <p class="mt-3 max-w-xl text-sm sm:text-base leading-6 text-white/80">
+                        {{ Str::limit($mainService->short_description ?? $mainService->description, 140) }}
+                    </p>
+
+                    @if (!empty($mainService->tags))
+                        <div class="mt-5 flex flex-wrap gap-2">
+                            @foreach (array_slice((array) $mainService->tags, 0, 3) as $tag)
+                                <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">
+                                    {{ $tag }}
                                 </span>
-                            </div>
+                            @endforeach
                         </div>
+                    @endif
+
+                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                        Learn More
+                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                            arrow_forward
+                        </span>
                     </div>
-                </a>
-
-                <!-- Card -->
-                <a href="#"
-                    class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
-
-                    <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80"
-                        alt="Cyber Security"
-                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
-
-                    <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10">
-                    </div>
-
-                    <div class="relative z-10 flex h-full flex-col justify-between p-6">
-                        <div class="flex items-center justify-between">
-                            <span
-                                class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                                Security
-                            </span>
-                            <span class="material-symbols-outlined text-white">shield</span>
-                        </div>
-
-                        <div>
-                            <h3 class="text-lg font-bold text-white font-manrope">
-                                VAPT & Penetration Testing
-                            </h3>
-                            <p class="mt-2 text-sm text-white/75 leading-6">
-                                Identify vulnerabilities and strengthen your digital infrastructure.
-                            </p>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Card -->
-                <a href="#"
-                    class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
-
-                    <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800&q=80"
-                        alt="AI Automation"
-                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
-
-                    <div class="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10">
-                    </div>
-
-                    <div class="relative z-10 flex h-full flex-col justify-between p-6">
-                        <div class="flex items-center justify-between">
-                            <span
-                                class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                                Automation
-                            </span>
-                            <span class="material-symbols-outlined text-white">smart_toy</span>
-                        </div>
-
-                        <div>
-                            <h3 class="text-lg font-bold text-white font-manrope">
-                                AI Chatbot Integration
-                            </h3>
-                            <p class="mt-2 text-sm text-white/75 leading-6">
-                                Automate support and business workflows with smart AI systems.
-                            </p>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Wide Card -->
-                <a href="#"
-                    class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 md:col-span-2 xl:col-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
-
-                    <img src="https://images.unsplash.com/photo-1556155092-490a1ba16284?auto=format&fit=crop&w=1200&q=80"
-                        alt="Digital Marketing"
-                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
-
-                    <div class="absolute inset-0 bg-linear-to-r from-slate-950/85 via-slate-900/45 to-slate-900/20">
-                    </div>
-
-                    <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
-                        <div class="flex items-center justify-between">
-                            <span
-                                class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                                Growth
-                            </span>
-                            <span class="material-symbols-outlined text-white">trending_up</span>
-                        </div>
-
-                        <div>
-                            <h3 class="text-xl sm:text-2xl font-bold text-white font-manrope">
-                                SEO & Digital Marketing
-                            </h3>
-                            <p class="mt-2 text-sm sm:text-base text-white/75 max-w-lg leading-6">
-                                Boost traffic, engagement, and conversions through data-driven digital growth
-                                strategies.
-                            </p>
-                        </div>
-                    </div>
-                </a>
-
+                </div>
             </div>
+        </a>
+    @endif
+
+
+    {{-- Small Cards --}}
+    @foreach ($otherServices as $service)
+        <a href="{{ route('client.services.details', $service->slug) }}"
+           wire:navigate
+           class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300
+           {{ $loop->last ? 'md:col-span-2 xl:col-span-2' : '' }}">
+
+            <img src="{{ $service->image ? asset('storage/' . $service->image) : 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80' }}"
+                 alt="{{ $service->title }}"
+                 class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+
+            <div class="absolute inset-0 {{ $loop->last ? 'bg-linear-to-r from-slate-950/85 via-slate-900/45 to-slate-900/20' : 'bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10' }}"></div>
+
+            <div class="relative z-10 flex h-full flex-col justify-between p-6">
+                <div class="flex items-center justify-between">
+                    <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                        {{ $service->category->name ?? 'Service' }}
+                    </span>
+
+                    <span class="material-symbols-outlined text-white">
+                        {{ $service->icon ?? 'settings' }}
+                    </span>
+                </div>
+
+                <div>
+                    <h3 class="{{ $loop->last ? 'text-xl sm:text-2xl' : 'text-lg' }} font-bold text-white font-manrope">
+                        {{ $service->card_title }}
+                    </h3>
+
+                    <p class="mt-2 text-sm text-white/75 leading-6 {{ $loop->last ? 'max-w-lg sm:text-base' : '' }}">
+                        {{ Str::limit($service->short_description ?? $service->description, 100) }}
+                    </p>
+                </div>
+            </div>
+        </a>
+    @endforeach
+
+</div>
 
             <!-- Show All Services Button -->
             <div class="mt-10 flex justify-center">

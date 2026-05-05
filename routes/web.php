@@ -57,7 +57,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, string $id, 
 })->middleware('signed')->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
-    if (! auth()->check()) {
+    if (!auth()->check()) {
         return redirect()->route('home')->with('auth_error', 'Please login first to resend the verification email.');
     }
 
@@ -95,7 +95,7 @@ Route::middleware('guest')->group(function () {
 | Client protected routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'role:client'])->prefix('account')->name('account.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:client,admin'])->prefix('account')->name('account.')->group(function () {
     Route::livewire('/dashboard', 'pages::client.account.dashboard')->name('dashboard');
 
     Route::livewire('/services', 'pages::client.account.services')->name('services');
@@ -167,4 +167,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/blogs', 'pages::admin.blogs.index')->name('blogs.index');
     Route::livewire('/blogs/create', 'pages::admin.blogs.create')->name('blogs.create');
     Route::livewire('/blogs/{blog}/edit', 'pages::admin.blogs.edit')->name('blogs.edit');
+
+    // Service plan management
+    Route::livewire('/service-plans', 'pages::admin.service-plans.index')->name('service-plans.index');
+    Route::livewire('/service-plans/create', 'pages::admin.service-plans.create')->name('service-plans.create');
+    Route::livewire('/service-plans/{servicePlan}/edit', 'pages::admin.service-plans.edit')->name('service-plans.edit');
+
+    // Proposal management
+    Route::livewire('/proposals', 'pages::admin.proposals.index')->name('proposals.index');
+    Route::livewire('/proposals/create', 'pages::admin.proposals.create')->name('proposals.create');
+    Route::livewire('/proposals/{proposal}/edit', 'pages::admin.proposals.edit')->name('proposals.edit');
+
+    // Settings
+    Route::livewire('/site-settings', 'pages::admin.settings.site-setting')->name('settings.site-setting');
+    Route::livewire('/invoice-templates', 'pages::admin.settings.invoice-template')->name('settings.invoice-templates');
+
 });
