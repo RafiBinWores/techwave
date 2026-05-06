@@ -20,8 +20,6 @@ return new class extends Migration
             $table->text('intro_text')->nullable();
             $table->text('footer_text')->nullable();
             $table->text('terms_text')->nullable();
-            $table->string('button_text')->default('Contact Us');
-            $table->string('button_url')->nullable();
             $table->string('brand_color')->default('#0F52BA');
             $table->boolean('is_active')->default(false);
             $table->timestamps();

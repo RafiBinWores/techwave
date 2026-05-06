@@ -15,8 +15,6 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
     public string $intro_text = '';
     public string $footer_text = '';
     public string $terms_text = '';
-    public string $button_text = '';
-    public string $button_url = '';
     public string $brand_color = '#0F52BA';
 
     public function mount(): void
@@ -30,23 +28,19 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
         $this->intro_text = $this->template->intro_text ?? '';
         $this->footer_text = $this->template->footer_text ?? '';
         $this->terms_text = $this->template->terms_text ?? '';
-        $this->button_text = $this->template->button_text;
-        $this->button_url = $this->template->button_url ?? '';
         $this->brand_color = $this->template->brand_color;
     }
 
     protected function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:180'],
-            'subject_prefix' => ['required', 'string', 'max:80'],
-            'title' => ['required', 'string', 'max:180'],
-            'greeting' => ['required', 'string', 'max:180'],
-            'intro_text' => ['nullable', 'string', 'max:2000'],
-            'footer_text' => ['nullable', 'string', 'max:2000'],
-            'terms_text' => ['nullable', 'string', 'max:3000'],
-            'button_text' => ['required', 'string', 'max:80'],
-            'button_url' => ['nullable', 'url', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'subject_prefix' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255'],
+            'greeting' => ['required', 'string', 'max:255'],
+            'intro_text' => ['nullable', 'string'],
+            'footer_text' => ['nullable', 'string'],
+            'terms_text' => ['nullable', 'string'],
             'brand_color' => ['required', 'string', 'max:20'],
         ];
     }
@@ -65,8 +59,6 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
             'intro_text' => $validated['intro_text'] ?: null,
             'footer_text' => $validated['footer_text'] ?: null,
             'terms_text' => $validated['terms_text'] ?: null,
-            'button_text' => $validated['button_text'],
-            'button_url' => $validated['button_url'] ?: null,
             'brand_color' => $validated['brand_color'],
             'is_active' => true,
         ]);
@@ -158,24 +150,6 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                             </div>
 
                             <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Button Text</label>
-                                <input type="text" wire:model.live="button_text"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5" />
-                                @error('button_text')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Button URL</label>
-                                <input type="url" wire:model.live="button_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5" />
-                                @error('button_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="space-y-2">
                                 <label class="block font-label-md text-on-surface">Brand Color</label>
                                 <div class="flex gap-3">
                                     <input type="color" wire:model.live="brand_color"
@@ -243,12 +217,12 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                         <div class="w-[45%] text-right">
                                             <h2 class="mb-4 text-3xl font-extrabold"
                                                 style="color: {{ $brand_color }}">
-                                                INVOICE
+                                                PROPOSAL
                                             </h2>
 
                                             <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-right text-xs">
-                                                <span class="uppercase tracking-wider text-slate-400">Invoice #</span>
-                                                <span class="font-mono font-bold text-slate-900">INV-2026-0892</span>
+                                                <span class="uppercase tracking-wider text-slate-400">Proposal #</span>
+                                                <span class="font-mono font-bold text-slate-900">PROP-2026-0892</span>
 
                                                 <span class="uppercase tracking-wider text-slate-400">Date
                                                     Issued</span>
@@ -268,7 +242,7 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                         <div class="rounded-xl border border-slate-200 bg-white p-4">
                                             <p
                                                 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                                Bill To
+                                                Customer Details
                                             </p>
 
                                             <div class="space-y-1 text-xs leading-relaxed text-slate-600">

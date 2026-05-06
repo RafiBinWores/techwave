@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\CompanyLogo;
+use App\Models\PricingPlan;
 use App\Models\Service;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
@@ -15,6 +16,25 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
     public function services()
     {
         return Service::query()->with('category')->where('is_active', true)->where('is_featured', true)->latest()->take(4)->get();
+    }
+
+    public function pricingPlans()
+    {
+        return PricingPlan::query()
+            ->where('status', 'active')
+            ->orderByRaw(
+                "
+            CASE plan_type
+                WHEN 'startup' THEN 1
+                WHEN 'business' THEN 2
+                WHEN 'enterprise' THEN 3
+                ELSE 4
+            END
+        ",
+            )
+            ->latest()
+            ->take(3)
+            ->get();
     }
 };
 ?>
@@ -200,107 +220,115 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             </div>
 
             @php
-    $featuredServices = $this->services();
-    $mainService = $featuredServices->first();
-    $otherServices = $featuredServices->skip(1);
-@endphp
+                $featuredServices = $this->services();
+                $mainService = $featuredServices->first();
+                $otherServices = $featuredServices->skip(1);
+            @endphp
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 auto-rows-[260px] gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 auto-rows-[260px] gap-5">
 
-    {{-- Large Featured Card --}}
-    @if ($mainService)
-        <a href="{{ route('client.services.details', $mainService->slug) }}"
-           wire:navigate
-           class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white md:col-span-2 xl:col-span-2 xl:row-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
+                {{-- Large Featured Card --}}
+                @if ($mainService)
+                    <a href="{{ route('client.services.details', $mainService->slug) }}" wire:navigate
+                        class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white md:col-span-2 xl:col-span-2 xl:row-span-2 shadow-sm hover:shadow-xl transition-all duration-300">
 
-            <img src="{{ $mainService->image ? asset('storage/' . $mainService->image) : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80' }}"
-                 alt="{{ $mainService->title }}"
-                 class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <img src="{{ $mainService->image ? asset('storage/' . $mainService->image) : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80' }}"
+                            alt="{{ $mainService->title }}"
+                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-            <div class="absolute inset-0 bg-linear-to-br from-slate-950/75 via-slate-900/45 to-blue-900/40"></div>
-
-            <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
-                <div class="flex items-start justify-between gap-4">
-                    <span class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-                        {{ $mainService->category->name ?? 'Service' }}
-                    </span>
-
-                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white">
-                        <span class="material-symbols-outlined">
-                            {{ $mainService->icon ?? 'language' }}
-                        </span>
-                    </span>
-                </div>
-
-                <div>
-                    <h3 class="text-2xl sm:text-3xl font-bold text-white font-manrope">
-                        {{ $mainService->card_title }}
-                    </h3>
-
-                    <p class="mt-3 max-w-xl text-sm sm:text-base leading-6 text-white/80">
-                        {{ Str::limit($mainService->short_description ?? $mainService->description, 140) }}
-                    </p>
-
-                    @if (!empty($mainService->tags))
-                        <div class="mt-5 flex flex-wrap gap-2">
-                            @foreach (array_slice((array) $mainService->tags, 0, 3) as $tag)
-                                <span class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">
-                                    {{ $tag }}
-                                </span>
-                            @endforeach
+                        <div class="absolute inset-0 bg-linear-to-br from-slate-950/75 via-slate-900/45 to-blue-900/40">
                         </div>
-                    @endif
 
-                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                        Learn More
-                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                            arrow_forward
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </a>
-    @endif
+                        <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
+                            <div class="flex items-start justify-between gap-4">
+                                <span
+                                    class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                                    {{ $mainService->category->name ?? 'Service' }}
+                                </span>
+
+                                <span
+                                    class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white">
+                                    <span class="material-symbols-outlined">
+                                        {{ $mainService->icon ?? 'language' }}
+                                    </span>
+                                </span>
+                            </div>
+
+                            <div>
+                                <h3 class="text-2xl sm:text-3xl font-bold text-white font-manrope">
+                                    {{ $mainService->card_title }}
+                                </h3>
+
+                                <p class="mt-3 max-w-xl text-sm sm:text-base leading-6 text-white/80">
+                                    {{ Str::limit($mainService->short_description ?? $mainService->description, 140) }}
+                                </p>
+
+                                @if (!empty($mainService->tags))
+                                    <div class="mt-5 flex flex-wrap gap-2">
+                                        @foreach (array_slice((array) $mainService->tags, 0, 3) as $tag)
+                                            <span
+                                                class="rounded-full bg-white/10 px-3 py-1 text-xs text-white/90 border border-white/10">
+                                                {{ $tag }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                                    Learn More
+                                    <span
+                                        class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                                        arrow_forward
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                @endif
 
 
-    {{-- Small Cards --}}
-    @foreach ($otherServices as $service)
-        <a href="{{ route('client.services.details', $service->slug) }}"
-           wire:navigate
-           class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300
+                {{-- Small Cards --}}
+                @foreach ($otherServices as $service)
+                    <a href="{{ route('client.services.details', $service->slug) }}" wire:navigate
+                        class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300
            {{ $loop->last ? 'md:col-span-2 xl:col-span-2' : '' }}">
 
-            <img src="{{ $service->image ? asset('storage/' . $service->image) : 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80' }}"
-                 alt="{{ $service->title }}"
-                 class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <img src="{{ $service->image ? asset('storage/' . $service->image) : 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80' }}"
+                            alt="{{ $service->title }}"
+                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-            <div class="absolute inset-0 {{ $loop->last ? 'bg-linear-to-r from-slate-950/85 via-slate-900/45 to-slate-900/20' : 'bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10' }}"></div>
+                        <div
+                            class="absolute inset-0 {{ $loop->last ? 'bg-linear-to-r from-slate-950/85 via-slate-900/45 to-slate-900/20' : 'bg-linear-to-t from-slate-950/85 via-slate-900/35 to-slate-900/10' }}">
+                        </div>
 
-            <div class="relative z-10 flex h-full flex-col justify-between p-6">
-                <div class="flex items-center justify-between">
-                    <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                        {{ $service->category->name ?? 'Service' }}
-                    </span>
+                        <div class="relative z-10 flex h-full flex-col justify-between p-6">
+                            <div class="flex items-center justify-between">
+                                <span
+                                    class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+                                    {{ $service->category->name ?? 'Service' }}
+                                </span>
 
-                    <span class="material-symbols-outlined text-white">
-                        {{ $service->icon ?? 'settings' }}
-                    </span>
-                </div>
+                                <span class="material-symbols-outlined text-white">
+                                    {{ $service->icon ?? 'settings' }}
+                                </span>
+                            </div>
 
-                <div>
-                    <h3 class="{{ $loop->last ? 'text-xl sm:text-2xl' : 'text-lg' }} font-bold text-white font-manrope">
-                        {{ $service->card_title }}
-                    </h3>
+                            <div>
+                                <h3
+                                    class="{{ $loop->last ? 'text-xl sm:text-2xl' : 'text-lg' }} font-bold text-white font-manrope">
+                                    {{ $service->card_title }}
+                                </h3>
 
-                    <p class="mt-2 text-sm text-white/75 leading-6 {{ $loop->last ? 'max-w-lg sm:text-base' : '' }}">
-                        {{ Str::limit($service->short_description ?? $service->description, 100) }}
-                    </p>
-                </div>
+                                <p
+                                    class="mt-2 text-sm text-white/75 leading-6 {{ $loop->last ? 'max-w-lg sm:text-base' : '' }}">
+                                    {{ Str::limit($service->short_description ?? $service->description, 100) }}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
+
             </div>
-        </a>
-    @endforeach
-
-</div>
 
             <!-- Show All Services Button -->
             <div class="mt-10 flex justify-center">
@@ -916,210 +944,130 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             </div>
 
             <!-- Cards -->
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <!-- Startup IT Care -->
-                <div
-                    class="group relative rounded-[30px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
-                    <div
-                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent">
-                    </div>
+            <!-- Cards -->
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    @forelse ($this->pricingPlans() as $plan)
+        @php
+            $isPopular = $plan->plan_type === 'business';
 
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <p class="text-sm font-medium uppercase tracking-[0.22em] text-cyan-200/80">Startup</p>
-                            <h3 class="mt-2 text-2xl font-bold text-white">Startup IT Care</h3>
-                        </div>
+            $cardClass = $isPopular
+                ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/10 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
+                : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
 
-                        <div
-                            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-blue-500/15 text-cyan-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M3 7.5l9-4.5 9 4.5m-18 0 9 4.5m-9-4.5V16.5l9 4.5m9-13.5v9l-9 4.5m0-9V21" />
-                            </svg>
-                        </div>
-                    </div>
+            $lineClass = $plan->plan_type === 'enterprise'
+                ? 'via-violet-300/70'
+                : 'via-cyan-300/70';
 
-                    <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                        Perfect for startups and small offices that need reliable day-to-day IT support and setup
-                        services.
+            $iconBgClass = match ($plan->plan_type) {
+                'business' => 'bg-sky-500/15 text-sky-200',
+                'enterprise' => 'bg-violet-500/15 text-violet-200',
+                default => 'bg-blue-500/15 text-cyan-200',
+            };
+
+            $typeTextClass = match ($plan->plan_type) {
+                'business' => 'text-sky-200/80',
+                'enterprise' => 'text-violet-200/80',
+                default => 'text-cyan-200/80',
+            };
+
+            $features = is_array($plan->features) ? $plan->features : [];
+        @endphp
+
+        <div
+            class="group relative rounded-[30px] border {{ $cardClass }} p-6 sm:p-7 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
+
+            <div class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent {{ $lineClass }} to-transparent">
+            </div>
+
+            @if ($isPopular)
+                <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <span
+                        class="inline-flex rounded-full border border-cyan-300 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-950 backdrop-blur-xl">
+                        Most Popular
+                    </span>
+                </div>
+            @endif
+
+            <div class="flex items-start justify-between gap-4 {{ $isPopular ? 'pt-4' : '' }}">
+                <div>
+                    <p class="text-sm font-medium uppercase tracking-[0.22em] {{ $typeTextClass }}">
+                        {{ $plan->plan_type }}
                     </p>
 
-                    <div class="mt-6">
-                        <div x-show="billing === 'monthly'" x-transition>
-                            <div class="flex items-end gap-2">
-                                <span class="text-4xl font-bold text-white">৳ 10,000</span>
-                                <span class="pb-1 text-sm text-blue-100/60">/ month</span>
-                            </div>
-                        </div>
-
-                        <div x-show="billing === 'yearly'" x-transition style="display: none;">
-                            <div class="flex items-end gap-2">
-                                <span class="text-4xl font-bold text-white">৳ 99,000</span>
-                                <span class="pb-1 text-sm text-blue-100/60">/ year</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="#contact"
-                        class="mt-6 inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition hover:bg-white/12">
-                        Get Started
-                    </a>
-
-                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
-                        <li class="pricing-li">Office Networking</li>
-                        <li class="pricing-li">Office & Windows Installation</li>
-                        <li class="pricing-li">Email Client Configuration</li>
-                        <li class="pricing-li">Website Design & Development</li>
-                        <li class="pricing-li">Graphics Design</li>
-                        <li class="pricing-li">CCTV Camera Installation</li>
-                        <li class="pricing-li">Attendance Device Installation</li>
-                        <li class="pricing-li">Virus & Malware Scan</li>
-                        <li class="pricing-li">Data Recovery Services</li>
-                        <li class="pricing-li">Cloud Email Setup (Google Workspace, Microsoft 365)</li>
-                        <li class="pricing-li">Basic Firewall & Endpoint Security Setup</li>
-                        <li class="pricing-li">Social Media Business Page Setup & Security Audit</li>
-                    </ul>
+                    <h3 class="mt-2 text-2xl font-bold text-white">
+                        {{ $plan->title }}
+                    </h3>
                 </div>
 
-                <!-- Business IT Shield -->
                 <div
-                    class="group relative rounded-[30px] border border-cyan-300/25 bg-linear-to-b from-blue-500/10 to-white/8 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_25px_80px_rgba(0,0,0,0.24)] transition duration-300 hover:-translate-y-1">
-                    <div
-                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300 to-transparent">
-                    </div>
-                    <div class="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <span
-                            class="inline-flex rounded-full border border-cyan-300 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200 backdrop-blur-xl">
-                            Most Popular
-                        </span>
-                    </div>
-
-                    <div class="flex items-start justify-between gap-4 pt-4">
-                        <div>
-                            <p class="text-sm font-medium uppercase tracking-[0.22em] text-sky-200/80">Business</p>
-                            <h3 class="mt-2 text-2xl font-bold text-white">Business IT Shield</h3>
-                        </div>
-
-                        <div
-                            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-sky-500/15 text-sky-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-                                <path d="m9 12 2 2 4-4" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                        Ideal for growing businesses that need structured infrastructure, stronger security, and
-                        proactive IT management.
-                    </p>
-
-                    <div class="mt-6">
-                        <div x-show="billing === 'monthly'" x-transition>
-                            <div class="flex items-end gap-2">
-                                <span class="text-4xl font-bold text-white">৳ 20,000</span>
-                                <span class="pb-1 text-sm text-blue-100/60">/ month</span>
-                            </div>
-                        </div>
-
-                        <div x-show="billing === 'yearly'" x-transition style="display: none;">
-                            <div class="flex items-end gap-2">
-                                <span class="text-4xl font-bold text-white">৳ 210,000</span>
-                                <span class="pb-1 text-sm text-blue-100/60">/ year</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="#contact"
-                        class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
-                        Choose Plan
-                    </a>
-
-                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
-                        <li class="pricing-li">All Features of Startup IT Care</li>
-                        <li class="pricing-li">IIS Configuration & Web Hosting</li>
-                        <li class="pricing-li">Network Policy Server (NPS) & WPA3 Enterprise Configuration</li>
-                        <li class="pricing-li">VPN Server Setup</li>
-                        <li class="pricing-li">Professional Business Email</li>
-                        <li class="pricing-li">SEO</li>
-                        <li class="pricing-li">Active Directory Management</li>
-                        <li class="pricing-li">Print Server Setup</li>
-                        <li class="pricing-li">File Server & File Sharing Solution</li>
-                        <li class="pricing-li">Cloud-Based Cybersecurity Training for Employees</li>
-                        <li class="pricing-li">Automated IT Monitoring & Alerts</li>
-                        <li class="pricing-li">DevOps & CI/CD Pipeline Implementation</li>
-                    </ul>
-                </div>
-
-                <!-- Enterprise Plan -->
-                <div
-                    class="group relative rounded-[30px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-violet-300/20">
-                    <div
-                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-violet-300/70 to-transparent">
-                    </div>
-
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <p class="text-sm font-medium uppercase tracking-[0.22em] text-violet-200/80">Enterprise
-                            </p>
-                            <h3 class="mt-2 text-2xl font-bold text-white">Enterprise Plan</h3>
-                        </div>
-
-                        <div
-                            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-violet-500/15 text-violet-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                        Advanced support for enterprises that need compliance, 24/7 operations, cyber defense, and
-                        multi-cloud security.
-                    </p>
-
-                    <div class="mt-6">
-                        <div x-show="billing === 'monthly'" x-transition>
-                            <div class="flex items-end gap-2">
-                                <span class="text-4xl font-bold text-white">৳ 45,000</span>
-                                <span class="pb-1 text-sm text-blue-100/60">/ month</span>
-                            </div>
-                        </div>
-
-                        <div x-show="billing === 'yearly'" x-transition style="display: none;">
-                            <div class="flex items-end gap-2">
-                                <span class="text-4xl font-bold text-white">৳ 480,000</span>
-                                <span class="pb-1 text-sm text-blue-100/60">/ year</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="#contact"
-                        class="mt-6 inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition hover:bg-white/12">
-                        Contact Sales
-                    </a>
-
-                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
-                        <li class="pricing-li">All Features of Startup IT Care</li>
-                        <li class="pricing-li">All Features of Business IT Shield</li>
-                        <li class="pricing-li">DataGuard Backup & Recovery Service Solution (Based on Duplicati/Bacula)
-                        </li>
-                        <li class="pricing-li">VAPT</li>
-                        <li class="pricing-li">Digital Marketing</li>
-                        <li class="pricing-li">SecureMail Server Solution</li>
-                        <li class="pricing-li">24/7/365 Support</li>
-                        <li class="pricing-li">Zero Trust Security Implementation</li>
-                        <li class="pricing-li">AI-Powered Threat Detection & Response</li>
-                        <li class="pricing-li">Multi-Cloud Security & Compliance</li>
-                    </ul>
+                    class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 {{ $iconBgClass }}">
+                    <span class="material-symbols-outlined">
+                        {{ $plan->icon ?: 'workspace_premium' }}
+                    </span>
                 </div>
             </div>
+
+            <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                {{ $plan->description ?: 'Flexible IT support package designed for your business growth.' }}
+            </p>
+
+            <div class="mt-6">
+                <div x-show="billing === 'monthly'" x-transition>
+                    <div class="flex items-end gap-2">
+                        @if ($plan->monthly_price)
+                            <span class="text-4xl font-bold text-white">
+                                ৳ {{ number_format($plan->monthly_price, 0) }}
+                            </span>
+                            <span class="pb-1 text-sm text-blue-100/60">/ month</span>
+                        @else
+                            <span class="text-3xl font-bold text-white">Custom</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div x-show="billing === 'yearly'" x-transition style="display: none;">
+                    <div class="flex items-end gap-2">
+                        @if ($plan->yearly_price)
+                            <span class="text-4xl font-bold text-white">
+                                ৳ {{ number_format($plan->yearly_price, 0) }}
+                            </span>
+                            <span class="pb-1 text-sm text-blue-100/60">/ year</span>
+                        @else
+                            <span class="text-3xl font-bold text-white">Custom</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <a href="#contact"
+                class="mt-6 inline-flex w-full items-center justify-center rounded-full {{ $isPopular ? 'bg-linear-to-r from-blue-500 to-sky-400 shadow-lg shadow-blue-500/30 hover:-translate-y-0.5' : 'border border-white/15 bg-white/8 hover:bg-white/12' }} px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition">
+                Choose Plan
+            </a>
+
+            <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                @forelse ($features as $feature)
+                    <li class="pricing-li">
+                        {{ $feature }}
+                    </li>
+                @empty
+                    <li class="pricing-li">
+                        Custom features available on request
+                    </li>
+                @endforelse
+            </ul>
+
+            @if ($plan->purchase_count > 0)
+                <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-blue-100/70">
+                    {{ $plan->purchase_count }} customers already selected this plan.
+                </div>
+            @endif
+        </div>
+    @empty
+        <div class="col-span-1 rounded-[30px] border border-white/10 bg-white/6 p-8 text-center text-blue-100/70 backdrop-blur-2xl lg:col-span-3">
+            No pricing plan found. Please add active pricing plans from admin panel.
+        </div>
+    @endforelse
+</div>
         </div>
     </section>
 

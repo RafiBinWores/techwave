@@ -13,8 +13,6 @@ use Illuminate\Database\Eloquent\Model;
     'intro_text',
     'footer_text',
     'terms_text',
-    'button_text',
-    'button_url',
     'brand_color',
     'is_active',
 ])]
@@ -41,7 +39,6 @@ class InvoiceTemplate extends Model
             'intro_text' => 'We have prepared a proposal for your selected services.',
             'footer_text' => 'Thank you for choosing us.',
             'terms_text' => 'This proposal is valid until the mentioned validity date.',
-            'button_text' => 'Contact Us',
             'brand_color' => '#0F52BA',
             'is_active' => true,
         ]);

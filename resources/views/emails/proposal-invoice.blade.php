@@ -78,13 +78,13 @@
 
                                     <td valign="top" align="right" style="width:45%;">
                                         <h2 style="margin:0 0 16px; font-size:32px; line-height:1; color:{{ $brandColor }}; font-weight:800;">
-                                            INVOICE
+                                            PROPOSAL
                                         </h2>
 
                                         <table cellpadding="0" cellspacing="0" style="margin-left:auto; font-size:13px; color:#475569;">
                                             <tr>
                                                 <td style="padding:3px 16px 3px 0; text-transform:uppercase; color:#94a3b8; font-size:11px; letter-spacing:.08em;">
-                                                    Invoice #
+                                                    Proposal #
                                                 </td>
                                                 <td style="padding:3px 0; font-weight:700; color:#111827; text-align:right;">
                                                     {{ $proposal->proposal_no }}
@@ -125,7 +125,7 @@
                                     <td valign="top" style="width:50%; padding-right:10px;">
                                         <div style="border:1px solid #e5e7eb; border-radius:14px; padding:16px; background:#ffffff;">
                                             <p style="margin:0 0 8px; font-size:11px; font-weight:700; text-transform:uppercase; color:#94a3b8; letter-spacing:.08em;">
-                                                Bill To
+                                                Customer Details
                                             </p>
 
                                             <div style="font-size:14px; line-height:1.8; color:#334155;">

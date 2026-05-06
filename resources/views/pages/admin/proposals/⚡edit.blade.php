@@ -1,15 +1,19 @@
 <?php
 
+use App\Models\InvoiceTemplate;
 use App\Models\Proposal;
 use App\Models\Service;
 use App\Models\ServicePlan;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Component {
     public Proposal $proposal;
+    public InvoiceTemplate $invoiceTemplate;
 
     public ?int $user_id = null;
     public ?int $company_id = null;
@@ -20,7 +24,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
     public string $customer_name = '';
     public string $customer_email = '';
     public string $customer_phone = '';
-
     public string $company_name = '';
 
     public string $subject = '';
@@ -28,7 +31,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
     public string $discount_type = 'none';
     public string $discount_value = '0';
-
     public string $valid_until = '';
 
     public ?int $selected_service_id = null;
@@ -44,42 +46,44 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
     public function mount(Proposal $proposal): void
     {
+        $this->invoiceTemplate = InvoiceTemplate::activeTemplate();
+
         $this->proposal = $proposal->load(['items', 'user.company', 'company']);
 
-        $this->user_id = $proposal->user_id;
-        $this->company_id = $proposal->company_id;
+        $this->fillFromProposal();
+    }
 
-        $this->customer_search = $proposal->user ? trim(($proposal->user->name ?? '') . ' - ' . ($proposal->user->email ?? '')) : '';
+    public function fillFromProposal(): void
+    {
+        $this->user_id = $this->proposal->user_id;
+        $this->company_id = $this->proposal->company_id;
 
-        $this->customer_name = $proposal->customer_name;
-        $this->customer_email = $proposal->customer_email ?? '';
-        $this->customer_phone = $proposal->customer_phone ?? '';
+        $this->customer_search = $this->proposal->user
+            ? trim(($this->proposal->user->name ?? '') . ' - ' . ($this->proposal->user->email ?? ''))
+            : '';
 
-        $this->company_name = $proposal->company_name ?? '';
-        $this->company_phone = $proposal->company_phone ?? '';
-        $this->company_address = $proposal->company_address ?? '';
-        $this->company_website = $proposal->company_website ?? '';
+        $this->customer_name = $this->proposal->customer_name;
+        $this->customer_email = $this->proposal->customer_email ?? '';
+        $this->customer_phone = $this->proposal->customer_phone ?? '';
+        $this->company_name = $this->proposal->company_name ?? '';
 
-        $this->subject = $proposal->subject;
-        $this->message = $proposal->message ?? '';
-        $this->terms = $proposal->terms ?? '';
+        $this->subject = $this->proposal->subject;
+        $this->note = $this->proposal->note ?? '';
 
-        $this->discount_type = $proposal->discount_type;
-        $this->discount_value = (string) $proposal->discount_value;
+        $this->discount_type = $this->proposal->discount_type;
+        $this->discount_value = (string) $this->proposal->discount_value;
 
-        $this->valid_until = $proposal->valid_until?->format('Y-m-d') ?? '';
+        $this->valid_until = $this->proposal->valid_until?->format('Y-m-d') ?? '';
 
-        $this->items = $proposal->items
-            ->map(
-                fn($item) => [
-                    'item_type' => $item->item_type,
-                    'item_id' => $item->item_id,
-                    'title' => $item->title,
-                    'description' => $item->description ?? '',
-                    'quantity' => (float) $item->quantity,
-                    'unit_price' => (float) $item->unit_price,
-                ],
-            )
+        $this->items = $this->proposal->items
+            ->map(fn ($item) => [
+                'item_type' => $item->item_type,
+                'item_id' => $item->item_id,
+                'title' => $item->title,
+                'description' => $item->description ?? '',
+                'quantity' => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+            ])
             ->toArray();
     }
 
@@ -89,14 +93,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'company_id' => ['nullable', 'integer', 'exists:companies,id'],
 
-            'customer_name' => ['required', 'string', 'max:180'],
-            'customer_email' => ['nullable', 'email', 'max:180'],
-            'customer_phone' => ['nullable', 'string', 'max:80'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_email' => ['nullable', 'email', 'max:255'],
+            'customer_phone' => ['nullable', 'string', 'max:255'],
+            'company_name' => ['nullable', 'string', 'max:255'],
 
-            'company_name' => ['nullable', 'string', 'max:180'],
-
-            'subject' => ['required', 'string', 'max:220'],
-            'note' => ['nullable', 'string', 'max:2000'],
+            'subject' => ['required', 'string', 'max:255'],
+            'note' => ['nullable', 'string'],
 
             'discount_type' => ['required', 'in:none,fixed,percentage'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
@@ -104,9 +107,20 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             'valid_until' => ['nullable', 'date'],
 
             'items' => ['required', 'array', 'min:1'],
-            'items.*.title' => ['required', 'string', 'max:220'],
-            'items.*.quantity' => ['required', 'numeric', 'min:1'],
+            'items.*.item_type' => ['required', 'in:service,service_plan,pricing_plan,custom'],
+            'items.*.item_id' => ['nullable', 'integer'],
+            'items.*.title' => ['required', 'string', 'max:255'],
+            'items.*.description' => ['nullable', 'string'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'items.required' => 'Please add at least one service, plan, pricing, or custom item.',
+            'items.min' => 'Please add at least one service, plan, pricing, or custom item.',
         ];
     }
 
@@ -137,7 +151,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
     public function selectCustomer(int $userId): void
     {
         $user = User::query()->with('company')->findOrFail($userId);
-
         $company = $user->company;
 
         $this->user_id = $user->id;
@@ -146,16 +159,19 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
         $this->customer_name = $user->name ?? '';
         $this->customer_email = $user->email ?? '';
         $this->customer_phone = $company?->phone ?? '';
-
         $this->company_name = $company?->company_name ?? '';
-        $this->company_phone = $company?->phone ?? '';
-        $this->company_address = $company?->address ?? '';
-        $this->company_website = $company?->website ?? '';
 
         $this->customer_search = trim(($user->name ?? '') . ' - ' . ($user->email ?? ''));
         $this->customer_dropdown_open = false;
 
-        $this->resetValidation(['user_id', 'company_id', 'customer_name', 'customer_email', 'customer_phone', 'company_name', 'company_phone', 'company_address', 'company_website']);
+        $this->resetValidation([
+            'user_id',
+            'company_id',
+            'customer_name',
+            'customer_email',
+            'customer_phone',
+            'company_name',
+        ]);
     }
 
     public function clearCustomer(): void
@@ -164,27 +180,30 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
         $this->company_id = null;
 
         $this->customer_search = '';
-
         $this->customer_name = '';
         $this->customer_email = '';
         $this->customer_phone = '';
-
         $this->company_name = '';
-        $this->company_phone = '';
-        $this->company_address = '';
-        $this->company_website = '';
 
         $this->customer_dropdown_open = false;
     }
 
     public function services()
     {
-        return Service::query()->where('is_active', true)->orderBy('card_title')->get();
+        return Service::query()
+            ->where('is_active', true)
+            ->orderBy('card_title')
+            ->get();
     }
 
     public function servicePlans()
     {
-        return ServicePlan::query()->with('service')->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        return ServicePlan::query()
+            ->with('service')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 
     public function pricingPlans()
@@ -193,7 +212,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             return collect();
         }
 
-        return \App\Models\PricingPlan::query()->orderBy('title')->get();
+        return \App\Models\PricingPlan::query()
+            ->orderBy('title')
+            ->get();
     }
 
     public function addService(): void
@@ -203,13 +224,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             return;
         }
 
-        $service = Service::findOrFail($this->selected_service_id);
+        $service = Service::query()->findOrFail($this->selected_service_id);
 
         $this->items[] = [
             'item_type' => 'service',
             'item_id' => $service->id,
-            'title' => $service->card_title,
-            'description' => $service->short_description ?? '',
+            'title' => $service->card_title ?? $service->title ?? 'Service',
+            'description' => $service->short_description ?? $service->description ?? '',
             'quantity' => 1,
             'unit_price' => 0,
         ];
@@ -225,7 +246,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             return;
         }
 
-        $plan = ServicePlan::with('service')->findOrFail($this->selected_service_plan_id);
+        $plan = ServicePlan::query()->with('service')->findOrFail($this->selected_service_plan_id);
 
         $this->items[] = [
             'item_type' => 'service_plan',
@@ -247,14 +268,14 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             return;
         }
 
-        $plan = \App\Models\PricingPlan::findOrFail($this->selected_pricing_plan_id);
+        $plan = \App\Models\PricingPlan::query()->findOrFail($this->selected_pricing_plan_id);
 
-        $price = $plan->yearly_price ?? ($plan->monthly_price ?? 0);
+        $price = $plan->yearly_price ?? $plan->monthly_price ?? $plan->price ?? 0;
 
         $this->items[] = [
             'item_type' => 'pricing_plan',
             'item_id' => $plan->id,
-            'title' => $plan->title ?? 'Pricing Plan',
+            'title' => $plan->title ?? $plan->name ?? 'Pricing Plan',
             'description' => $plan->description ?? '',
             'quantity' => 1,
             'unit_price' => $price,
@@ -293,13 +314,14 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
     public function removeItem(int $index): void
     {
         unset($this->items[$index]);
-
         $this->items = array_values($this->items);
     }
 
     public function subtotal(): float
     {
-        return collect($this->items)->sum(fn($item) => (float) $item['quantity'] * (float) $item['unit_price']);
+        return collect($this->items)->sum(function ($item) {
+            return (float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0);
+        });
     }
 
     public function discountAmount(): float
@@ -307,11 +329,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
         $subtotal = $this->subtotal();
         $discount = (float) ($this->discount_value ?: 0);
 
-        return match ($this->discount_type) {
-            'percentage' => ($subtotal * $discount) / 100,
+        $amount = match ($this->discount_type) {
+            'percentage' => ($subtotal * min($discount, 100)) / 100,
             'fixed' => $discount,
             default => 0,
         };
+
+        return min($amount, $subtotal);
     }
 
     public function grandTotal(): float
@@ -323,36 +347,38 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
     {
         $validated = $this->validate();
 
-        $this->proposal->update([
-            'user_id' => $validated['user_id'] ?: null,
-            'company_id' => $validated['company_id'] ?: null,
+        DB::transaction(function () use ($validated) {
+            $this->proposal->update([
+                'user_id' => $validated['user_id'] ?: null,
+                'company_id' => $validated['company_id'] ?: null,
 
-            'customer_name' => $validated['customer_name'],
-            'customer_email' => $validated['customer_email'] ?: null,
-            'customer_phone' => $validated['customer_phone'] ?: null,
-            'company_name' => $validated['company_name'] ?: null,
+                'customer_name' => $validated['customer_name'],
+                'customer_email' => $validated['customer_email'] ?: null,
+                'customer_phone' => $validated['customer_phone'] ?: null,
+                'company_name' => $validated['company_name'] ?: null,
 
-            'subject' => $validated['subject'],
-            'note' => $validated['note'] ?: null,
+                'subject' => $validated['subject'],
+                'note' => $validated['note'] ?: null,
 
-            'discount_type' => $validated['discount_type'],
-            'discount_value' => $validated['discount_value'] ?: 0,
+                'discount_type' => $validated['discount_type'],
+                'discount_value' => $validated['discount_value'] ?: 0,
 
-            'valid_until' => $validated['valid_until'] ?: null,
-        ]);
-
-        $this->proposal->items()->delete();
-
-        foreach ($this->items as $item) {
-            $this->proposal->items()->create([
-                'item_type' => $item['item_type'],
-                'item_id' => $item['item_id'],
-                'title' => $item['title'],
-                'description' => $item['description'] ?: null,
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
+                'valid_until' => $validated['valid_until'] ?: null,
             ]);
-        }
+
+            $this->proposal->items()->delete();
+
+            foreach ($validated['items'] as $item) {
+                $this->proposal->items()->create([
+                    'item_type' => $item['item_type'],
+                    'item_id' => $item['item_id'] ?? null,
+                    'title' => $item['title'],
+                    'description' => $item['description'] ?: null,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                ]);
+            }
+        });
 
         session()->flash('toast', [
             'type' => 'success',
@@ -360,6 +386,29 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
         ]);
 
         $this->redirectRoute('admin.proposals.index', navigate: true);
+    }
+
+    public function discard(): void
+    {
+        $this->proposal->refresh();
+        $this->proposal->load(['items', 'user.company', 'company']);
+
+        $this->fillFromProposal();
+
+        $this->selected_service_id = null;
+        $this->selected_service_plan_id = null;
+        $this->selected_pricing_plan_id = null;
+
+        $this->custom_title = '';
+        $this->custom_description = '';
+        $this->custom_quantity = '1';
+        $this->custom_unit_price = '';
+
+        $this->customer_dropdown_open = false;
+
+        $this->resetValidation();
+
+        $this->dispatch('toast', message: 'Changes discarded.', type: 'info');
     }
 };
 ?>
@@ -554,19 +603,10 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                         </div>
 
                         <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">Message</label>
-                            <textarea wire:model.live="message" rows="5" class="w-full rounded border border-outline-variant px-4 py-2.5"
+                            <label class="block font-label-md text-on-surface">Note</label>
+                            <textarea wire:model.live="note" rows="5" class="w-full rounded border border-outline-variant px-4 py-2.5"
                                 placeholder="Write a convincing proposal message..."></textarea>
-                            @error('message')
-                                <p class="text-sm text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">Terms</label>
-                            <textarea wire:model.live="terms" rows="4" class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                placeholder="Payment terms, delivery timeline, support terms..."></textarea>
-                            @error('terms')
+                            @error('note')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
@@ -683,13 +723,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
                                     <div class="md:col-span-2">
                                         <label class="text-xs text-secondary">Qty</label>
-                                        <input type="number" wire:model.live="items.{{ $index }}.quantity"
+                                        <input type="number" step="1" min="1" wire:model.live="items.{{ $index }}.quantity"
                                             class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
                                     </div>
 
                                     <div class="md:col-span-2">
                                         <label class="text-xs text-secondary">Unit Price</label>
-                                        <input type="number" wire:model.live="items.{{ $index }}.unit_price"
+                                        <input type="number" step="0.1" min="1" wire:model.live="items.{{ $index }}.unit_price"
                                             class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
                                     </div>
 

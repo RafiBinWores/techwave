@@ -1,9 +1,11 @@
 <?php
 
+use App\Models\InvoiceTemplate;
 use App\Models\Proposal;
 use App\Models\Service;
 use App\Models\ServicePlan;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -12,6 +14,8 @@ use Livewire\Component;
 new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Component {
     public ?int $user_id = null;
     public ?int $company_id = null;
+
+    public InvoiceTemplate $invoiceTemplate;
 
     public string $customer_search = '';
     public bool $customer_dropdown_open = false;
@@ -35,10 +39,17 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public string $custom_title = '';
     public string $custom_description = '';
-    public string $custom_quantity = '';
+    public string $custom_quantity = '1';
     public string $custom_unit_price = '';
 
     public array $items = [];
+
+    public function mount(): void
+    {
+        $this->invoiceTemplate = InvoiceTemplate::activeTemplate();
+
+        $this->subject = $this->invoiceTemplate->subject_prefix . ' - ';
+    }
 
     protected function rules(): array
     {
@@ -46,13 +57,13 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'company_id' => ['nullable', 'integer', 'exists:companies,id'],
 
-            'customer_name' => ['required', 'string', 'max:180'],
-            'customer_email' => ['nullable', 'email', 'max:180'],
-            'customer_phone' => ['nullable', 'string', 'max:80'],
-            'company_name' => ['nullable', 'string', 'max:180'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_email' => ['nullable', 'email', 'max:255'],
+            'customer_phone' => ['nullable', 'string', 'max:255'],
+            'company_name' => ['nullable', 'string', 'max:255'],
 
-            'subject' => ['required', 'string', 'max:220'],
-            'note' => ['nullable', 'string', 'max:2000'],
+            'subject' => ['required', 'string', 'max:255'],
+            'note' => ['nullable', 'string'],
 
             'discount_type' => ['required', 'in:none,fixed,percentage'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
@@ -60,8 +71,11 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             'valid_until' => ['nullable', 'date'],
 
             'items' => ['required', 'array', 'min:1'],
-            'items.*.title' => ['required', 'string', 'max:220'],
-            'items.*.quantity' => ['required', 'numeric', 'min:1'],
+            'items.*.item_type' => ['required', 'in:service,service_plan,pricing_plan,custom'],
+            'items.*.item_id' => ['nullable', 'integer'],
+            'items.*.title' => ['required', 'string', 'max:255'],
+            'items.*.description' => ['nullable', 'string'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ];
     }
@@ -101,7 +115,6 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
     public function selectCustomer(int $userId): void
     {
         $user = User::query()->with('company')->findOrFail($userId);
-
         $company = $user->company;
 
         $this->user_id = $user->id;
@@ -109,10 +122,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
         $this->customer_name = $user->name ?? '';
         $this->customer_email = $user->email ?? '';
-
-        // Your users table has no phone column, so company phone is used.
         $this->customer_phone = $company?->phone ?? '';
-
         $this->company_name = $company?->company_name ?? '';
 
         $this->customer_search = trim(($user->name ?? '') . ' - ' . ($user->email ?? ''));
@@ -156,7 +166,16 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public function proposalNo(): string
     {
-        return 'PROP-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5));
+        do {
+            $proposalNo = 'PROP-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5));
+        } while (Proposal::query()->where('proposal_no', $proposalNo)->exists());
+
+        return $proposalNo;
+    }
+
+    public function previewProposalNo(): string
+    {
+        return 'PROP-' . now()->format('Ymd') . '-XXXXX';
     }
 
     public function addService(): void
@@ -166,13 +185,13 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             return;
         }
 
-        $service = Service::findOrFail($this->selected_service_id);
+        $service = Service::query()->findOrFail($this->selected_service_id);
 
         $this->items[] = [
             'item_type' => 'service',
             'item_id' => $service->id,
-            'title' => $service->card_title,
-            'description' => $service->short_description ?? '',
+            'title' => $service->card_title ?? ($service->title ?? 'Service'),
+            'description' => $service->short_description ?? ($service->description ?? ''),
             'quantity' => 1,
             'unit_price' => 0,
         ];
@@ -188,7 +207,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             return;
         }
 
-        $plan = ServicePlan::with('service')->findOrFail($this->selected_service_plan_id);
+        $plan = ServicePlan::query()->with('service')->findOrFail($this->selected_service_plan_id);
 
         $this->items[] = [
             'item_type' => 'service_plan',
@@ -210,14 +229,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             return;
         }
 
-        $plan = \App\Models\PricingPlan::findOrFail($this->selected_pricing_plan_id);
+        $plan = \App\Models\PricingPlan::query()->findOrFail($this->selected_pricing_plan_id);
 
-        $price = $plan->yearly_price ?? ($plan->monthly_price ?? 0);
+        $price = $plan->yearly_price ?? ($plan->monthly_price ?? ($plan->price ?? 0));
 
         $this->items[] = [
             'item_type' => 'pricing_plan',
             'item_id' => $plan->id,
-            'title' => $plan->title ?? 'Pricing Plan',
+            'title' => $plan->title ?? ($plan->name ?? 'Pricing Plan'),
             'description' => $plan->description ?? '',
             'quantity' => 1,
             'unit_price' => $price,
@@ -256,13 +275,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
     public function removeItem(int $index): void
     {
         unset($this->items[$index]);
-
         $this->items = array_values($this->items);
     }
 
     public function subtotal(): float
     {
-        return collect($this->items)->sum(fn($item) => (float) $item['quantity'] * (float) $item['unit_price']);
+        return collect($this->items)->sum(function ($item) {
+            return (float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0);
+        });
     }
 
     public function discountAmount(): float
@@ -270,11 +290,13 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
         $subtotal = $this->subtotal();
         $discount = (float) ($this->discount_value ?: 0);
 
-        return match ($this->discount_type) {
-            'percentage' => ($subtotal * $discount) / 100,
+        $amount = match ($this->discount_type) {
+            'percentage' => ($subtotal * min($discount, 100)) / 100,
             'fixed' => $discount,
             default => 0,
         };
+
+        return min($amount, $subtotal);
     }
 
     public function grandTotal(): float
@@ -286,37 +308,39 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
     {
         $validated = $this->validate();
 
-        $proposal = Proposal::create([
-            'user_id' => $validated['user_id'] ?: null,
-            'company_id' => $validated['company_id'] ?: null,
+        DB::transaction(function () use ($validated) {
+            $proposal = Proposal::query()->create([
+                'user_id' => $validated['user_id'] ?: null,
+                'company_id' => $validated['company_id'] ?: null,
+                'proposal_no' => $this->proposalNo(),
 
-            'proposal_no' => $this->proposalNo(),
+                'customer_name' => $validated['customer_name'],
+                'customer_email' => $validated['customer_email'] ?: null,
+                'customer_phone' => $validated['customer_phone'] ?: null,
+                'company_name' => $validated['company_name'] ?: null,
 
-            'customer_name' => $validated['customer_name'],
-            'customer_email' => $validated['customer_email'] ?: null,
-            'customer_phone' => $validated['customer_phone'] ?: null,
-            'company_name' => $validated['company_name'] ?: null,
+                'subject' => $validated['subject'],
+                'note' => $validated['note'] ?: null,
 
-            'subject' => $validated['subject'],
-            'note' => $validated['note'] ?: null,
+                'discount_type' => $validated['discount_type'],
+                'discount_value' => $validated['discount_value'] ?: 0,
 
-            'discount_type' => $validated['discount_type'],
-            'discount_value' => $validated['discount_value'] ?: 0,
-
-            'status' => 'draft',
-            'valid_until' => $validated['valid_until'] ?: null,
-        ]);
-
-        foreach ($this->items as $item) {
-            $proposal->items()->create([
-                'item_type' => $item['item_type'],
-                'item_id' => $item['item_id'],
-                'title' => $item['title'],
-                'description' => $item['description'] ?: null,
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
+                'status' => 'draft',
+                'valid_until' => $validated['valid_until'] ?: null,
+                'sent_at' => null,
             ]);
-        }
+
+            foreach ($validated['items'] as $item) {
+                $proposal->items()->create([
+                    'item_type' => $item['item_type'],
+                    'item_id' => $item['item_id'] ?? null,
+                    'title' => $item['title'],
+                    'description' => $item['description'] ?: null,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                ]);
+            }
+        });
 
         session()->flash('toast', [
             'type' => 'success',
@@ -328,13 +352,12 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public function discard(): void
     {
-        $this->reset();
+        $this->reset(['user_id', 'company_id', 'customer_search', 'customer_name', 'customer_email', 'customer_phone', 'company_name', 'subject', 'note', 'discount_type', 'discount_value', 'valid_until', 'selected_service_id', 'selected_service_plan_id', 'selected_pricing_plan_id', 'custom_title', 'custom_description', 'custom_quantity', 'custom_unit_price', 'items', 'customer_dropdown_open']);
 
         $this->discount_type = 'none';
         $this->discount_value = '0';
         $this->custom_quantity = '1';
-        $this->items = [];
-        $this->customer_dropdown_open = false;
+        $this->subject = $this->invoiceTemplate->subject_prefix . ' - ';
 
         $this->resetValidation();
 
@@ -517,42 +540,6 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
                 <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                     <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
-                        <span class="material-symbols-outlined text-primary">request_quote</span>
-                        Proposal Details
-                    </h3>
-
-                    <div class="space-y-6">
-                        <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">Subject</label>
-
-                            <input type="text" wire:model.live="subject"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
-                                placeholder="Managed IT Service Proposal" />
-
-                            @error('subject')
-                                <p class="text-sm text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">
-                                Note
-                                <span class="text-xs font-normal text-secondary">(optional)</span>
-                            </label>
-
-                            <textarea wire:model.live="note" rows="4"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
-                                placeholder="Example: Special discount valid for 7 days. Free initial setup included."></textarea>
-
-                            @error('note')
-                                <p class="text-sm text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-                    <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
                         <span class="material-symbols-outlined text-primary">add_shopping_cart</span>
                         Add Services / Plans
                     </h3>
@@ -710,6 +697,42 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             </div>
 
             <div class="col-span-12 space-y-6 lg:col-span-4">
+                                <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
+                        <span class="material-symbols-outlined text-primary">request_quote</span>
+                        Proposal Details
+                    </h3>
+
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Subject</label>
+
+                            <input type="text" wire:model.live="subject"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
+                                placeholder="Managed IT Service Proposal" />
+
+                            @error('subject')
+                                <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">
+                                Note
+                                <span class="text-xs font-normal text-secondary">(optional)</span>
+                            </label>
+
+                            <textarea wire:model.live="note" rows="4"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
+                                placeholder="Example: Special discount valid for 7 days. Free initial setup included."></textarea>
+
+                            @error('note')
+                                <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="mb-5 text-h3 font-h2">Discount & Validity</h3>
 
@@ -722,52 +745,34 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                                 <option value="fixed">Fixed Discount</option>
                                 <option value="percentage">Percentage Discount</option>
                             </select>
+
+                            @error('discount_type')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-on-surface">Discount Value</label>
-                            <input type="number" wire:model.live="discount_value"
+                            <input type="number" step="0.01" wire:model.live="discount_value"
                                 class="mt-2 w-full rounded border border-outline-variant px-4 py-2.5" />
+
+                            @error('discount_value')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-on-surface">Valid Until</label>
                             <input type="date" wire:model.live="valid_until"
                                 class="mt-2 w-full rounded border border-outline-variant px-4 py-2.5" />
+
+                            @error('valid_until')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
                 </div>
 
-                <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 class="mb-5 text-h3 font-h2">Proposal Summary</h3>
-
-                    <div class="space-y-3 rounded-2xl bg-slate-50 p-5">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-secondary">Subtotal</span>
-                            <span class="font-mono">{{ number_format($this->subtotal(), 2) }}</span>
-                        </div>
-
-                        <div class="flex justify-between text-sm">
-                            <span class="text-secondary">Discount</span>
-                            <span
-                                class="font-mono text-red-600">-{{ number_format($this->discountAmount(), 2) }}</span>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-3">
-                            <div class="flex justify-between">
-                                <span class="font-bold text-on-surface">Grand Total</span>
-                                <span class="font-mono text-xl font-bold text-primary">
-                                    {{ number_format($this->grandTotal(), 2) }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-5 rounded-xl bg-blue-50 p-4 text-sm leading-relaxed text-blue-800">
-                        Use the discount field to encourage your customer to buy faster. For example:
-                        “Special 10% discount valid until this week.”
-                    </div>
-                </div>
             </div>
         </div>
     </form>
