@@ -14,4 +14,9 @@ class PricingPlan extends Model
         'features' => 'array',
         'purchase_count' => 'integer',
     ];
+
+    public function pricingOrders()
+    {
+        return $this->hasMany(PricingOrder::class);
+    }
 }

@@ -944,130 +944,130 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             </div>
 
             <!-- Cards -->
-            <!-- Cards -->
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-    @forelse ($this->pricingPlans() as $plan)
-        @php
-            $isPopular = $plan->plan_type === 'business';
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                @forelse ($this->pricingPlans() as $plan)
+                    @php
+                        $isPopular = $plan->plan_type === 'business';
 
-            $cardClass = $isPopular
-                ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/10 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
-                : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
+                        $cardClass = $isPopular
+                            ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/10 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
+                            : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
 
-            $lineClass = $plan->plan_type === 'enterprise'
-                ? 'via-violet-300/70'
-                : 'via-cyan-300/70';
+                        $lineClass = $plan->plan_type === 'enterprise' ? 'via-violet-300/70' : 'via-cyan-300/70';
 
-            $iconBgClass = match ($plan->plan_type) {
-                'business' => 'bg-sky-500/15 text-sky-200',
-                'enterprise' => 'bg-violet-500/15 text-violet-200',
-                default => 'bg-blue-500/15 text-cyan-200',
-            };
+                        $iconBgClass = match ($plan->plan_type) {
+                            'business' => 'bg-sky-500/15 text-sky-200',
+                            'enterprise' => 'bg-violet-500/15 text-violet-200',
+                            default => 'bg-blue-500/15 text-cyan-200',
+                        };
 
-            $typeTextClass = match ($plan->plan_type) {
-                'business' => 'text-sky-200/80',
-                'enterprise' => 'text-violet-200/80',
-                default => 'text-cyan-200/80',
-            };
+                        $typeTextClass = match ($plan->plan_type) {
+                            'business' => 'text-sky-200/80',
+                            'enterprise' => 'text-violet-200/80',
+                            default => 'text-cyan-200/80',
+                        };
 
-            $features = is_array($plan->features) ? $plan->features : [];
-        @endphp
+                        $features = is_array($plan->features) ? $plan->features : [];
+                    @endphp
 
-        <div
-            class="group relative rounded-[30px] border {{ $cardClass }} p-6 sm:p-7 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
+                    <div
+                        class="group relative rounded-[30px] border {{ $cardClass }} p-6 sm:p-7 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
 
-            <div class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent {{ $lineClass }} to-transparent">
-            </div>
+                        <div
+                            class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent {{ $lineClass }} to-transparent">
+                        </div>
 
-            @if ($isPopular)
-                <div class="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span
-                        class="inline-flex rounded-full border border-cyan-300 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-950 backdrop-blur-xl">
-                        Most Popular
-                    </span>
-                </div>
-            @endif
-
-            <div class="flex items-start justify-between gap-4 {{ $isPopular ? 'pt-4' : '' }}">
-                <div>
-                    <p class="text-sm font-medium uppercase tracking-[0.22em] {{ $typeTextClass }}">
-                        {{ $plan->plan_type }}
-                    </p>
-
-                    <h3 class="mt-2 text-2xl font-bold text-white">
-                        {{ $plan->title }}
-                    </h3>
-                </div>
-
-                <div
-                    class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 {{ $iconBgClass }}">
-                    <span class="material-symbols-outlined">
-                        {{ $plan->icon ?: 'workspace_premium' }}
-                    </span>
-                </div>
-            </div>
-
-            <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                {{ $plan->description ?: 'Flexible IT support package designed for your business growth.' }}
-            </p>
-
-            <div class="mt-6">
-                <div x-show="billing === 'monthly'" x-transition>
-                    <div class="flex items-end gap-2">
-                        @if ($plan->monthly_price)
-                            <span class="text-4xl font-bold text-white">
-                                ৳ {{ number_format($plan->monthly_price, 0) }}
-                            </span>
-                            <span class="pb-1 text-sm text-blue-100/60">/ month</span>
-                        @else
-                            <span class="text-3xl font-bold text-white">Custom</span>
+                        @if ($isPopular)
+                            <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                                <span
+                                    class="inline-flex rounded-full border border-cyan-300 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-950 backdrop-blur-xl">
+                                    Most Popular
+                                </span>
+                            </div>
                         @endif
+
+                        <div class="flex items-start justify-between gap-4 {{ $isPopular ? 'pt-4' : '' }}">
+                            <div>
+                                <p class="text-sm font-medium uppercase tracking-[0.22em] {{ $typeTextClass }}">
+                                    {{ $plan->plan_type }}
+                                </p>
+
+                                <h3 class="mt-2 text-2xl font-bold text-white">
+                                    {{ $plan->title }}
+                                </h3>
+                            </div>
+
+                            <div
+                                class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 {{ $iconBgClass }}">
+                                <span class="material-symbols-outlined">
+                                    {{ $plan->icon ?: 'workspace_premium' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                            {{ $plan->description ?: 'Flexible IT support package designed for your business growth.' }}
+                        </p>
+
+                        <div class="mt-6">
+                            <div x-show="billing === 'monthly'" x-transition>
+                                <div class="flex items-end gap-2">
+                                    @if ($plan->monthly_price)
+                                        <span class="text-4xl font-bold text-white">
+                                            ৳ {{ number_format($plan->monthly_price, 0) }}
+                                        </span>
+                                        <span class="pb-1 text-sm text-blue-100/60">/ month</span>
+                                    @else
+                                        <span class="text-3xl font-bold text-white">Custom</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div x-show="billing === 'yearly'" x-transition style="display: none;">
+                                <div class="flex items-end gap-2">
+                                    @if ($plan->yearly_price)
+                                        <span class="text-4xl font-bold text-white">
+                                            ৳ {{ number_format($plan->yearly_price, 0) }}
+                                        </span>
+                                        <span class="pb-1 text-sm text-blue-100/60">/ year</span>
+                                    @else
+                                        <span class="text-3xl font-bold text-white">Custom</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <a :href="`{{ route('client.checkout.pricing', $plan->id) }}?billing=${billing}`" wire:navigate
+                            class="mt-6 inline-flex w-full items-center justify-center rounded-full {{ $isPopular ? 'bg-linear-to-r from-blue-500 to-sky-400 shadow-lg shadow-blue-500/30 hover:-translate-y-0.5' : 'border border-white/15 bg-white/8 hover:bg-white/12' }} px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition">
+                            Choose Plan
+                        </a>
+
+                        <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                            @forelse ($features as $feature)
+                                <li class="pricing-li">
+                                    {{ $feature }}
+                                </li>
+                            @empty
+                                <li class="pricing-li">
+                                    Custom features available on request
+                                </li>
+                            @endforelse
+                        </ul>
+
+                        {{-- @if ($plan->purchase_count > 0)
+                            <div
+                                class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-blue-100/70">
+                                {{ $plan->purchase_count }} customers already selected this plan.
+                            </div>
+                        @endif --}}
                     </div>
-                </div>
-
-                <div x-show="billing === 'yearly'" x-transition style="display: none;">
-                    <div class="flex items-end gap-2">
-                        @if ($plan->yearly_price)
-                            <span class="text-4xl font-bold text-white">
-                                ৳ {{ number_format($plan->yearly_price, 0) }}
-                            </span>
-                            <span class="pb-1 text-sm text-blue-100/60">/ year</span>
-                        @else
-                            <span class="text-3xl font-bold text-white">Custom</span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <a href="#contact"
-                class="mt-6 inline-flex w-full items-center justify-center rounded-full {{ $isPopular ? 'bg-linear-to-r from-blue-500 to-sky-400 shadow-lg shadow-blue-500/30 hover:-translate-y-0.5' : 'border border-white/15 bg-white/8 hover:bg-white/12' }} px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition">
-                Choose Plan
-            </a>
-
-            <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
-                @forelse ($features as $feature)
-                    <li class="pricing-li">
-                        {{ $feature }}
-                    </li>
                 @empty
-                    <li class="pricing-li">
-                        Custom features available on request
-                    </li>
+                    <div
+                        class="col-span-1 rounded-[30px] border border-white/10 bg-white/6 p-8 text-center text-blue-100/70 backdrop-blur-2xl lg:col-span-3">
+                        No pricing plan found. Please add active pricing plans from admin panel.
+                    </div>
                 @endforelse
-            </ul>
-
-            @if ($plan->purchase_count > 0)
-                <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-blue-100/70">
-                    {{ $plan->purchase_count }} customers already selected this plan.
-                </div>
-            @endif
-        </div>
-    @empty
-        <div class="col-span-1 rounded-[30px] border border-white/10 bg-white/6 p-8 text-center text-blue-100/70 backdrop-blur-2xl lg:col-span-3">
-            No pricing plan found. Please add active pricing plans from admin panel.
-        </div>
-    @endforelse
-</div>
+            </div>
         </div>
     </section>
 

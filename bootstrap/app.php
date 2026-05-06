@@ -15,7 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => App\Http\Middleware\RoleMiddleware::class,
         ]);
-        $middleware->redirectGuestsTo(fn (Request $request) => route('home'));
+        $middleware->redirectGuestsTo(fn(Request $request) => route('home'));
+
+        $middleware->validateCsrfTokens(except: [
+            'sslcommerz/success',
+            'sslcommerz/fail',
+            'sslcommerz/cancel',
+            'sslcommerz/ipn',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

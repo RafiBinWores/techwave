@@ -279,14 +279,65 @@ new class extends Component {
                 </span>
             </a>
 
-            <a href="{{ route('admin.settings.invoice-templates') }}" wire:navigate
-                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                <span class="material-symbols-outlined shrink-0">receipt_long</span>
-                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                    Proposal Template
-                </span>
-            </a>
+            {{-- Mail Templates Dropdown --}}
+<div x-data="{ open: {{ request()->routeIs('admin.settings.invoice-templates') ? 'true' : 'false' }} }" class="space-y-1">
+    {{-- Dropdown Button --}}
+    <button type="button"
+        @click="open = !open"
+        class="flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined shrink-0">mail</span>
+
+            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                Mail Templates
+            </span>
+        </div>
+
+        <span x-show="!sidebarCollapsed"
+            class="material-symbols-outlined text-lg transition-transform duration-200"
+            :class="open ? 'rotate-180' : ''">
+            expand_more
+        </span>
+    </button>
+
+    {{-- Dropdown Items --}}
+    <div x-show="open && !sidebarCollapsed"
+        x-collapse
+        class="ml-4 space-y-1 border-l border-slate-200 pl-3">
+
+        <a href="{{ route('admin.settings.invoice-templates') }}"
+            wire:navigate
+            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+
+            <span class="material-symbols-outlined shrink-0 text-[20px]">
+                receipt_long
+            </span>
+
+            <span class="font-manrope text-sm font-medium">
+                Proposal Template
+            </span>
+        </a>
+
+        {{-- Future link example --}}
+        {{-- 
+        <a href="{{ route('admin.settings.verify-email-template') }}"
+            wire:navigate
+            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+
+            <span class="material-symbols-outlined shrink-0 text-[20px]">
+                mark_email_read
+            </span>
+
+            <span class="font-manrope text-sm font-medium">
+                Verification Template
+            </span>
+        </a>
+        --}}
+    </div>
+</div>
         </div>
     </nav>
 

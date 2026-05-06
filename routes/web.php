@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SslCommerzController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -95,15 +96,35 @@ Route::middleware('guest')->group(function () {
 | Client protected routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'role:client,admin'])->prefix('account')->name('account.')->group(function () {
-    Route::livewire('/dashboard', 'pages::client.account.dashboard')->name('dashboard');
+Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () {
+    Route::livewire('account/dashboard', 'pages::client.account.dashboard')->name('account.dashboard');
 
-    Route::livewire('/services', 'pages::client.account.services')->name('services');
-    Route::livewire('/tickets', 'pages::client.account.tickets')->name('tickets');
-    Route::livewire('/proposals', 'pages::client.account.proposals')->name('proposals');
-    Route::livewire('/profile', 'pages::client.account.profile')->name('profile');
-    Route::livewire('/change-password', 'pages::client.account.change-password')->name('password');
+    Route::livewire('account/services', 'pages::client.account.services')->name('account.services');
+    Route::livewire('account/tickets', 'pages::client.account.tickets')->name('account.tickets');
+    Route::livewire('account/proposals', 'pages::client.account.proposals')->name('account.proposals');
+    Route::livewire('account/profile', 'pages::client.account.profile')->name('account.profile');
+    Route::livewire('account/change-password', 'pages::client.account.change-password')->name('account.change-password');
+
+    // Pricing and orders
+    Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
+
+    Route::livewire('/checkout/success/{order}', 'pages::client.checkout.checkout-success')->name('client.checkout.success');
+
+    Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])
+        ->name('client.checkout.pricing.pay');
 });
+
+Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])
+    ->name('sslcommerz.success');
+
+Route::match(['get', 'post'], '/sslcommerz/fail', [SslCommerzController::class, 'fail'])
+    ->name('sslcommerz.fail');
+
+Route::match(['get', 'post'], '/sslcommerz/cancel', [SslCommerzController::class, 'cancel'])
+    ->name('sslcommerz.cancel');
+
+Route::match(['get', 'post'], '/sslcommerz/ipn', [SslCommerzController::class, 'ipn'])
+    ->name('sslcommerz.ipn');
 
 
 /*
@@ -181,5 +202,4 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // Settings
     Route::livewire('/site-settings', 'pages::admin.settings.site-setting')->name('settings.site-setting');
     Route::livewire('/invoice-templates', 'pages::admin.settings.invoice-template')->name('settings.invoice-templates');
-
 });
