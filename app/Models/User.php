@@ -70,6 +70,7 @@ class User extends Authenticatable implements MustVerifyEmail
             UserRole::ADMIN_MANAGER,
         ])) {
             $this->notify(new AdminResetPasswordNotification($token));
+
             return;
         }
 

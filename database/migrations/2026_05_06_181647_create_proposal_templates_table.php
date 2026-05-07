@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('invoice_templates', function (Blueprint $table) {
+        Schema::create('proposal_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name')->default('Default Template');
-            $table->string('subject_prefix')->default('Invoice');
-            $table->string('title')->default('Service Invoice');
+            $table->string('subject_prefix')->default('Proposal');
+            $table->string('title')->default('Service Proposal');
+            $table->string('greeting')->default('Dear valued customer,');
+            $table->text('intro_text')->nullable();
             $table->text('footer_text')->nullable();
             $table->text('terms_text')->nullable();
             $table->string('brand_color')->default('#0F52BA');
@@ -29,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('invoice_templates');
+        Schema::dropIfExists('proposal_templates');
     }
 };

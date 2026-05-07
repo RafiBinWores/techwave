@@ -1,30 +1,5 @@
-<?php
-
-use App\Models\PricingOrder;
-use Illuminate\Support\Facades\Auth;
-// use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
-use Livewire\Component;
-
-new #[Title('Payment Successful')] class extends Component {
-    public PricingOrder $order;
-
-    public function mount(PricingOrder $order): void
-    {
-        $order->loadMissing(['pricingPlan', 'user']);
-
-        abort_if($order->payment_status !== 'paid', 404);
-
-        if (Auth::check() && $order->user_id && Auth::id() !== $order->user_id) {
-            abort(403);
-        }
-
-        $this->order = $order;
-    }
-};
-?>
-
-    <section class="min-h-screen px-4 py-20 text-white">
+<div>
+    <section class="min-h-screen bg-slate-950 px-4 py-20 text-white">
         <div class="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl">
             <div
                 class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
@@ -79,3 +54,4 @@ new #[Title('Payment Successful')] class extends Component {
             </a>
         </div>
     </section>
+</div>

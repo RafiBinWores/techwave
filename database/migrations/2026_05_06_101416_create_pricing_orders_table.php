@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('billing_cycle', ['monthly', 'yearly']);
             $table->decimal('amount', 10, 2);
             $table->string('currency')->default('BDT');
-            $table->enum('payment_status', ['pending','paid','failed','cancelled',])->default('pending');
+            $table->enum('payment_status', ['pending', 'paid', 'failed', 'cancelled'])->default('pending');
             $table->string('ssl_status')->nullable();
             $table->string('bank_transaction_id')->nullable();
             $table->string('val_id')->nullable();

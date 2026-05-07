@@ -1,27 +1,31 @@
 <?php
 
-use App\Models\InvoiceTemplate;
+use App\Models\ProposalTemplate;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Component {
-    public InvoiceTemplate $template;
+new #[Layout('layouts.admin-app')] #[Title('Proposal Template')] class extends Component {
+    public ProposalTemplate $template;
 
     public string $name = '';
     public string $subject_prefix = '';
     public string $title = '';
+    public string $greeting = '';
+    public string $intro_text = '';
     public string $footer_text = '';
     public string $terms_text = '';
     public string $brand_color = '#0F52BA';
 
     public function mount(): void
     {
-        $this->template = InvoiceTemplate::activeTemplate();
+        $this->template = ProposalTemplate::activeTemplate();
 
         $this->name = $this->template->name;
         $this->subject_prefix = $this->template->subject_prefix;
         $this->title = $this->template->title;
+        $this->greeting = $this->template->greeting;
+        $this->intro_text = $this->template->intro_text ?? '';
         $this->footer_text = $this->template->footer_text ?? '';
         $this->terms_text = $this->template->terms_text ?? '';
         $this->brand_color = $this->template->brand_color;
@@ -33,6 +37,8 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
             'name' => ['required', 'string', 'max:255'],
             'subject_prefix' => ['required', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
+            'greeting' => ['required', 'string', 'max:255'],
+            'intro_text' => ['nullable', 'string'],
             'footer_text' => ['nullable', 'string'],
             'terms_text' => ['nullable', 'string'],
             'brand_color' => ['required', 'string', 'max:20'],
@@ -43,21 +49,23 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
     {
         $validated = $this->validate();
 
-        InvoiceTemplate::query()->update(['is_active' => false]);
+        ProposalTemplate::query()->update(['is_active' => false]);
 
         $this->template->update([
             'name' => $validated['name'],
             'subject_prefix' => $validated['subject_prefix'],
             'title' => $validated['title'],
-            'footer_text' => filled($validated['footer_text']) ? $validated['footer_text'] : null,
-            'terms_text' => filled($validated['terms_text']) ? $validated['terms_text'] : null,
+            'greeting' => $validated['greeting'],
+            'intro_text' => $validated['intro_text'] ?: null,
+            'footer_text' => $validated['footer_text'] ?: null,
+            'terms_text' => $validated['terms_text'] ?: null,
             'brand_color' => $validated['brand_color'],
             'is_active' => true,
         ]);
 
         $this->template = $this->template->fresh();
 
-        $this->dispatch('toast', message: 'Invoice template updated successfully.', type: 'success');
+        $this->dispatch('toast', message: 'Proposal template updated successfully.', type: 'success');
     }
 };
 ?>
@@ -65,29 +73,27 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
 <div>
     <div class="mx-auto w-full max-w-7xl space-y-8">
         <div>
-            <h1 class="text-h1 font-h1 text-on-surface">Invoice Template</h1>
+            <h1 class="text-h1 font-h1 text-on-surface">Proposal Template</h1>
             <p class="mt-1 text-body-md text-secondary">
-                Customize your invoice design and content. Future invoice emails will use this template.
+                Customize the proposal email design and content. Future proposal emails will use this template.
             </p>
         </div>
 
         <form wire:submit.prevent="save">
             <div class="grid grid-cols-12 gap-6">
+                {{-- Left Form --}}
                 <div class="col-span-12 space-y-6 lg:col-span-6">
                     <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                         <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
                             <span class="material-symbols-outlined text-primary">receipt_long</span>
-                            Template Content
+                            Proposal Template Content
                         </h3>
 
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div class="space-y-2">
                                 <label class="block font-label-md text-on-surface">Template Name</label>
-                                <input
-                                    type="text"
-                                    wire:model.live="name"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                />
+                                <input type="text" wire:model.live="name"
+                                    class="w-full rounded border border-outline-variant px-4 py-2.5" />
                                 @error('name')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
@@ -95,36 +101,47 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
 
                             <div class="space-y-2">
                                 <label class="block font-label-md text-on-surface">Subject Prefix</label>
-                                <input
-                                    type="text"
-                                    wire:model.live="subject_prefix"
+                                <input type="text" wire:model.live="subject_prefix"
                                     class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                />
+                                    placeholder="Proposal" />
                                 @error('subject_prefix')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div class="space-y-2 md:col-span-2">
-                                <label class="block font-label-md text-on-surface">Invoice Title</label>
-                                <input
-                                    type="text"
-                                    wire:model.live="title"
+                                <label class="block font-label-md text-on-surface">Proposal Title</label>
+                                <input type="text" wire:model.live="title"
                                     class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                />
+                                    placeholder="Service Proposal" />
                                 @error('title')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div class="space-y-2 md:col-span-2">
-                                <label class="block font-label-md text-on-surface">Terms Text</label>
-                                <textarea
-                                    wire:model.live="terms_text"
-                                    rows="4"
+                                <label class="block font-label-md text-on-surface">Greeting</label>
+                                <input type="text" wire:model.live="greeting"
                                     class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="Net terms apply. Please contact support for invoice related queries."
-                                ></textarea>
+                                    placeholder="Dear valued customer," />
+                                @error('greeting')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-2 md:col-span-2">
+                                <label class="block font-label-md text-on-surface">Intro Text</label>
+                                <textarea wire:model.live="intro_text" rows="4" class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                    placeholder="Write the proposal intro message..."></textarea>
+                                @error('intro_text')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-2 md:col-span-2">
+                                <label class="block font-label-md text-on-surface">Terms Text</label>
+                                <textarea wire:model.live="terms_text" rows="4" class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                    placeholder="Payment terms, validity, support terms..."></textarea>
                                 @error('terms_text')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
@@ -132,12 +149,8 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
 
                             <div class="space-y-2 md:col-span-2">
                                 <label class="block font-label-md text-on-surface">Footer Text</label>
-                                <textarea
-                                    wire:model.live="footer_text"
-                                    rows="3"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="Empowering your digital infrastructure."
-                                ></textarea>
+                                <textarea wire:model.live="footer_text" rows="3" class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                    placeholder="Footer note..."></textarea>
                                 @error('footer_text')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
@@ -146,17 +159,13 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                             <div class="space-y-2">
                                 <label class="block font-label-md text-on-surface">Brand Color</label>
                                 <div class="flex gap-3">
-                                    <input
-                                        type="color"
-                                        wire:model.live="brand_color"
-                                        class="h-11 w-16 rounded border border-outline-variant"
-                                    />
-                                    <input
-                                        type="text"
-                                        wire:model.live="brand_color"
-                                        class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    />
+                                    <input type="color" wire:model.live="brand_color"
+                                        class="h-11 w-16 rounded border border-outline-variant" />
+
+                                    <input type="text" wire:model.live="brand_color"
+                                        class="w-full rounded border border-outline-variant px-4 py-2.5" />
                                 </div>
+
                                 @error('brand_color')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
@@ -166,15 +175,13 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
 
                     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div class="flex justify-end">
-                            <button
-                                type="submit"
-                                wire:loading.attr="disabled"
-                                class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90"
-                            >
-                                <span wire:loading.remove wire:target="save">Save Template</span>
+                            <button type="submit" wire:loading.attr="disabled"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70">
+                                <span wire:loading.remove wire:target="save">Save Proposal Template</span>
 
                                 <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
-                                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                    <span
+                                        class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
                                     Saving...
                                 </span>
                             </button>
@@ -182,9 +189,17 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                     </div>
                 </div>
 
+                {{-- Right Preview --}}
                 <div class="col-span-12 lg:col-span-6">
                     <div class="sticky top-20 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <h3 class="mb-5 text-h3 font-h2">Live Preview</h3>
+                        <div class="mb-5 flex items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-h3 font-h2">Live Preview</h3>
+                                <p class="mt-1 text-xs text-secondary">
+                                    Preview of your proposal email/template layout.
+                                </p>
+                            </div>
+                        </div>
 
                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                             {{-- Header --}}
@@ -192,7 +207,8 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                 <div class="flex items-start justify-between gap-4">
                                     <div class="w-[55%]">
                                         <div class="flex items-center gap-3">
-                                            <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded bg-blue-50 ring-1 ring-blue-100">
+                                            <div
+                                                class="flex h-12 w-12 items-center justify-center overflow-hidden rounded bg-blue-50 ring-1 ring-blue-100">
                                                 <span class="text-[10px] font-semibold text-slate-400">Logo</span>
                                             </div>
 
@@ -200,8 +216,9 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                                 <h1 class="text-2xl font-bold uppercase tracking-tight text-slate-900">
                                                     TechWave
                                                 </h1>
+
                                                 <p class="mt-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                                                    {{ $title ?: 'Service Invoice' }}
+                                                    {{ $title ?: 'Service Proposal' }}
                                                 </p>
                                             </div>
                                         </div>
@@ -216,38 +233,78 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
 
                                     <div class="w-[45%] text-right">
                                         <h2 class="mb-4 text-3xl font-extrabold" style="color: {{ $brand_color }}">
-                                            INVOICE
+                                            PROPOSAL
                                         </h2>
 
                                         <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-right text-xs">
-                                            <span class="uppercase tracking-wider text-slate-400">Invoice #</span>
-                                            <span class="font-mono font-bold text-slate-900">INV-2026-0892</span>
+                                            <span class="uppercase tracking-wider text-slate-400">Proposal #</span>
+                                            <span class="font-mono font-bold text-slate-900">PROP-2026-0892</span>
 
                                             <span class="uppercase tracking-wider text-slate-400">Date Issued</span>
                                             <span class="text-slate-600">May 05, 2026</span>
 
+                                            <span class="uppercase tracking-wider text-slate-400">Valid Until</span>
+                                            <span class="font-bold" style="color: {{ $brand_color }}">May 12,
+                                                2026</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Bill To / Details --}}
-                            <div class="px-6 pb-2">
-                                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                            {{-- Customer / Details --}}
+                            <div class="px-6">
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div class="rounded-xl border border-slate-200 bg-white p-4">
                                         <p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                            Bill To
+                                            Customer Details
                                         </p>
 
                                         <div class="space-y-1 text-xs leading-relaxed text-slate-600">
-                                            <p><strong class="text-slate-900">Name:</strong> Mr. Customer Name</p>
-                                            <p><strong class="text-slate-900">Email:</strong> customer@email.com</p>
-                                            <p><strong class="text-slate-900">Phone:</strong> +880 1XXX XXXXXX</p>
+                                            <p><strong class="text-slate-900">Mr. Customer Name</strong></p>
+                                            <p>customer@email.com</p>
+                                            <p>+880 1XXX XXXXXX</p>
                                             <p class="font-semibold" style="color: {{ $brand_color }}">
-                                                <strong class="text-slate-900">Company :</strong> Customer Company
+                                                Customer Company
                                             </p>
                                         </div>
                                     </div>
+
+                                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                                        <p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                            Proposal Details
+                                        </p>
+
+                                        <div class="space-y-1 text-xs leading-relaxed text-slate-600">
+                                            <p>
+                                                <strong>Subject:</strong>
+                                                {{ $subject_prefix ?: 'Proposal' }} - Managed IT Service
+                                            </p>
+                                            <p><strong>Status:</strong> Sent</p>
+
+                                            <div class="mt-2 rounded-lg border-l-4 bg-slate-50 p-2"
+                                                style="border-color: {{ $brand_color }}">
+                                                <p class="text-[11px] text-slate-500">
+                                                    <strong>Note:</strong> Special discount valid for 7 days.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+
+                            {{-- Dynamic intro --}}
+                            <div class="px-6">
+                                <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                    <p class="text-sm font-semibold text-slate-900">
+                                        {{ $greeting ?: 'Dear valued customer,' }}
+                                    </p>
+
+                                    <p class="mt-2 text-xs leading-relaxed text-slate-500">
+                                        {{ $intro_text ?: 'Thank you for your interest in our services. Please review the proposal details below.' }}
+                                    </p>
+                                </div>
+                            </div>
+
 
                             {{-- Items --}}
                             <div class="px-6 pt-4">
@@ -255,10 +312,11 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                     <table class="w-full border-collapse text-left text-xs">
                                         <thead>
                                             <tr class="text-white" style="background: {{ $brand_color }}">
-                                                <th class="px-4 py-3 uppercase tracking-wider">Plan</th>
+                                                <th class="px-4 py-3 uppercase tracking-wider">Service</th>
                                                 <th class="px-4 py-3 uppercase tracking-wider">Description</th>
-                                                <th class="px-4 py-3 text-center uppercase tracking-wider">Plan Type</th>
-                                                <th class="px-4 py-3 text-right uppercase tracking-wider">Unit Price</th>
+                                                <th class="px-4 py-3 text-center uppercase tracking-wider">Qty</th>
+                                                <th class="px-4 py-3 text-right uppercase tracking-wider">Unit Price
+                                                </th>
                                                 <th class="px-4 py-3 text-right uppercase tracking-wider">Total</th>
                                             </tr>
                                         </thead>
@@ -271,9 +329,12 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                                 <td class="px-4 py-4 align-top text-[11px] text-slate-500">
                                                     Comprehensive security and performance audit.
                                                 </td>
-                                                <td class="px-4 py-4 text-center align-top text-slate-600">Monthly</td>
-                                                <td class="px-4 py-4 text-right align-top text-slate-600">৳2,450.00</td>
-                                                <td class="px-4 py-4 text-right align-top font-bold text-slate-900">৳2,450.00</td>
+                                                <td class="px-4 py-4 text-center align-top text-slate-600">1.00</td>
+                                                <td class="px-4 py-4 text-right align-top text-slate-600">৳2,450.00
+                                                </td>
+                                                <td class="px-4 py-4 text-right align-top font-bold text-slate-900">
+                                                    ৳2,450.00
+                                                </td>
                                             </tr>
 
                                             <tr class="bg-slate-50">
@@ -283,9 +344,12 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                                 <td class="px-4 py-4 align-top text-[11px] text-slate-500">
                                                     Migration of legacy system to cloud.
                                                 </td>
-                                                <td class="px-4 py-4 text-center align-top text-slate-600">Yearly</td>
-                                                <td class="px-4 py-4 text-right align-top text-slate-600">৳12,000.00</td>
-                                                <td class="px-4 py-4 text-right align-top font-bold text-slate-900">৳24,000.00</td>
+                                                <td class="px-4 py-4 text-center align-top text-slate-600">2.00</td>
+                                                <td class="px-4 py-4 text-right align-top text-slate-600">৳12,000.00
+                                                </td>
+                                                <td class="px-4 py-4 text-right align-top font-bold text-slate-900">
+                                                    ৳24,000.00
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -307,11 +371,15 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                                 <span class="font-mono text-red-600">-৳1,500.00</span>
                                             </div>
 
-                                            <div class="flex items-center justify-between border-t-2 pt-3" style="border-color: {{ $brand_color }}">
-                                                <span class="text-xl font-bold uppercase" style="color: {{ $brand_color }}">
+                                            <div class="flex items-center justify-between border-t-2 pt-3"
+                                                style="border-color: {{ $brand_color }}">
+                                                <span class="text-xl font-bold uppercase"
+                                                    style="color: {{ $brand_color }}">
                                                     Total Amount
                                                 </span>
-                                                <span class="text-2xl font-extrabold" style="color: {{ $brand_color }}">
+
+                                                <span class="text-2xl font-extrabold"
+                                                    style="color: {{ $brand_color }}">
                                                     ৳24,950.00
                                                 </span>
                                             </div>
@@ -327,8 +395,9 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                         <h4 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                             Terms & Conditions
                                         </h4>
+
                                         <p class="text-xs leading-relaxed text-slate-500">
-                                            {{ $terms_text ?: 'Net terms apply. Please contact support for invoice related queries.' }}
+                                            {{ $terms_text ?: 'This proposal is valid for the mentioned period. Payment terms and service delivery timeline will be confirmed after approval.' }}
                                         </p>
                                     </div>
 
@@ -336,6 +405,7 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                                         <p class="mb-1 text-xl font-bold" style="color: {{ $brand_color }}">
                                             Thank you for your business!
                                         </p>
+
                                         <p class="text-xs text-slate-400">
                                             {{ $footer_text ?: 'Empowering your digital infrastructure.' }}
                                         </p>
@@ -345,7 +415,7 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Template')] class extends Co
                         </div>
 
                         <p class="mt-3 text-center text-[11px] text-slate-400">
-                            This preview follows your invoice template migration structure.
+                            This preview uses the active proposal template structure.
                         </p>
                     </div>
                 </div>

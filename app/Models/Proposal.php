@@ -46,7 +46,7 @@ class Proposal extends Model
 
     public function subtotal(): float
     {
-        return $this->items->sum(fn($item) => (float) $item->quantity * (float) $item->unit_price);
+        return $this->items->sum(fn ($item) => (float) $item->quantity * (float) $item->unit_price);
     }
 
     public function discountAmount(): float

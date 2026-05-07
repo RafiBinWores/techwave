@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
     'instagram_url',
     'youtube_url',
     'github_url',
-    'whatsapp_url'
+    'whatsapp_url',
 ])]
 class SiteSetting extends Model
 {

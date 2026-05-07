@@ -3,7 +3,6 @@
 use App\Http\Controllers\SslCommerzController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +23,7 @@ Route::livewire('/tools', 'pages::client.tools.index')->name('client.tools.index
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs.index');
 Route::livewire('/blogs/{slug}', 'pages::client.blogs.details')->name('client.blogs.details');
 
-//About
+// About
 Route::livewire('/about', 'pages::client.about')->name('client.about');
 
 // Contact
@@ -58,7 +57,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, string $id, 
 })->middleware('signed')->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return redirect()->route('home')->with('auth_error', 'Please login first to resend the verification email.');
     }
 
@@ -72,7 +71,6 @@ Route::post('/email/verification-notification', function (Request $request) {
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
 Route::livewire('/verified-success', 'pages::client.auth.verified-success')->name('verified.success');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -89,7 +87,6 @@ Route::middleware('guest')->group(function () {
     Route::livewire('/admin/reset-password/{token}', 'pages::admin.auth.reset-password')
         ->name('admin.password.reset');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -108,10 +105,9 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Pricing and orders
     Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
 
-    Route::livewire('/checkout/success/{order}', 'pages::client.checkout.checkout-success')->name('client.checkout.success');
+    Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');
 
-    Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])
-        ->name('client.checkout.pricing.pay');
+    Route::livewire('/checkout/success/{order}', 'pages::client.checkout.checkout-success')->name('client.checkout.success');
 });
 
 Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])
@@ -125,7 +121,6 @@ Route::match(['get', 'post'], '/sslcommerz/cancel', [SslCommerzController::class
 
 Route::match(['get', 'post'], '/sslcommerz/ipn', [SslCommerzController::class, 'ipn'])
     ->name('sslcommerz.ipn');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -202,4 +197,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // Settings
     Route::livewire('/site-settings', 'pages::admin.settings.site-setting')->name('settings.site-setting');
     Route::livewire('/invoice-templates', 'pages::admin.settings.invoice-template')->name('settings.invoice-templates');
+    Route::livewire('/proposal-templates', 'pages::admin.settings.proposal-template')->name('settings.proposal-templates');
+
+    // Order management
+    Route::livewire('/orders', 'pages::admin.orders.index')->name('orders.index');
 });

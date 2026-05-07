@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
     'published_at',
     'meta_title',
     'meta_description',
-    'meta_keywords'
+    'meta_keywords',
 ])]
 class Blog extends Model
 {

@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Model;
     'name',
     'subject_prefix',
     'title',
+    'greeting',
+    'intro_text',
     'footer_text',
     'terms_text',
     'brand_color',
     'is_active',
 ])]
-class InvoiceTemplate extends Model
+class ProposalTemplate extends Model
 {
     protected $casts = [
         'is_active' => 'boolean',
@@ -31,10 +33,12 @@ class InvoiceTemplate extends Model
         return static::query()->firstOrCreate([
             'name' => 'Default Template',
         ], [
-            'subject_prefix' => 'Invoice',
-            'title' => 'Service Invoice',
+            'subject_prefix' => 'Proposal',
+            'title' => 'Service Proposal',
+            'greeting' => 'Dear valued customer,',
+            'intro_text' => 'We have prepared a proposal for your selected services.',
             'footer_text' => 'Thank you for choosing us.',
-            'terms_text' => 'This Invoice is valid until the mentioned validity date.',
+            'terms_text' => 'This proposal is valid until the mentioned validity date.',
             'brand_color' => '#0F52BA',
             'is_active' => true,
         ]);

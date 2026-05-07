@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['service_id', 'name', 'slug', 'badge', 'description', 'price', 'features', 'buy_url', 'sort_order', 'is_active',])]
+#[Fillable(['service_id', 'name', 'slug', 'badge', 'description', 'price', 'features', 'buy_url', 'sort_order', 'is_active'])]
 class ServicePlan extends Model
 {
     protected $casts = [

@@ -10,7 +10,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 class AdminResetPasswordNotification extends BaseResetPassword implements ShouldQueue
 {
     use Queueable;
-    
+
     public function toMail($notifiable): MailMessage
     {
         $resetUrl = url(route('admin.password.reset', [

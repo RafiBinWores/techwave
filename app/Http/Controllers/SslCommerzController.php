@@ -3,17 +3,158 @@
 namespace App\Http\Controllers;
 
 use App\Library\SslCommerz\SslCommerzNotification;
+use App\Mail\OrderInvoiceMail;
 use App\Models\PricingOrder;
 use App\Models\PricingPlan;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class SslCommerzController extends Controller
 {
+    public function pay(Request $request, PricingPlan $pricingPlan)
+    {
+        abort_if($pricingPlan->status !== 'active', 404);
+
+        $validated = $request->validate([
+            'billing' => ['required', 'in:monthly,yearly'],
+
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_email' => ['required', 'email', 'max:255'],
+            'customer_phone' => ['required', 'string', 'max:30'],
+            'phone_country' => ['required', 'string', 'size:2'],
+            'phone_e164' => ['required', 'string', 'max:30', 'regex:/^\+[1-9]\d{7,14}$/'],
+
+            'customer_address' => ['required', 'string', 'max:500'],
+            'customer_city' => ['required', 'string', 'max:100'],
+            'customer_postcode' => ['required', 'string', 'max:20'],
+        ], [
+            'phone_e164.regex' => 'Please enter a valid phone number with country code.',
+        ]);
+
+        $subtotal = (float) (
+            $validated['billing'] === 'yearly'
+            ? $pricingPlan->yearly_price
+            : $pricingPlan->monthly_price
+        );
+
+        abort_if($subtotal <= 0, 404);
+
+        $taxRate = 0.15;
+        $taxAmount = round($subtotal * $taxRate, 2);
+        $totalAmount = round($subtotal + $taxAmount, 2);
+
+        $transactionId = 'TW-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6));
+
+        $order = PricingOrder::query()->create([
+            'user_id' => Auth::id(),
+            'pricing_plan_id' => $pricingPlan->id,
+
+            'order_no' => 'ORD-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(5)),
+            'transaction_id' => $transactionId,
+
+            'billing_cycle' => $validated['billing'],
+
+            // Better to save subtotal, tax, and final amount separately
+            'subtotal' => $subtotal,
+            'tax_rate' => $taxRate * 100,
+            'tax_amount' => $taxAmount,
+            'amount' => $totalAmount,
+
+            'currency' => 'BDT',
+            'payment_status' => 'pending',
+
+            'customer_name' => $validated['customer_name'],
+            'customer_email' => $validated['customer_email'],
+            'customer_phone' => $validated['customer_phone'],
+            'phone_country' => $validated['phone_country'],
+            'phone_e164' => $validated['phone_e164'],
+
+            'customer_address' => $validated['customer_address'],
+            'customer_city' => $validated['customer_city'],
+            'customer_postcode' => $validated['customer_postcode'],
+        ]);
+
+        $postData = [
+            'total_amount' => $order->amount,
+            'currency' => $order->currency,
+            'tran_id' => $order->transaction_id,
+
+            'success_url' => route('sslcommerz.success'),
+            'fail_url' => route('sslcommerz.fail'),
+            'cancel_url' => route('sslcommerz.cancel'),
+            'ipn_url' => route('sslcommerz.ipn'),
+
+            'cus_name' => $order->customer_name,
+            'cus_email' => $order->customer_email,
+            'cus_add1' => $order->customer_address,
+            'cus_add2' => '',
+            'cus_city' => $order->customer_city,
+            'cus_state' => $order->customer_city,
+            'cus_postcode' => $order->customer_postcode,
+            'cus_country' => $order->phone_country === 'BD' ? 'Bangladesh' : $order->phone_country,
+            'cus_phone' => $order->phone_e164,
+
+            'shipping_method' => 'NO',
+            'num_of_item' => 1,
+
+            'product_name' => $pricingPlan->title,
+            'product_category' => 'IT Service Plan',
+            'product_profile' => 'non-physical-goods',
+
+            'value_a' => $order->id,
+            'value_b' => $pricingPlan->id,
+            'value_c' => $validated['billing'],
+            'value_d' => Auth::id(),
+        ];
+
+        $sslcz = new SslCommerzNotification;
+
+        return $sslcz->makePayment($postData, 'hosted');
+    }
+
     public function success(Request $request)
     {
-        return $this->handleResponse($request, false);
+        // dd($request->all());
+        $transactionId = $request->input('tran_id');
+
+        $order = PricingOrder::query()
+            ->where('transaction_id', $transactionId)
+            ->first();
+
+        if (! $order) {
+            return redirect()->route('home')->with('error', 'Order not found.');
+        }
+
+        $status = $request->input('status');
+
+        if (in_array($status, ['VALID', 'VALIDATED']) && $order->payment_status !== 'paid') {
+            $order->update([
+                'payment_status'      => 'paid',
+                'ssl_status'          => $status,
+                'bank_transaction_id' => $request->input('bank_tran_id'),
+                'val_id'              => $request->input('val_id'),
+                'payment_response'    => $request->all(),
+                'paid_at'             => now(),
+            ]);
+
+            $order->pricingPlan()->increment('purchase_count');
+
+            // $email = $order->user?->email;
+            // if ($email) {
+            //     Mail::to($email)->send(new OrderInvoiceMail($order));
+            // }
+        }
+
+        // Guard: if still not paid, something went wrong
+        if ($order->fresh()->payment_status !== 'paid') {
+            return redirect()->route('home')->with('error', 'Payment could not be verified.');
+        }
+
+        return redirect()
+            ->route('client.checkout.success', $order->id)
+            ->with('success', 'Payment completed successfully.');
     }
 
     public function fail(Request $request)
@@ -47,7 +188,7 @@ class SslCommerzController extends Controller
                 : redirect()->route('home')->with('error', 'Order not found.');
         }
 
-        $sslcz = new SslCommerzNotification();
+        $sslcz = new SslCommerzNotification;
 
         $validation = $sslcz->orderValidate(
             $request->all(),
@@ -108,73 +249,4 @@ class SslCommerzController extends Controller
             ->route('home')
             ->with('error', 'Payment ' . $status . '.');
     }
-
-    public function pay(Request $request, PricingPlan $pricingPlan)
-{
-    abort_if($pricingPlan->status !== 'active', 404);
-
-    $validated = $request->validate([
-        'billing' => ['required', 'in:monthly,yearly'],
-    ]);
-
-    $amount = (float) (
-        $validated['billing'] === 'yearly'
-            ? $pricingPlan->yearly_price
-            : $pricingPlan->monthly_price
-    );
-
-    abort_if($amount <= 0, 404);
-
-    $user = Auth::user();
-
-    $transactionId = 'TW-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6));
-
-    $order = PricingOrder::query()->create([
-        'user_id' => Auth::id(),
-        'pricing_plan_id' => $pricingPlan->id,
-        'order_no' => 'ORD-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(5)),
-        'transaction_id' => $transactionId,
-        'billing_cycle' => $validated['billing'],
-        'amount' => $amount,
-        'currency' => 'BDT',
-        'payment_status' => 'pending',
-    ]);
-
-    $postData = [
-        'total_amount' => $order->amount,
-        'currency' => $order->currency,
-        'tran_id' => $order->transaction_id,
-
-        'success_url' => route('sslcommerz.success'),
-        'fail_url' => route('sslcommerz.fail'),
-        'cancel_url' => route('sslcommerz.cancel'),
-        'ipn_url' => route('sslcommerz.ipn'),
-
-        'cus_name' => $user->name ?? 'Customer',
-        'cus_email' => $user->email ?? 'customer@example.com',
-        'cus_add1' => 'Dhaka',
-        'cus_add2' => 'Bangladesh',
-        'cus_city' => 'Dhaka',
-        'cus_state' => 'Dhaka',
-        'cus_postcode' => '1200',
-        'cus_country' => 'Bangladesh',
-        'cus_phone' => $user->phone ?? '01700000000',
-
-        'shipping_method' => 'NO',
-        'num_of_item' => 1,
-
-        'product_name' => $pricingPlan->title,
-        'product_category' => 'IT Service Plan',
-        'product_profile' => 'non-physical-goods',
-
-        'value_a' => $order->id,
-        'value_b' => $pricingPlan->id,
-        'value_c' => $validated['billing'],
-        'value_d' => Auth::id(),
-    ];
-
-    $sslcz = new SslCommerzNotification();
-
-    return $sslcz->makePayment($postData, 'hosted');
-}
 }

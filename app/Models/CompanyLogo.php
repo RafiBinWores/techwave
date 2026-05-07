@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['name', 'logo', 'website_url', 'sort_order', 'is_active'])]
 class CompanyLogo extends Model
 {
-         protected $casts = [
+    protected $casts = [
         'sort_order' => 'integer',
         'is_active' => 'boolean',
     ];

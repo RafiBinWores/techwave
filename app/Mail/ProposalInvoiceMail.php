@@ -2,8 +2,8 @@
 
 namespace App\Mail;
 
-use App\Models\InvoiceTemplate;
 use App\Models\Proposal;
+use App\Models\ProposalTemplate;
 use App\Models\SiteSetting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,7 +18,9 @@ class ProposalInvoiceMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public Proposal $proposal;
-    public InvoiceTemplate $template;
+
+    public ProposalTemplate $template;
+
     public SiteSetting $settings;
 
     /**
@@ -27,7 +29,7 @@ class ProposalInvoiceMail extends Mailable implements ShouldQueue
     public function __construct(Proposal $proposal)
     {
         $this->proposal = $proposal->load('items');
-        $this->template = InvoiceTemplate::activeTemplate();
+        $this->template = ProposalTemplate::activeTemplate();
         $this->settings = SiteSetting::current();
     }
 
@@ -37,7 +39,7 @@ class ProposalInvoiceMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-             subject: ($this->template->subject_prefix ?: 'Invoice') . ': ' . $this->proposal->subject,
+            subject: ($this->template->subject_prefix ?: 'Invoice').': '.$this->proposal->subject,
         );
     }
 

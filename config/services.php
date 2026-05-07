@@ -36,9 +36,9 @@ return [
     ],
 
     'sslcommerz' => [
-    'store_id' => env('SSLCOMMERZ_STORE_ID'),
-    'store_password' => env('SSLCOMMERZ_STORE_PASSWORD'),
-    'sandbox' => env('SSLCOMMERZ_SANDBOX', true),
-],
+        'store_id' => env('SSLCOMMERZ_STORE_ID'),
+        'store_password' => env('SSLCOMMERZ_STORE_PASSWORD'),
+        'sandbox' => env('SSLCOMMERZ_SANDBOX', true),
+    ],
 
 ];

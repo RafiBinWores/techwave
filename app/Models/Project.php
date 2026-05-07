@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
     'is_active',
     'meta_title',
     'meta_description',
-    'meta_keywords'
+    'meta_keywords',
 ])]
 class Project extends Model
 {
