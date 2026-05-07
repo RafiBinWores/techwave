@@ -201,4 +201,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Order management
     Route::livewire('/orders', 'pages::admin.orders.index')->name('orders.index');
+
+    // Icons
+    Route::livewire('/icons', 'pages::admin.icons.material-icons')->name('icons.material-icons');
 });
