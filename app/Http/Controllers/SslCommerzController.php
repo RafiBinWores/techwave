@@ -45,13 +45,13 @@ class SslCommerzController extends Controller
         $taxAmount = round($subtotal * $taxRate, 2);
         $totalAmount = round($subtotal + $taxAmount, 2);
 
-        $transactionId = 'TW-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6));
+        $transactionId = 'TW-' . now()->format('Y') . '-' . strtoupper(Str::random(6));
 
         $order = PricingOrder::query()->create([
             'user_id' => Auth::id(),
             'pricing_plan_id' => $pricingPlan->id,
 
-            'order_no' => 'ORD-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(5)),
+            'order_no' => 'ORD-' . now()->format('Y') . '-' . strtoupper(Str::random(5)),
             'transaction_id' => $transactionId,
 
             'billing_cycle' => $validated['billing'],
@@ -74,6 +74,10 @@ class SslCommerzController extends Controller
             'customer_address' => $validated['customer_address'],
             'customer_city' => $validated['customer_city'],
             'customer_postcode' => $validated['customer_postcode'],
+        ]);
+
+        $order->update([
+            'order_no' => 'ORD-' . now()->format('Y') . '-' . $order->id,
         ]);
 
         $postData = [
@@ -103,10 +107,10 @@ class SslCommerzController extends Controller
             'product_category' => 'IT Service Plan',
             'product_profile' => 'non-physical-goods',
 
-            'value_a' => $order->id,
-            'value_b' => $pricingPlan->id,
-            'value_c' => $validated['billing'],
-            'value_d' => Auth::id(),
+            'order_id' => $order->id,
+            'pricing_id' => $pricingPlan->id,
+            'pricing_cycle' => $validated['billing'],
+            'user_id' => Auth::id(),
         ];
 
         $sslcz = new SslCommerzNotification;
@@ -141,10 +145,10 @@ class SslCommerzController extends Controller
 
             $order->pricingPlan()->increment('purchase_count');
 
-            // $email = $order->user?->email;
-            // if ($email) {
-            //     Mail::to($email)->send(new OrderInvoiceMail($order));
-            // }
+            $email = $order->user?->email;
+            if ($email) {
+                Mail::to($email)->send(new OrderInvoiceMail($order));
+            }
         }
 
         // Guard: if still not paid, something went wrong

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PlanOrderInvoiceController;
 use App\Http\Controllers\SslCommerzController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
@@ -105,9 +106,14 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Pricing and orders
     Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
 
+    // checkout page
     Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');
 
+    // Order success page
     Route::livewire('/checkout/success/{order}', 'pages::client.checkout.checkout-success')->name('client.checkout.success');
+
+    // Invoice download
+    Route::get('/success/{order}/invoice/download', [PlanOrderInvoiceController::class, 'download'])->name('success.invoice.download');
 });
 
 Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])
@@ -201,6 +207,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Order management
     Route::livewire('/orders', 'pages::admin.orders.index')->name('orders.index');
+
+    //Invoice management
+    Route::get('/orders/{order}/invoice/download', [PlanOrderInvoiceController::class, 'download'])->name('orders.invoice.download');
+
+    // Ticket management
+    Route::livewire('/tickets', 'pages::admin.tickets.index')->name('tickets.index');
 
     // Icons
     Route::livewire('/icons', 'pages::admin.icons.material-icons')->name('icons.material-icons');
