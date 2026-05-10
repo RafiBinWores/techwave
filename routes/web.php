@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::livewire('/', 'pages::client.home')->name('home');
+
+// Services
 Route::livewire('/services', 'pages::client.services.index')->name('client.services');
 Route::livewire('/services/{slug}', 'pages::client.services.details')->name('client.services.details');
 
@@ -210,6 +212,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Order management
     Route::livewire('/orders', 'pages::admin.orders.index')->name('orders.index');
+
+    // Service Booking
+    Route::livewire('/booking', 'pages::admin.booking.index')->name('booking.index');
 
     //Invoice management
     Route::get('/orders/{order}/invoice/download', [PlanOrderInvoiceController::class, 'download'])->name('orders.invoice.download');
