@@ -63,7 +63,7 @@
         <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
         @stack('scripts')
 
-        <script>
+        {{-- <script>
             document.addEventListener('livewire:init', () => {
                 console.log('Livewire initialized');
 
@@ -73,7 +73,7 @@
                     console.error('Echo not loaded');
                 }
             });
-        </script>
+        </script> --}}
 
         @livewireScripts
     </div>

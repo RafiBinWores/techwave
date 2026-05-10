@@ -1,13 +1,94 @@
 <?php
 
+use App\Models\Service;
+use App\Models\ServiceBooking;
+use App\Models\SiteSetting;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 new class extends Component {
-    //
+    public Service $service;
+    public SiteSetting $siteSetting;
+
+    public $otherServices;
+
+    public string $quote_full_name = '';
+    public string $quote_phone = '';
+    public string $quote_email = '';
+    public string $quote_company_name = '';
+    public string $quote_message = '';
+
+    public function mount(string $slug): void
+    {
+        $this->siteSetting = SiteSetting::current();
+
+        $this->service = Service::query()
+            ->with(['category', 'activePlans'])
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $this->otherServices = Service::query()->where('is_active', true)->where('id', '!=', $this->service->id)->latest()->limit(3)->get();
+    }
+
+    public function submitQuoteRequest(): void
+    {
+        $validated = $this->validate([
+            'quote_full_name' => ['required', 'string', 'max:255'],
+            'quote_phone' => ['required', 'string', 'max:50'],
+            'quote_email' => ['nullable', 'email', 'max:255'],
+            'quote_company_name' => ['nullable', 'string', 'max:255'],
+            'quote_message' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        ServiceBooking::create([
+            'service_id' => $this->service->id,
+            'full_name' => $validated['quote_full_name'],
+            'phone' => $validated['quote_phone'],
+            'email' => $validated['quote_email'] ?? null,
+            'company_name' => $validated['quote_company_name'] ?? null,
+            'message' => $validated['quote_message'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        $this->reset(['quote_full_name', 'quote_phone', 'quote_email', 'quote_company_name', 'quote_message']);
+
+        $this->dispatch('toast', message: 'Your quote request has been submitted successfully.', type: 'success');
+    }
+
+    public function serviceImage(): string
+    {
+        if ($this->service->image) {
+            if (str_starts_with($this->service->image, 'http://') || str_starts_with($this->service->image, 'https://')) {
+                return $this->service->image;
+            }
+
+            return asset('storage/' . $this->service->image);
+        }
+
+        return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80';
+    }
+
+    public function whatsappLink(): string
+    {
+        if ($this->siteSetting->whatsapp_url) {
+            return $this->siteSetting->whatsapp_url . '?text=' . urlencode('Hello, I am interested in ' . $this->service->card_title);
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $this->siteSetting->phone ?: 'n/a');
+
+        return 'https://wa.me/' . $phone . '?text=' . urlencode('Hello, I am interested in ' . $this->service->card_title);
+    }
 };
 ?>
 
 <div class="relative text-white">
+    @push('meta')
+        <meta name="title" content="{{ $service->meta_title ?: $service->card_title }}">
+        <meta name="description" content="{{ $service->meta_description ?: $service->short_description }}">
+        <meta name="keywords" content="{{ $service->meta_keywords }}">
+    @endpush
+
     <!-- Hero -->
     <section class="relative overflow-hidden py-18 sm:py-22 lg:py-26">
         <div class="absolute inset-0 pointer-events-none">
@@ -21,33 +102,47 @@ new class extends Component {
                     <div
                         class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs sm:text-sm text-blue-100/85 backdrop-blur-xl">
                         <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                        Service Details
+                        {{ $service->category?->name ?? 'Service Details' }}
                     </div>
+
+                    @php
+                        $mainTitle = $service->card_title;
+                        $detailTitle = $service->detail_title ?: $service->card_title;
+
+                        $gradientTitle = trim(str_replace($mainTitle, '', $detailTitle));
+
+                        if (blank($gradientTitle) && $service->short_description) {
+                            $gradientTitle = null;
+                        }
+                    @endphp
 
                     <h1
                         class="mt-6 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-7xl">
-                        Managed IT Support
-                        <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
-                            for modern business operations
-                        </span>
+                        {{ $mainTitle }}
+
+                        @if ($gradientTitle)
+                            <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                                {{ $gradientTitle }}
+                            </span>
+                        @endif
                     </h1>
 
-                    <p class="mt-6 max-w-2xl text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">
-                        Keep your business running smoothly with reliable day-to-day IT support, device setup,
-                        troubleshooting, office networking, system maintenance, and proactive technical guidance.
-                    </p>
+                    @if ($service->short_description)
+                        <p class="mt-6 max-w-2xl text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">
+                            {{ $service->short_description }}
+                        </p>
+                    @endif
 
-                    <div class="mt-8 flex flex-wrap gap-3">
-                        <span
-                            class="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-blue-100/80">Business
-                            IT</span>
-                        <span
-                            class="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-blue-100/80">Office
-                            Support</span>
-                        <span
-                            class="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-blue-100/80">System
-                            Setup</span>
-                    </div>
+                    @if (!empty($service->tags))
+                        <div class="mt-8 flex flex-wrap gap-3">
+                            @foreach ($service->tags as $tag)
+                                <span
+                                    class="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-blue-100/80">
+                                    {{ is_array($tag) ? $tag['name'] ?? ($tag['title'] ?? '') : $tag }}
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <div class="relative">
@@ -56,9 +151,9 @@ new class extends Component {
                         <div class="absolute left-8 top-8 h-28 w-28 rounded-full bg-cyan-400/12 blur-3xl"></div>
                         <div class="absolute bottom-8 right-8 h-32 w-32 rounded-full bg-blue-500/12 blur-3xl"></div>
 
-                        <div class="overflow-hidden rounded-[24px] border border-white/10">
-                            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80"
-                                alt="Managed IT support" class="h-[320px] w-full object-cover sm:h-[400px]">
+                        <div class="overflow-hidden rounded-3xl border border-white/10">
+                            <img src="{{ $this->serviceImage() }}" alt="{{ $service->card_title }}"
+                                class="h- w-full object-cover sm:h-100">
                         </div>
                     </div>
                 </div>
@@ -73,139 +168,120 @@ new class extends Component {
                 <!-- Left Content -->
                 <div class="space-y-8">
                     <!-- Overview -->
-                    <div class="service-detail-card">
-                        <h2 class="text-2xl font-bold text-white sm:text-3xl">Service Overview</h2>
-                        <p class="mt-5 text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">
-                            Our Managed IT Support service is designed for companies that need dependable technical
-                            assistance without the complexity of handling every issue internally. We help businesses
-                            maintain stable operations through system setup, user support, office networking,
-                            troubleshooting, maintenance, and ongoing technical guidance.
-                        </p>
-                        <p class="mt-4 text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">
-                            Whether you need support for workstations, office devices, connectivity, software
-                            installations, or daily issue resolution, our team helps create a smoother and more
-                            productive working environment.
-                        </p>
-                    </div>
+                    @if ($service->overview)
+                        <div class="service-detail-card">
+                            <h2 class="text-2xl font-bold text-white sm:text-3xl">Service Overview</h2>
+                            <p class="mt-5 text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">
+                                {!! $service->overview !!}
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Benefits -->
-                    <div class="service-detail-card">
-                        <h2 class="text-2xl font-bold text-white sm:text-3xl">Key Benefits</h2>
+                    @if (!empty($service->benefits))
+                        <div class="service-detail-card">
+                            <h2 class="text-2xl font-bold text-white sm:text-3xl">Key Benefits</h2>
 
-                        <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                            <div class="benefit-box">
-                                <h3 class="text-lg font-semibold text-white">Reduced Downtime</h3>
-                                <p class="mt-2 text-sm leading-6 text-blue-100/66">
-                                    Resolve technical issues faster and keep your team productive.
-                                </p>
-                            </div>
+                            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                                @foreach ($service->benefits as $benefit)
+                                    <div class="benefit-box">
+                                        <h3 class="text-lg font-semibold text-white">
+                                            {{ is_array($benefit) ? $benefit['title'] ?? ($benefit['name'] ?? 'Benefit') : $benefit }}
+                                        </h3>
 
-                            <div class="benefit-box">
-                                <h3 class="text-lg font-semibold text-white">Reliable Setup</h3>
-                                <p class="mt-2 text-sm leading-6 text-blue-100/66">
-                                    Ensure systems, devices, and office tools are configured correctly.
-                                </p>
-                            </div>
-
-                            <div class="benefit-box">
-                                <h3 class="text-lg font-semibold text-white">Scalable Support</h3>
-                                <p class="mt-2 text-sm leading-6 text-blue-100/66">
-                                    Support that grows with your business needs and team structure.
-                                </p>
-                            </div>
-
-                            <div class="benefit-box">
-                                <h3 class="text-lg font-semibold text-white">Operational Clarity</h3>
-                                <p class="mt-2 text-sm leading-6 text-blue-100/66">
-                                    Cleaner systems, better visibility, and smoother daily workflows.
-                                </p>
+                                        @if (is_array($benefit) && !empty($benefit['description']))
+                                            <p class="mt-2 text-sm leading-6 text-blue-100/66">
+                                                {{ $benefit['description'] }}
+                                            </p>
+                                        @elseif (is_array($benefit) && !empty($benefit['detail']))
+                                            <p class="mt-2 text-sm leading-6 text-blue-100/66">
+                                                {{ $benefit['detail'] }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
-                    </div>
+                    @endif
 
                     <!-- Features -->
-                    <div class="service-detail-card">
-                        <h2 class="text-2xl font-bold text-white sm:text-3xl">What’s Included</h2>
+                    @if (!empty($service->included_items))
+                        <div class="service-detail-card">
+                            <h2 class="text-2xl font-bold text-white sm:text-3xl">What’s Included</h2>
 
-                        <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                            <div class="feature-line">Office networking support</div>
-                            <div class="feature-line">Windows installation and setup</div>
-                            <div class="feature-line">Email client configuration</div>
-                            <div class="feature-line">Printer and device troubleshooting</div>
-                            <div class="feature-line">Attendance device assistance</div>
-                            <div class="feature-line">Virus and malware scanning</div>
-                            <div class="feature-line">Basic endpoint security assistance</div>
-                            <div class="feature-line">General business IT troubleshooting</div>
+                            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                                @foreach ($service->included_items as $item)
+                                    <div class="feature-line">
+                                        {{ is_array($item) ? $item['title'] ?? ($item['name'] ?? ($item['text'] ?? '')) : $item }}
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
 
                     <!-- Ideal For -->
-                    <div class="service-detail-card">
-                        <h2 class="text-2xl font-bold text-white sm:text-3xl">Who This Service Is For</h2>
-                        <div class="mt-5 space-y-4 text-sm leading-7 text-blue-100/72 sm:text-base">
-                            <p>Small and medium businesses that need dependable everyday IT support.</p>
-                            <p>Companies that want a smoother office environment without hiring a full in-house team.
-                            </p>
-                            <p>Growing organizations that need technical help with devices, networking, systems, and
-                                users.</p>
+                    @if ($service->audience_title || $service->audience_detail)
+                        <div class="service-detail-card">
+                            <h2 class="text-2xl font-bold text-white sm:text-3xl">
+                                {{ $service->audience_title ?: 'Who This Service Is For' }}
+                            </h2>
+
+                            @if ($service->audience_detail)
+                                <div class="mt-5 space-y-4 text-sm leading-7 text-blue-100/72 sm:text-base">
+                                    @foreach (preg_split('/\r\n|\r|\n/', $service->audience_detail) as $line)
+                                        @if (trim($line))
+                                            <p>{{ $line }}</p>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
-                    </div>
+                    @endif
 
                     <!-- Other Services -->
-                    <div class="service-detail-card">
-                        <div class="flex items-center justify-between gap-4">
-                            <div>
-                                <h2 class="text-2xl font-bold text-white sm:text-3xl">Other Services</h2>
-                                <p class="mt-2 text-sm text-blue-100/66">Explore other solutions we offer.</p>
+                    @if ($otherServices->count())
+                        <div class="service-detail-card">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <h2 class="text-2xl font-bold text-white sm:text-3xl">Other Services</h2>
+                                    <p class="mt-2 text-sm text-blue-100/66">Explore other solutions we offer.</p>
+                                </div>
+                                <a href="{{ route('client.services') }}" wire:navigate
+                                    class="hidden sm:inline-flex items-center rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white/12">
+                                    View All
+                                </a>
                             </div>
-                            <a href="{{ route('client.services') }}" wire:navigate
-                                class="hidden sm:inline-flex items-center rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white/12">
-                                View All
-                            </a>
+
+                            <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                @foreach ($otherServices as $otherService)
+                                    <a href="{{ route('client.services.details', $otherService->slug) }}" wire:navigate
+                                        class="other-service-card {{ $loop->last ? 'sm:col-span-2 xl:col-span-1' : '' }}">
+                                        <div class="other-service-icon bg-cyan-500/15 text-cyan-200">
+                                            @if ($otherService->icon)
+                                                <span class="material-symbols-outlined">
+                                                    {{ $otherService->icon }}
+                                                </span>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M3.75 4.5h16.5v10.5H3.75zM7.5 20.25h9" />
+                                                </svg>
+                                            @endif
+                                        </div>
+
+                                        <h3 class="mt-4 text-lg font-semibold text-white">
+                                            {{ $otherService->card_title }}
+                                        </h3>
+
+                                        <p class="mt-2 text-sm leading-6 text-blue-100/64">
+                                            {{ Str::limit($otherService->short_description, 90) }}
+                                        </p>
+                                    </a>
+                                @endforeach
+                            </div>
                         </div>
-
-                        <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <a href="#" class="other-service-card">
-                                <div class="other-service-icon bg-cyan-500/15 text-cyan-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-                                        <path d="m9 12 2 2 4-4" />
-                                    </svg>
-                                </div>
-                                <h3 class="mt-4 text-lg font-semibold text-white">Cyber Security</h3>
-                                <p class="mt-2 text-sm leading-6 text-blue-100/64">Protection, hardening, and
-                                    security-focused support.</p>
-                            </a>
-
-                            <a href="#" class="other-service-card">
-                                <div class="other-service-icon bg-sky-500/15 text-sky-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M3.75 4.5h16.5v10.5H3.75zM7.5 20.25h9" />
-                                    </svg>
-                                </div>
-                                <h3 class="mt-4 text-lg font-semibold text-white">Website Development</h3>
-                                <p class="mt-2 text-sm leading-6 text-blue-100/64">Modern websites and business systems.
-                                </p>
-                            </a>
-
-                            <a href="#" class="other-service-card sm:col-span-2 xl:col-span-1">
-                                <div class="other-service-icon bg-violet-500/15 text-violet-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M3 7.5l9-4.5 9 4.5m-18 0 9 4.5m-9-4.5V16.5l9 4.5m9-13.5v9l-9 4.5m0-9V21" />
-                                    </svg>
-                                </div>
-                                <h3 class="mt-4 text-lg font-semibold text-white">Cloud & Email Setup</h3>
-                                <p class="mt-2 text-sm leading-6 text-blue-100/64">Scalable cloud tools and business
-                                    communication.</p>
-                            </a>
-                        </div>
-                    </div>
+                    @endif
                 </div>
 
                 <!-- Right Sidebar -->
@@ -220,15 +296,15 @@ new class extends Component {
                         <div class="mt-6 space-y-4">
                             <div class="contact-side-box">
                                 <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Call Us</p>
-                                <p class="mt-2 text-base font-semibold text-white">+880 96381-01601</p>
+                                <p class="mt-2 text-base font-semibold text-white">{{ $this->siteSetting->phone }}</p>
                             </div>
 
-                            <div class="contact-side-box">
+                            {{-- <div class="contact-side-box">
                                 <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">WhatsApp</p>
                                 <p class="mt-2 text-base font-semibold text-white">+880 96381-01601</p>
-                            </div>
+                            </div> --}}
 
-                            <a href="https://wa.me/8801000000000"
+                            <a href="{{ $this->whatsappLink() }}" target="_blank"
                                 class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-emerald-500 to-green-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5">
                                 Chat on WhatsApp
                             </a>
@@ -242,35 +318,63 @@ new class extends Component {
                             Share your requirements and we’ll get back to you with the right solution.
                         </p>
 
-                        <form class="mt-6 space-y-4">
+                        <form wire:submit.prevent="submitQuoteRequest" class="mt-6 space-y-4">
+                            <input type="hidden" value="{{ $service->id }}">
+
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Full Name</label>
-                                <input type="text" placeholder="Enter your name" class="contact-input">
+                                <input type="text" wire:model="quote_full_name" placeholder="Enter your name"
+                                    class="contact-input">
+                                @error('quote_full_name')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Phone Number</label>
-                                <input type="text" placeholder="Enter your phone" class="contact-input">
+                                <input type="text" wire:model="quote_phone" placeholder="Enter your phone"
+                                    class="contact-input">
+                                @error('quote_phone')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Email Address</label>
-                                <input type="email" placeholder="Enter your email" class="contact-input">
+                                <input type="email" wire:model="quote_email" placeholder="Enter your email"
+                                    class="contact-input">
+                                @error('quote_email')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Company Name</label>
-                                <input type="text" placeholder="Enter your company name" class="contact-input">
+                                <input type="text" wire:model="quote_company_name"
+                                    placeholder="Enter your company name" class="contact-input">
+                                @error('quote_company_name')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Project Details</label>
-                                <textarea rows="5" placeholder="Tell us what you need" class="contact-input resize-none"></textarea>
+                                <textarea rows="5" wire:model="quote_message"
+                                    placeholder="Tell us what you need for {{ $service->card_title }}" class="contact-input resize-none"></textarea>
+                                @error('quote_message')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
-                            <button type="submit"
-                                class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer">
-                                Send Quote Request
+                            <button type="submit" wire:loading.attr="disabled" wire:target="submitQuoteRequest"
+                                class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="submitQuoteRequest">
+                                    Send Quote Request
+                                </span>
+
+                                <span wire:loading wire:target="submitQuoteRequest">
+                                    Sending...
+                                </span>
                             </button>
                         </form>
                     </div>

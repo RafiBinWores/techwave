@@ -12,12 +12,14 @@ new class extends Component {
     #[On('echo-private:admin.tickets,.ticket.updated')]
     public function refreshAdminNotifications(): void
     {
+        $action = $event['action'] ?? null;
+        
         $this->notificationRefreshKey++;
 
         if ($action !== 'client_replied' && $action !== 'user_replied') {
             return;
         }
-        
+
         $this->dispatch('admin-ticket-notification-received');
         $this->dispatch('toast', message: 'New support ticket update received.', type: 'info');
     }

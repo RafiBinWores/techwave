@@ -1,10 +1,130 @@
 <?php
 
+use App\Models\Service;
+use App\Models\ServiceBooking;
+use App\Models\SiteSetting;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Services | Techwave')] class extends Component {
-    //
+    public int $perPage = 12;
+
+    public SiteSetting $siteSetting;
+
+    public string $full_name = '';
+    public string $phone = '';
+    public string $email = '';
+    public string $company_name = '';
+    public string $message = '';
+    public string $service_id = '';
+
+    public string $serviceSearch = '';
+
+    public function mount(): void
+    {
+        $this->siteSetting = SiteSetting::current();
+    }
+
+    public function getFilteredServicesProperty()
+    {
+        return Service::query()
+            ->where('is_active', true)
+            ->when($this->serviceSearch, function ($query) {
+                $query->where('card_title', 'like', '%' . $this->serviceSearch . '%');
+            })
+            ->orderBy('card_title')
+            ->limit(8)
+            ->get();
+    }
+
+    public function submitBooking(): void
+    {
+        $validated = $this->validate([
+            'full_name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:50'],
+            'email' => ['required', 'email', 'max:255'],
+            'company_name' => ['required', 'string', 'max:255'],
+            'service_id' => ['required', 'exists:services,id'],
+            'message' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        ServiceBooking::create([
+            'service_id' => $validated['service_id'] ?: null,
+            'full_name' => $validated['full_name'],
+            'phone' => $validated['phone'],
+            'email' => $validated['email'] ?? null,
+            'company_name' => $validated['company_name'] ?? null,
+            'message' => $validated['message'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        $this->reset(['full_name', 'phone', 'email', 'company_name', 'message', 'service_id', 'serviceSearch']);
+
+        $this->dispatch('toast', message: 'Your service booking has been submitted successfully.', type: 'success');
+    }
+
+    public function loadMore(): void
+    {
+        $this->perPage += 12;
+    }
+
+    public function getServicesProperty()
+    {
+        return Service::query()->with('category')->where('is_active', true)->latest()->limit($this->perPage)->get();
+    }
+
+    public function getTotalServicesProperty(): int
+    {
+        return Service::query()->where('is_active', true)->count();
+    }
+
+    public function serviceImage(Service $service): string
+    {
+        if ($service->image) {
+            if (str_starts_with($service->image, 'http://') || str_starts_with($service->image, 'https://')) {
+                return $service->image;
+            }
+
+            return asset('storage/' . $service->image);
+        }
+
+        return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    public function serviceBullets(Service $service): array
+    {
+        if (!empty($service->included_items)) {
+            return collect($service->included_items)
+                ->take(3)
+                ->map(function ($item) {
+                    if (is_array($item)) {
+                        return $item['title'] ?? ($item['name'] ?? ($item['text'] ?? null));
+                    }
+
+                    return $item;
+                })
+                ->filter()
+                ->values()
+                ->toArray();
+        }
+
+        if (!empty($service->benefits)) {
+            return collect($service->benefits)
+                ->take(3)
+                ->map(function ($item) {
+                    if (is_array($item)) {
+                        return $item['title'] ?? ($item['name'] ?? null);
+                    }
+
+                    return $item;
+                })
+                ->filter()
+                ->values()
+                ->toArray();
+        }
+
+        return ['Professional setup', 'Reliable support', 'Business-ready solution'];
+    }
 };
 ?>
 
@@ -13,319 +133,108 @@ new #[Title('Services | Techwave')] class extends Component {
     <!-- Main Services -->
     <section id="service-list" class="relative overflow-hidden py-20 sm:py-24">
         <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
-    <div class="mb-14 text-center lg:mb-18">
-        <div
-            class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
-            <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
-            Core Service Areas
+            <div class="mb-14 text-center lg:mb-18">
+                <div
+                    class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
+                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                    Core Service Areas
+                </div>
+
+                <h2 class="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+                    Tailored services for
+                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                        growth, security, and stability
+                    </span>
+                </h2>
+
+                <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/70 sm:text-base">
+                    From foundational IT support to advanced enterprise protection, we design solutions that fit
+                    your business stage and operational needs.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+
+                @forelse ($this->services as $service)
+                    <a href="{{ route('client.services.details', ['slug' => $service->slug]) }}" wire:navigate
+                        class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
+
+                        <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
+                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20">
+                        </div>
+                        <div class="absolute inset-0 bg-linear-to-br from-cyan-500/20 via-transparent to-blue-700/20">
+                        </div>
+
+                        <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                            <div class="flex items-start justify-between gap-4">
+                                <span
+                                    class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur-md">
+                                    {{ $service->category?->name ?? 'Service' }}
+                                </span>
+
+                                <div
+                                    class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-cyan-200 backdrop-blur-md">
+                                    @if ($service->icon)
+                                        <span class="material-symbols-outlined">{{ $service->icon }}</span>
+                                    @else
+                                        <span class="material-symbols-outlined">apps</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-2xl font-bold text-white">
+                                    {{ $service->card_title }}
+                                </h3>
+
+                                <p class="mt-3 text-sm leading-7 text-blue-100/75">
+                                    {{ Str::limit($service->short_description, 145) }}
+                                </p>
+
+                                <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
+                                    @foreach ($this->serviceBullets($service) as $bullet)
+                                        <li class="service-bullet">{{ $bullet }}</li>
+                                    @endforeach
+                                </ul>
+
+                                <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-100">
+                                    Explore Service
+                                    <span
+                                        class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                                        arrow_forward
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                @empty
+                    <div class="col-span-full rounded-3xl border border-white/10 bg-white/5 p-10 text-center">
+                        <h3 class="text-2xl font-bold text-white">No services found</h3>
+                        <p class="mt-3 text-sm text-blue-100/70">
+                            Please add active services from your admin panel.
+                        </p>
+                    </div>
+                @endforelse
+
+            </div>
+
+            @if ($this->services->count() < $this->totalServices)
+                <div class="mt-12 flex justify-center">
+                    <button type="button" wire:click="loadMore" wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/8 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+
+                        <span wire:loading.remove wire:target="loadMore">Load More Services</span>
+                        <span wire:loading wire:target="loadMore">Loading...</span>
+
+                        <span wire:loading.remove wire:target="loadMore" class="material-symbols-outlined text-[18px]">
+                            expand_more
+                        </span>
+                    </button>
+                </div>
+            @endif
         </div>
-
-        <h2 class="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            Tailored services for
-            <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
-                growth, security, and stability
-            </span>
-        </h2>
-
-        <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/70 sm:text-base">
-            From foundational IT support to advanced enterprise protection, we design solutions that fit
-            your business stage and operational needs.
-        </p>
-    </div>
-
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-
-        <!-- Cyber Security -->
-        <a href="{{ route('client.services.details', ['slug' => 'cyber-security']) }}"
-            wire:navigate
-            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
-
-            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80"
-                alt="Cyber Security"
-                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
-
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
-            <div class="absolute inset-0 bg-linear-to-br from-cyan-500/20 via-transparent to-blue-700/20"></div>
-
-            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <span
-                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur-md">
-                        Security
-                    </span>
-
-                    <div
-                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-cyan-200 backdrop-blur-md">
-                        <span class="material-symbols-outlined">shield</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-2xl font-bold text-white">Cyber Security</h3>
-
-                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
-                        Secure your business with proactive protection, endpoint defense, vulnerability reviews, and
-                        modern security architecture.
-                    </p>
-
-                    <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
-                        <li class="service-bullet">Firewall & endpoint security</li>
-                        <li class="service-bullet">Threat monitoring & hardening</li>
-                        <li class="service-bullet">Security audits & best practices</li>
-                    </ul>
-
-                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-100">
-                        Explore Service
-                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                            arrow_forward
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </a>
-
-        <!-- Managed IT Support -->
-        <a href="#"
-            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-blue-300/30 hover:shadow-blue-950/30">
-
-            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1200&q=80"
-                alt="Managed IT Support"
-                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
-
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
-            <div class="absolute inset-0 bg-linear-to-br from-blue-500/20 via-transparent to-cyan-700/20"></div>
-
-            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <span
-                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-blue-100 backdrop-blur-md">
-                        IT Support
-                    </span>
-
-                    <div
-                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-blue-200 backdrop-blur-md">
-                        <span class="material-symbols-outlined">support_agent</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-2xl font-bold text-white">Managed IT Support</h3>
-
-                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
-                        Keep your business running smoothly with responsive support, troubleshooting, system setup,
-                        and day-to-day IT assistance.
-                    </p>
-
-                    <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
-                        <li class="service-bullet">Office networking support</li>
-                        <li class="service-bullet">Windows & device setup</li>
-                        <li class="service-bullet">Monitoring and issue resolution</li>
-                    </ul>
-
-                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-100">
-                        Explore Service
-                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                            arrow_forward
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </a>
-
-        <!-- Website & Web Apps -->
-        <a href="#"
-            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-sky-300/30 hover:shadow-sky-950/30">
-
-            <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80"
-                alt="Website and Web Apps"
-                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
-
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
-            <div class="absolute inset-0 bg-linear-to-br from-sky-500/20 via-transparent to-blue-700/20"></div>
-
-            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <span
-                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-sky-100 backdrop-blur-md">
-                        Web Solution
-                    </span>
-
-                    <div
-                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-sky-200 backdrop-blur-md">
-                        <span class="material-symbols-outlined">desktop_windows</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-2xl font-bold text-white">Website & Web Apps</h3>
-
-                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
-                        We design and build modern websites and business systems that are fast, secure, and crafted
-                        to support real growth.
-                    </p>
-
-                    <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
-                        <li class="service-bullet">Company websites</li>
-                        <li class="service-bullet">Custom business systems</li>
-                        <li class="service-bullet">Responsive premium UI/UX</li>
-                    </ul>
-
-                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-100">
-                        Explore Service
-                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                            arrow_forward
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </a>
-
-        <!-- Cloud & Email Systems -->
-        <a href="#"
-            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-violet-300/30 hover:shadow-violet-950/30">
-
-            <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80"
-                alt="Cloud and Email Systems"
-                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
-
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
-            <div class="absolute inset-0 bg-linear-to-br from-violet-500/20 via-transparent to-blue-700/20"></div>
-
-            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <span
-                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-violet-100 backdrop-blur-md">
-                        Cloud
-                    </span>
-
-                    <div
-                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-violet-200 backdrop-blur-md">
-                        <span class="material-symbols-outlined">cloud</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-2xl font-bold text-white">Cloud & Email Systems</h3>
-
-                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
-                        Build scalable communication and collaboration systems with professional cloud email and
-                        secure hosted infrastructure.
-                    </p>
-
-                    <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
-                        <li class="service-bullet">Google Workspace / Microsoft 365</li>
-                        <li class="service-bullet">Business email setup</li>
-                        <li class="service-bullet">Hosting and cloud services</li>
-                    </ul>
-
-                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-violet-100">
-                        Explore Service
-                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                            arrow_forward
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </a>
-
-        <!-- Office Infrastructure -->
-        <a href="#"
-            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300/30 hover:shadow-emerald-950/30">
-
-            <img src="https://images.unsplash.com/photo-1597852074816-d933c7d2b988?auto=format&fit=crop&w=1200&q=80"
-                alt="Office Infrastructure"
-                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
-
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
-            <div class="absolute inset-0 bg-linear-to-br from-emerald-500/20 via-transparent to-cyan-700/20"></div>
-
-            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <span
-                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-emerald-100 backdrop-blur-md">
-                        Infrastructure
-                    </span>
-
-                    <div
-                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-emerald-200 backdrop-blur-md">
-                        <span class="material-symbols-outlined">settings_input_component</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-2xl font-bold text-white">Office Infrastructure</h3>
-
-                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
-                        Create dependable physical and network foundations with office systems, CCTV, attendance
-                        devices, and structured connectivity.
-                    </p>
-
-                    <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
-                        <li class="service-bullet">CCTV camera installation</li>
-                        <li class="service-bullet">Attendance device setup</li>
-                        <li class="service-bullet">Network and print solutions</li>
-                    </ul>
-
-                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-100">
-                        Explore Service
-                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                            arrow_forward
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </a>
-
-        <!-- Growth & Digital Presence -->
-        <a href="#"
-            class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-pink-300/30 hover:shadow-pink-950/30">
-
-            <img src="https://images.unsplash.com/photo-1556155092-490a1ba16284?auto=format&fit=crop&w=1200&q=80"
-                alt="Growth and Digital Presence"
-                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
-
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
-            <div class="absolute inset-0 bg-linear-to-br from-pink-500/20 via-transparent to-blue-700/20"></div>
-
-            <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <span
-                        class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-pink-100 backdrop-blur-md">
-                        Growth
-                    </span>
-
-                    <div
-                        class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/30 text-pink-200 backdrop-blur-md">
-                        <span class="material-symbols-outlined">rocket_launch</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-2xl font-bold text-white">Growth & Digital Presence</h3>
-
-                    <p class="mt-3 text-sm leading-7 text-blue-100/75">
-                        Expand your digital reach through branding, social media setup, SEO, and business-facing
-                        design systems.
-                    </p>
-
-                    <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
-                        <li class="service-bullet">Graphics and visual content</li>
-                        <li class="service-bullet">SEO and online visibility</li>
-                        <li class="service-bullet">Social media business setup</li>
-                    </ul>
-
-                    <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-pink-100">
-                        Explore Service
-                        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                            arrow_forward
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </a>
-
-    </div>
-</div>
     </section>
 
     <!-- Process -->
@@ -581,36 +490,64 @@ new #[Title('Services | Techwave')] class extends Component {
                         <div class="mt-8 grid gap-4 sm:grid-cols-2">
                             <div class="contact-info-card">
                                 <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Email</p>
-                                <a href="mailto:info@techwave.com"
-                                    class="mt-2 text-sm font-semibold text-white">info@techwave.com</a>
+
+                                @if ($siteSetting->email)
+                                    <a href="mailto:{{ $siteSetting->email }}"
+                                        class="mt-2 text-sm font-semibold text-white">
+                                        {{ $siteSetting->email }}
+                                    </a>
+                                @else
+                                    <p class="mt-2 text-sm font-semibold text-white">
+                                        info@example.com
+                                    </p>
+                                @endif
                             </div>
 
                             <div class="contact-info-card">
                                 <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Phone</p>
-                                <a href="tel:+8809638101601"
-                                    class="mt-2 text-sm font-semibold text-white">+8809638-101601</a>
+
+                                @if ($siteSetting->phone)
+                                    <a href="tel:{{ preg_replace('/[^0-9+]/', '', $siteSetting->phone) }}"
+                                        class="mt-2 text-sm font-semibold text-white">
+                                        {{ $siteSetting->phone }}
+                                    </a>
+                                @else
+                                    <p class="mt-2 text-sm font-semibold text-white">
+                                        +8809638-101601
+                                    </p>
+                                @endif
                             </div>
 
                             <div class="contact-info-card sm:col-span-2">
-                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Support Hours</p>
-                                <p class="mt-2 text-sm font-semibold text-white">Business hours support with
-                                    priority response options</p>
+                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Location</p>
+                                <p class="mt-2 text-sm font-semibold text-white">
+                                    {{ $siteSetting->location ?: 'Business hours support with priority response options' }}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <div
                         class="border-t border-white/10 bg-slate-950/20 px-6 py-10 sm:px-8 sm:py-12 lg:border-l lg:border-t-0 lg:px-10 lg:py-14">
-                        <form class="space-y-5">
+
+                        <form wire:submit.prevent="submitBooking" class="space-y-5">
                             <div class="grid gap-5 sm:grid-cols-2">
                                 <div>
                                     <label class="mb-2 block text-sm font-medium text-blue-50/85">Full Name</label>
-                                    <input type="text" placeholder="Enter your name" class="contact-input">
+                                    <input type="text" wire:model="full_name" placeholder="Enter your name"
+                                        class="contact-input">
+                                    @error('full_name')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                                 <div>
                                     <label class="mb-2 block text-sm font-medium text-blue-50/85">Phone</label>
-                                    <input type="text" placeholder="Enter your phone" class="contact-input">
+                                    <input type="text" wire:model="phone" placeholder="Enter your phone"
+                                        class="contact-input">
+                                    @error('phone')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
 
@@ -618,7 +555,11 @@ new #[Title('Services | Techwave')] class extends Component {
                                 <div>
                                     <label class="mb-2 block text-sm font-medium text-blue-50/85">Email
                                         Address</label>
-                                    <input type="email" placeholder="Enter your email" class="contact-input">
+                                    <input type="email" wire:model="email" placeholder="Enter your email"
+                                        class="contact-input">
+                                    @error('email')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                                 <div>
@@ -626,42 +567,95 @@ new #[Title('Services | Techwave')] class extends Component {
                                         Service Needed
                                     </label>
 
-                                    <div class="relative">
-                                        <select class="contact-input contact-select appearance-none pr-12">
-                                            <option value="" selected disabled>Choose a service</option>
-                                            <option>Managed IT Support</option>
-                                            <option>Cyber Security</option>
-                                            <option>Website Development</option>
-                                            <option>Cloud & Email Setup</option>
-                                            <option>Office Infrastructure</option>
-                                        </select>
+                                    <div x-data="{
+                                        open: false,
+                                        selectedService: @entangle('serviceSearch').live,
+                                    }" class="relative">
+                                        <input type="text" wire:model.live.debounce.300ms="serviceSearch"
+                                            @focus="open = true" @click="open = true" @keydown.escape="open = false"
+                                            placeholder="Search service..." class="contact-input pr-12">
 
-                                        <!-- Custom Arrow -->
+                                        <input type="hidden" wire:model="service_id">
+
+                                        <!-- Search Icon -->
                                         <div
                                             class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-blue-100/60">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                                            </svg>
+                                            <span class="material-symbols-outlined text-[20px]">
+                                                search
+                                            </span>
+                                        </div>
+
+                                        @if ($serviceSearch)
+                                            <button type="button" wire:click="$set('serviceSearch', '')"
+                                                wire:click.prevent="$set('service_id', '')"
+                                                class="absolute inset-y-0 right-12 flex items-center text-blue-100/60 transition hover:text-white">
+                                                <span class="material-symbols-outlined text-[18px]">
+                                                    close
+                                                </span>
+                                            </button>
+                                        @endif
+
+                                        <div x-show="open" @click.outside="open = false" x-transition
+                                            class="absolute left-0 right-0 z-30 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl shadow-blue-950/40 backdrop-blur-2xl  [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-gray-300
+     hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full"
+                                            style="display: none;">
+                                            @forelse ($this->filteredServices as $service)
+                                                <button type="button"
+                                                    wire:click="$set('service_id', '{{ $service->id }}'); $set('serviceSearch', '{{ addslashes($service->card_title) }}')"
+                                                    @click="open = false"
+                                                    class="w-full rounded-xl px-4 py-3 text-left transition hover:bg-white/10">
+                                                    <span class="block text-sm font-semibold text-white">
+                                                        {{ $service->card_title }}
+                                                    </span>
+
+                                                    @if ($service->category)
+                                                        <span class="mt-1 block text-xs text-blue-100/55">
+                                                            {{ $service->category->name }}
+                                                        </span>
+                                                    @endif
+                                                </button>
+                                            @empty
+                                                <div class="px-4 py-4 text-sm text-blue-100/60">
+                                                    No service found.
+                                                </div>
+                                            @endforelse
                                         </div>
                                     </div>
+
+                                    @error('service_id')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Company Name</label>
-                                <input type="text" placeholder="Enter your company name" class="contact-input">
+                                <input type="text" wire:model="company_name" placeholder="Enter your company name"
+                                    class="contact-input">
+                                @error('company_name')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Your Message</label>
-                                <textarea rows="5" placeholder="Tell us about your requirements" class="contact-input resize-none"></textarea>
+                                <textarea rows="5" wire:model="message" placeholder="Tell us about your requirements"
+                                    class="contact-input resize-none"></textarea>
+                                @error('message')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
-                            <button type="submit"
-                                class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
-                                Send Inquiry
+                            <button type="submit" wire:loading.attr="disabled" wire:target="submitBooking"
+                                class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
+
+                                <span wire:loading.remove wire:target="submitBooking">
+                                    Send Inquiry
+                                </span>
+
+                                <span wire:loading wire:target="submitBooking">
+                                    Sending...
+                                </span>
                             </button>
                         </form>
                     </div>

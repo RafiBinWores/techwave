@@ -138,16 +138,12 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
     public function categories()
     {
-        return Category::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+        return Category::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
     }
 
     public function selectedCategory()
     {
-        if (! $this->category_id) {
+        if (!$this->category_id) {
             return null;
         }
 
@@ -184,7 +180,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
             return;
         }
 
-        if (! in_array($item, $this->included_items, true)) {
+        if (!in_array($item, $this->included_items, true)) {
             $this->included_items[] = $item;
         }
 
@@ -208,7 +204,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
             return;
         }
 
-        if (! in_array($tag, $this->tags, true)) {
+        if (!in_array($tag, $this->tags, true)) {
             $this->tags[] = $tag;
         }
 
@@ -228,12 +224,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
         $originalSlug = $slug;
         $counter = 1;
 
-        while (
-            Service::query()
-                ->where('slug', $slug)
-                ->where('id', '!=', $this->service->id)
-                ->exists()
-        ) {
+        while (Service::query()->where('slug', $slug)->where('id', '!=', $this->service->id)->exists()) {
             $slug = $originalSlug . '-' . $counter;
             $counter++;
         }
@@ -256,10 +247,12 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
         }
 
         $benefits = collect($validated['benefits'])
-            ->map(fn ($benefit) => [
-                'title' => trim($benefit['title']),
-                'description' => trim($benefit['description']),
-            ])
+            ->map(
+                fn($benefit) => [
+                    'title' => trim($benefit['title']),
+                    'description' => trim($benefit['description']),
+                ],
+            )
             ->values()
             ->toArray();
 
@@ -378,10 +371,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             </label>
 
                             <div class="relative">
-                                <select
-                                    wire:model.live="category_id"
-                                    class="w-full appearance-none rounded border border-outline-variant bg-white px-4 py-2.5 pr-10 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                >
+                                <select wire:model.live="category_id"
+                                    class="w-full appearance-none rounded border border-outline-variant bg-white px-4 py-2.5 pr-10 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10">
                                     <option value="">Select a category</option>
 
                                     @foreach ($this->categories() as $category)
@@ -391,7 +382,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     @endforeach
                                 </select>
 
-                                <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                <span
+                                    class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                                     expand_more
                                 </span>
                             </div>
@@ -404,12 +396,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Service Card Title</label>
 
-                            <input
-                                wire:model.live="card_title"
+                            <input wire:model.live="card_title"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                placeholder="e.g., Managed Kubernetes Node"
-                                type="text"
-                            />
+                                placeholder="e.g., Managed Kubernetes Node" type="text" />
 
                             @error('card_title')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -419,12 +408,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Detail Page Title</label>
 
-                            <input
-                                wire:model.live="detail_title"
+                            <input wire:model.live="detail_title"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                placeholder="e.g., Enterprise Kubernetes Solutions"
-                                type="text"
-                            />
+                                placeholder="e.g., Enterprise Kubernetes Solutions" type="text" />
 
                             @error('detail_title')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -437,18 +423,16 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         <label class="block font-label-md text-on-surface">Service Icon</label>
 
                         <div class="flex gap-3">
-                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <div
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <span class="material-symbols-outlined text-[24px]">
                                     {{ $icon ?: 'design_services' }}
                                 </span>
                             </div>
 
-                            <input
-                                wire:model.live="icon"
+                            <input wire:model.live="icon"
                                 class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                placeholder="e.g., cloud, settings, lock"
-                                type="text"
-                            />
+                                placeholder="e.g., cloud, settings, lock" type="text" />
                         </div>
 
                         <p class="text-[10px] font-bold uppercase tracking-tight text-on-surface-variant">
@@ -463,12 +447,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                     <div class="mt-6 space-y-2">
                         <label class="block font-label-md text-on-surface">Short Description</label>
 
-                        <textarea
-                            wire:model.live="short_description"
+                        <textarea wire:model.live="short_description"
                             class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            placeholder="Enter a brief summary for the catalog card..."
-                            rows="2"
-                        ></textarea>
+                            placeholder="Enter a brief summary for the catalog card..." rows="2"></textarea>
 
                         @error('short_description')
                             <p class="text-sm text-red-500">{{ $message }}</p>
@@ -479,45 +460,58 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                     <div class="mt-6 space-y-2">
                         <label class="block font-label-md text-on-surface">Service Overview</label>
 
-                        <div
-                            wire:ignore
-                            x-data="{
-                                quill: null,
-                                value: @entangle('overview').live,
-
-                                init() {
-                                    this.quill = new Quill(this.$refs.editor, {
-                                        theme: 'snow',
-                                        placeholder: 'Describe the service technical architecture and business value...',
-                                        modules: {
-                                            toolbar: [
-                                                [{ header: [2, 3, false] }],
-                                                ['bold', 'italic', 'underline', 'strike'],
-                                                [{ list: 'ordered' }, { list: 'bullet' }],
-                                                ['blockquote', 'code-block'],
-                                                ['link'],
-                                                ['clean']
-                                            ]
-                                        }
-                                    });
-
-                                    if (this.value) {
-                                        this.quill.clipboard.dangerouslyPasteHTML(this.value);
+                        <div wire:ignore x-data="{
+                            quill: null,
+                            value: @entangle('overview').live,
+                            isUpdatingFromQuill: false,
+                        
+                            init() {
+                                this.quill = new Quill(this.$refs.editor, {
+                                    theme: 'snow',
+                                    placeholder: 'Describe the service technical architecture and business value...',
+                                    modules: {
+                                        toolbar: [
+                                            [{ header: [2, 3, false] }],
+                                            ['bold', 'italic', 'underline', 'strike'],
+                                            [{ list: 'ordered' }, { list: 'bullet' }],
+                                            ['blockquote', 'code-block'],
+                                            ['link'],
+                                            ['clean']
+                                        ]
                                     }
-
-                                    this.quill.on('text-change', () => {
-                                        this.value = this.quill.root.innerHTML;
-                                    });
-
-                                    this.$watch('value', (newValue) => {
-                                        if (this.quill.root.innerHTML !== newValue) {
-                                            this.quill.clipboard.dangerouslyPasteHTML(newValue || '');
-                                        }
-                                    });
+                                });
+                        
+                                if (this.value) {
+                                    this.quill.root.innerHTML = this.value;
                                 }
-                            }"
-                            class="overflow-hidden rounded-lg border border-outline-variant bg-white"
-                        >
+                        
+                                this.quill.on('text-change', () => {
+                                    this.isUpdatingFromQuill = true;
+                                    this.value = this.quill.root.innerHTML;
+                        
+                                    setTimeout(() => {
+                                        this.isUpdatingFromQuill = false;
+                                    }, 100);
+                                });
+                        
+                                this.$watch('value', (newValue) => {
+                                    if (this.isUpdatingFromQuill) {
+                                        return;
+                                    }
+                        
+                                    if (this.quill.root.innerHTML !== newValue) {
+                                        let range = this.quill.getSelection();
+                        
+                                        this.quill.root.innerHTML = newValue || '';
+                        
+                                        if (range) {
+                                            this.quill.setSelection(range.index, range.length);
+                                        }
+                                    }
+                                });
+                            }
+                        }"
+                            class="overflow-hidden rounded-lg border border-outline-variant bg-white">
                             <div x-ref="editor"></div>
                         </div>
 
@@ -543,15 +537,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
                     <div class="space-y-4">
                         @foreach ($benefits as $index => $benefit)
-                            <div wire:key="benefit-{{ $index }}" class="rounded-lg border border-slate-100 bg-surface p-4">
+                            <div wire:key="benefit-{{ $index }}"
+                                class="rounded-lg border border-slate-100 bg-surface p-4">
                                 <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                                     <div class="md:col-span-4">
-                                        <input
-                                            wire:model.live="benefits.{{ $index }}.title"
+                                        <input wire:model.live="benefits.{{ $index }}.title"
                                             class="w-full rounded border border-outline-variant bg-white px-4 py-2 text-sm"
-                                            placeholder="Benefit Title"
-                                            type="text"
-                                        />
+                                            placeholder="Benefit Title" type="text" />
 
                                         @error("benefits.$index.title")
                                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
@@ -559,12 +551,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     </div>
 
                                     <div class="md:col-span-7">
-                                        <input
-                                            wire:model.live="benefits.{{ $index }}.description"
+                                        <input wire:model.live="benefits.{{ $index }}.description"
                                             class="w-full rounded border border-outline-variant bg-white px-4 py-2 text-sm"
-                                            placeholder="Brief description of the value proposition"
-                                            type="text"
-                                        />
+                                            placeholder="Brief description of the value proposition" type="text" />
 
                                         @error("benefits.$index.description")
                                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
@@ -595,13 +584,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         </label>
 
                         <div class="mb-4 flex gap-3">
-                            <input
-                                wire:model.live="included_item"
-                                wire:keydown.enter.prevent="addIncludedItem"
+                            <input wire:model.live="included_item" wire:keydown.enter.prevent="addIncludedItem"
                                 class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                placeholder="e.g., 24/7 Monitoring"
-                                type="text"
-                            />
+                                placeholder="e.g., 24/7 Monitoring" type="text" />
 
                             <button type="button" wire:click="addIncludedItem"
                                 class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
@@ -640,13 +625,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         <label class="mb-4 block font-label-md text-on-surface">Service Tags</label>
 
                         <div class="mb-4 flex gap-3">
-                            <input
-                                wire:model.live="tag"
-                                wire:keydown.enter.prevent="addTag"
+                            <input wire:model.live="tag" wire:keydown.enter.prevent="addTag"
                                 class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                placeholder="e.g., Infrastructure"
-                                type="text"
-                            />
+                                placeholder="e.g., Infrastructure" type="text" />
 
                             <button type="button" wire:click="addTag"
                                 class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
@@ -655,7 +636,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             </button>
                         </div>
 
-                        <div class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                        <div
+                            class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
                             @forelse ($tags as $index => $serviceTag)
                                 <div wire:key="service-tag-{{ $index }}"
                                     class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
@@ -685,12 +667,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             <div class="space-y-1.5">
                                 <label class="text-xs font-label-sm text-on-surface-variant">Profile Title</label>
 
-                                <input
-                                    wire:model.live="audience_title"
+                                <input wire:model.live="audience_title"
                                     class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm"
-                                    placeholder="e.g., System Architects"
-                                    type="text"
-                                />
+                                    placeholder="e.g., System Architects" type="text" />
 
                                 @error('audience_title')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
@@ -700,12 +679,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             <div class="space-y-1.5">
                                 <label class="text-xs font-label-sm text-on-surface-variant">Requirement Detail</label>
 
-                                <textarea
-                                    wire:model.live="audience_detail"
+                                <textarea wire:model.live="audience_detail"
                                     class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm"
-                                    placeholder="Describe the ideal user profile for this specific service..."
-                                    rows="2"
-                                ></textarea>
+                                    placeholder="Describe the ideal user profile for this specific service..." rows="2"></textarea>
 
                                 @error('audience_detail')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
@@ -737,7 +713,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             </p>
                         </div>
 
-                        <span class="rounded-full border border-outline-variant px-2 py-0.5 text-xs font-normal uppercase tracking-widest text-outline-variant">
+                        <span
+                            class="rounded-full border border-outline-variant px-2 py-0.5 text-xs font-normal uppercase tracking-widest text-outline-variant">
                             Optional
                         </span>
                     </div>
@@ -752,12 +729,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 </span>
                             </div>
 
-                            <input
-                                wire:model.live="meta_title"
+                            <input wire:model.live="meta_title"
                                 class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                placeholder="e.g., Managed IT Services in Bangladesh | TechWave"
-                                type="text"
-                            />
+                                placeholder="e.g., Managed IT Services in Bangladesh | TechWave" type="text" />
 
                             @error('meta_title')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -773,12 +747,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 </span>
                             </div>
 
-                            <textarea
-                                wire:model.live="meta_description"
+                            <textarea wire:model.live="meta_description"
                                 class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                placeholder="Write a short SEO-friendly description for this service..."
-                                rows="3"
-                            ></textarea>
+                                placeholder="Write a short SEO-friendly description for this service..." rows="3"></textarea>
 
                             @error('meta_description')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -794,12 +765,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 </span>
                             </div>
 
-                            <textarea
-                                wire:model.live="meta_keywords"
+                            <textarea wire:model.live="meta_keywords"
                                 class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                placeholder="e.g., managed IT service, cyber security, cloud server, business email"
-                                rows="2"
-                            ></textarea>
+                                placeholder="e.g., managed IT service, cyber security, cloud server, business email" rows="2"></textarea>
 
                             <p class="text-xs text-secondary">Separate keywords with commas.</p>
 
@@ -813,24 +781,18 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                 <!-- Bottom Action Buttons -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-                        <button
-                            type="button"
-                            wire:click="discard"
-                            wire:loading.attr="disabled"
-                            class="rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
+                        <button type="button" wire:click="discard" wire:loading.attr="disabled"
+                            class="rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
                             Discard Changes
                         </button>
 
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
+                        <button type="submit" wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                             <span wire:loading.remove wire:target="update">Update Service</span>
 
                             <span wire:loading wire:target="update" class="inline-flex items-center gap-2">
-                                <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
                                 Updating...
                             </span>
                         </button>
@@ -847,22 +809,14 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                     <div class="space-y-3">
                         <label class="block font-label-md text-on-surface">Service Image</label>
 
-                        <label
-                            for="image"
-                            class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container"
-                        >
+                        <label for="image"
+                            class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
                             @if ($image)
-                                <img
-                                    src="{{ $image->temporaryUrl() }}"
-                                    alt="Service preview"
-                                    class="h-full w-full object-cover"
-                                />
+                                <img src="{{ $image->temporaryUrl() }}" alt="Service preview"
+                                    class="h-full w-full object-cover" />
                             @elseif ($service->image)
-                                <img
-                                    src="{{ Storage::url($service->image) }}"
-                                    alt="{{ $service->card_title }}"
-                                    class="h-full w-full object-cover"
-                                />
+                                <img src="{{ Storage::url($service->image) }}" alt="{{ $service->card_title }}"
+                                    class="h-full w-full object-cover" />
                             @else
                                 <span class="material-symbols-outlined mb-2 text-5xl text-outline">
                                     add_photo_alternate
@@ -878,13 +832,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             @endif
                         </label>
 
-                        <input
-                            id="image"
-                            type="file"
-                            wire:model="image"
-                            accept="image/png,image/jpeg,image/jpg,image/webp"
-                            class="hidden"
-                        />
+                        <input id="image" type="file" wire:model="image"
+                            accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden" />
 
                         <div wire:loading wire:target="image" class="text-sm text-primary">
                             Uploading image...
@@ -904,13 +853,11 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
                     <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
                         <div class="flex items-center gap-3">
-                            <div
-                                @class([
-                                    'h-2.5 w-2.5 rounded-full',
-                                    'bg-emerald-500' => $is_active,
-                                    'bg-red-500' => ! $is_active,
-                                ])
-                            ></div>
+                            <div @class([
+                                'h-2.5 w-2.5 rounded-full',
+                                'bg-emerald-500' => $is_active,
+                                'bg-red-500' => !$is_active,
+                            ])></div>
 
                             <div>
                                 <span class="block text-label-md font-label-md text-on-surface">
@@ -924,25 +871,22 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         </div>
 
                         <label class="relative inline-flex cursor-pointer items-center">
-                            <input
-                                type="checkbox"
-                                wire:model.live="is_active"
-                                class="peer sr-only"
-                            />
+                            <input type="checkbox" wire:model.live="is_active" class="peer sr-only" />
 
-                            <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100"></div>
+                            <div
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100">
+                            </div>
                         </label>
                     </div>
 
-                    <div class="mt-3 flex items-center justify-between rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                    <div
+                        class="mt-3 flex items-center justify-between rounded-lg border border-amber-100 bg-amber-50/50 p-3">
                         <div class="flex items-center gap-3">
-                            <div
-                                @class([
-                                    'flex h-8 w-8 items-center justify-center rounded-full',
-                                    'bg-amber-100 text-amber-600' => $is_featured,
-                                    'bg-slate-100 text-slate-400' => ! $is_featured,
-                                ])
-                            >
+                            <div @class([
+                                'flex h-8 w-8 items-center justify-center rounded-full',
+                                'bg-amber-100 text-amber-600' => $is_featured,
+                                'bg-slate-100 text-slate-400' => !$is_featured,
+                            ])>
                                 <span class="material-symbols-outlined text-[18px]">stars</span>
                             </div>
 
@@ -958,13 +902,11 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         </div>
 
                         <label class="relative inline-flex cursor-pointer items-center">
-                            <input
-                                type="checkbox"
-                                wire:model.live="is_featured"
-                                class="peer sr-only"
-                            />
+                            <input type="checkbox" wire:model.live="is_featured" class="peer sr-only" />
 
-                            <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-100"></div>
+                            <div
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-100">
+                            </div>
                         </label>
                     </div>
 
@@ -978,7 +920,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                     <h3 class="mb-5 text-h3 font-h2">Quick Preview</h3>
 
                     <div class="rounded-2xl border border-slate-100 bg-slate-50 p-5">
-                        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <div
+                            class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                             <span class="material-symbols-outlined">
                                 {{ $icon ?: 'design_services' }}
                             </span>
@@ -986,7 +929,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
                         <div class="mb-3 flex flex-wrap items-center gap-2">
                             @if ($this->selectedCategory())
-                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
                                     <span class="material-symbols-outlined text-[14px]">
                                         {{ $this->selectedCategory()->icon ?: 'category' }}
                                     </span>
@@ -995,19 +939,18 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             @endif
 
                             @if ($is_featured)
-                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
                                     <span class="material-symbols-outlined text-[14px]">stars</span>
                                     Featured
                                 </span>
                             @endif
 
-                            <span
-                                @class([
-                                    'rounded-full px-2.5 py-1 text-xs font-semibold',
-                                    'bg-emerald-100 text-emerald-700' => $is_active,
-                                    'bg-red-100 text-red-700' => ! $is_active,
-                                ])
-                            >
+                            <span @class([
+                                'rounded-full px-2.5 py-1 text-xs font-semibold',
+                                'bg-emerald-100 text-emerald-700' => $is_active,
+                                'bg-red-100 text-red-700' => !$is_active,
+                            ])>
                                 {{ $is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </div>
@@ -1022,11 +965,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             @forelse ($tags as $previewTag)
-                                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm">
+                                <span
+                                    class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm">
                                     {{ $previewTag }}
                                 </span>
                             @empty
-                                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-400 shadow-sm">
+                                <span
+                                    class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-400 shadow-sm">
                                     No tags yet
                                 </span>
                             @endforelse

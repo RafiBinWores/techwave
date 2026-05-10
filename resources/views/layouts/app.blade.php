@@ -10,6 +10,8 @@
 
     <title>{{ $title ?? config('app.name') }}</title>
 
+    @stack('meta')
+
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
@@ -142,6 +144,10 @@
 </head>
 
 <body>
+
+            {{-- Toast Notifications --}}
+        <livewire:shared.font-toast-notification />
+
     <!-- Full Website Background Video -->
     <div class="fixed inset-0 -z-20">
         <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/images/logo/logo.png') }}"
