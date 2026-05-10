@@ -14,26 +14,22 @@ new class extends Component {
     {
         $this->notificationRefreshKey++;
 
+        if ($action !== 'client_replied' && $action !== 'user_replied') {
+            return;
+        }
+        
         $this->dispatch('admin-ticket-notification-received');
         $this->dispatch('toast', message: 'New support ticket update received.', type: 'info');
     }
 
     public function unreadTicketCount(): int
     {
-        return SupportTicket::query()
-            ->whereNull('admin_read_at')
-            ->count();
+        return SupportTicket::query()->whereNull('admin_read_at')->count();
     }
 
     public function latestTicketNotifications()
     {
-        return SupportTicket::query()
-            ->with('user')
-            ->whereNull('admin_read_at')
-            ->latest('last_reply_at')
-            ->latest()
-            ->limit(5)
-            ->get();
+        return SupportTicket::query()->with('user')->whereNull('admin_read_at')->latest('last_reply_at')->latest()->limit(5)->get();
     }
 
     public function markAllTicketNotificationsRead(): void

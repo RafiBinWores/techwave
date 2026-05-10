@@ -23,7 +23,7 @@ new #[Layout('layouts.admin-app')] #[Title('Support Ticket Chat')] class extends
 
     public int $refreshKey = 0;
 
-        public function getListeners(): array
+    public function getListeners(): array
     {
         if (!$this->ticket?->id) {
             return [];
@@ -34,7 +34,7 @@ new #[Layout('layouts.admin-app')] #[Title('Support Ticket Chat')] class extends
         ];
     }
 
-     public function refreshTicketFromBroadcast(): void
+    public function refreshTicketFromBroadcast(): void
     {
         $this->refreshKey++;
         $this->refreshTicket();
@@ -49,12 +49,7 @@ new #[Layout('layouts.admin-app')] #[Title('Support Ticket Chat')] class extends
             ]);
         }
 
-        $this->ticket = $ticket->fresh([
-            'user',
-            'attachments',
-            'replies.user',
-            'replies.attachments'
-        ]);
+        $this->ticket = $ticket->fresh(['user', 'attachments', 'replies.user', 'replies.attachments']);
 
         $this->status = $this->ticket->status;
         $this->priority = $this->ticket->priority;
