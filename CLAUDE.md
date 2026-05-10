@@ -12,6 +12,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - php - 8.4
 - laravel/framework (LARAVEL) - v13
 - laravel/prompts (PROMPTS) - v0
+- laravel/reverb (REVERB) - v1
 - livewire/livewire (LIVEWIRE) - v4
 - laravel/boost (BOOST) - v2
 - laravel/mcp (MCP) - v0
@@ -20,6 +21,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - pestphp/pest (PEST) - v4
 - phpunit/phpunit (PHPUNIT) - v12
 - alpinejs (ALPINEJS) - v3
+- laravel-echo (ECHO) - v2
 - tailwindcss (TAILWINDCSS) - v4
 
 ## Conventions

@@ -134,6 +134,12 @@ class SslCommerzController extends Controller
         $status = $request->input('status');
 
         if (in_array($status, ['VALID', 'VALIDATED']) && $order->payment_status !== 'paid') {
+            $startsAt = now();
+
+            $expiresAt = $order->billing_cycle === 'yearly'
+                ? $startsAt->copy()->addYear()
+                : $startsAt->copy()->addMonth();
+
             $order->update([
                 'payment_status'      => 'paid',
                 'ssl_status'          => $status,
@@ -141,6 +147,8 @@ class SslCommerzController extends Controller
                 'val_id'              => $request->input('val_id'),
                 'payment_response'    => $request->all(),
                 'paid_at'             => now(),
+                'starts_at'           => $startsAt,
+                'expires_at'          => $expiresAt,
             ]);
 
             $order->pricingPlan()->increment('purchase_count');

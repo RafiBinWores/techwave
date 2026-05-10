@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="shortcut icon" href="{{ asset('assets/images/logo/logo.png') }}" type="image/x-icon">
 
@@ -30,8 +31,8 @@
         }
     </style>
 
-    @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 
 <body x-data="{ sidebarOpen: false, sidebarCollapsed: false }" class="bg-background text-on-background min-h-screen">
@@ -40,17 +41,15 @@
     <div x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false"
         class="fixed inset-0 bg-black/40 z-40 lg:hidden"></div>
 
-
-
     <!-- Main Wrapper -->
     <div :class="sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'"
         class="flex flex-col min-h-screen transition-all duration-300">
 
-        {{-- Sidebar --}}
-        <livewire:admin.shared.sidebar />
-
         <!-- Topbar -->
         <livewire:admin.shared.header />
+
+        {{-- Sidebar --}}
+        <livewire:admin.shared.sidebar />
 
         <!-- Content -->
         <main class="p-4 sm:p-6 lg:p-stack-lg max-w-350 mx-auto w-full">
@@ -63,6 +62,18 @@
 
         <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
         @stack('scripts')
+
+        <script>
+            document.addEventListener('livewire:init', () => {
+                console.log('Livewire initialized');
+
+                if (window.Echo) {
+                    console.log('Echo loaded for admin');
+                } else {
+                    console.error('Echo not loaded');
+                }
+            });
+        </script>
 
         @livewireScripts
     </div>

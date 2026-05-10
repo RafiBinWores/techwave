@@ -98,7 +98,6 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::livewire('account/dashboard', 'pages::client.account.dashboard')->name('account.dashboard');
 
     Route::livewire('account/services', 'pages::client.account.services')->name('account.services');
-    Route::livewire('account/tickets', 'pages::client.account.tickets')->name('account.tickets');
     Route::livewire('account/proposals', 'pages::client.account.proposals')->name('account.proposals');
     Route::livewire('account/profile', 'pages::client.account.profile')->name('account.profile');
     Route::livewire('account/change-password', 'pages::client.account.change-password')->name('account.change-password');
@@ -114,6 +113,10 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
 
     // Invoice download
     Route::get('/success/{order}/invoice/download', [PlanOrderInvoiceController::class, 'download'])->name('success.invoice.download');
+
+    // Support tickets
+    Route::livewire('/support/tickets', 'pages::client.tickets.index')->name('client.tickets.index');
+    Route::livewire('/support/tickets/{ticket}/show', 'pages::client.tickets.show')->name('client.tickets.show');
 });
 
 Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])
@@ -213,7 +216,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Ticket management
     Route::livewire('/tickets', 'pages::admin.tickets.index')->name('tickets.index');
+    Route::livewire('/tickets/{ticket}/show', 'pages::admin.tickets.show')->name('tickets.show');
+
 
     // Icons
     Route::livewire('/icons', 'pages::admin.icons.material-icons')->name('icons.material-icons');
+
 });
