@@ -346,44 +346,62 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Blog')] class extends Component
                             <label class="block font-label-md text-on-surface">Blog Content</label>
 
                             <div wire:ignore x-data="{
-                                quill: null,
-                                value: @entangle('content').live,
-                            
-                                init() {
-                                    this.quill = new Quill(this.$refs.editor, {
-                                        theme: 'snow',
-                                        placeholder: 'Write your full blog content here...',
-                                        modules: {
-                                            toolbar: [
-                                                [{ header: [1, 2, 3, false] }],
-                                                ['bold', 'italic', 'underline', 'strike'],
-                                                [{ list: 'ordered' }, { list: 'bullet' }],
-                                                [{ align: [] }],
-                                                ['blockquote', 'code-block'],
-                                                ['link'],
-                                                ['clean']
-                                            ]
-                                        }
-                                    });
-                            
-                                    if (this.value) {
-                                        this.quill.clipboard.dangerouslyPasteHTML(this.value);
+                            quill: null,
+                            value: @entangle('content'),
+                            isUpdatingFromQuill: false,
+                        
+                            init() {
+                                this.quill = new Quill(this.$refs.editor, {
+                                    theme: 'snow',
+                                    placeholder: 'Describe the service technical architecture and business value...',
+                                    modules: {
+                                        toolbar: [
+                                            [{ header: [2, 3, false] }],
+                                            [{ 'font': [] }],
+                                            ['bold', 'italic', 'underline', 'strike'],
+                                            [{ 'color': [] }, { 'background': [] }],
+                                            [{ list: 'ordered' }, { list: 'bullet' }],
+                                            [{ 'align': [] }],
+                                            ['blockquote', 'code-block'],
+                                            ['link'],
+                                            ['clean']
+                                        ]
                                     }
-                            
-                                    this.quill.on('text-change', () => {
-                                        this.value = this.quill.root.innerHTML;
-                                    });
-                            
-                                    this.$watch('value', (newValue) => {
-                                        if (this.quill.root.innerHTML !== newValue) {
-                                            this.quill.clipboard.dangerouslyPasteHTML(newValue || '');
-                                        }
-                                    });
+                                });
+                        
+                                if (this.value) {
+                                    this.quill.root.innerHTML = this.value;
                                 }
-                            }"
-                                class="overflow-hidden rounded-lg border border-outline-variant bg-white">
-                                <div x-ref="editor" class="min-h-80"></div>
-                            </div>
+                        
+                                this.quill.on('text-change', () => {
+                                    this.isUpdatingFromQuill = true;
+                                    this.value = this.quill.root.innerHTML;
+                        
+                                    setTimeout(() => {
+                                        this.isUpdatingFromQuill = false;
+                                    }, 100);
+                                });
+                        
+                                this.$watch('value', (newValue) => {
+                                    if (this.isUpdatingFromQuill) {
+                                        return;
+                                    }
+                        
+                                    if (this.quill.root.innerHTML !== newValue) {
+                                        let range = this.quill.getSelection();
+                        
+                                        this.quill.root.innerHTML = newValue || '';
+                        
+                                        if (range) {
+                                            this.quill.setSelection(range.index, range.length);
+                                        }
+                                    }
+                                });
+                            }
+                        }"
+                            class="overflow-hidden rounded-lg border border-outline-variant bg-white">
+                            <div x-ref="editor"></div>
+                        </div>
 
                             @error('content')
                                 <p class="text-sm text-red-500">{{ $message }}</p>

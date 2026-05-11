@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="flex flex-wrap gap-4">
-                    <a href="#contact"
+                    <a href="{{ route('client.contact') }}" wire:navigate
                         class="inline-flex items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
                         Contact Us
                     </a>

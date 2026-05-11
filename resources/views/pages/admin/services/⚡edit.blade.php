@@ -462,7 +462,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
                         <div wire:ignore x-data="{
                             quill: null,
-                            value: @entangle('overview').live,
+                            value: @entangle('overview'),
                             isUpdatingFromQuill: false,
                         
                             init() {
@@ -472,8 +472,11 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     modules: {
                                         toolbar: [
                                             [{ header: [2, 3, false] }],
+                                            [{ 'font': [] }],
                                             ['bold', 'italic', 'underline', 'strike'],
+                                            [{ 'color': [] }, { 'background': [] }],
                                             [{ list: 'ordered' }, { list: 'bullet' }],
+                                            [{ 'align': [] }],
                                             ['blockquote', 'code-block'],
                                             ['link'],
                                             ['clean']

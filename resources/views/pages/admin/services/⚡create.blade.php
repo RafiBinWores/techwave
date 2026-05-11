@@ -404,8 +404,11 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                                     modules: {
                                         toolbar: [
                                             [{ header: [2, 3, false] }],
+                                            [{ 'font': [] }],
                                             ['bold', 'italic', 'underline', 'strike'],
+                                            [{ 'color': [] }, { 'background': [] }],
                                             [{ list: 'ordered' }, { list: 'bullet' }],
+                                            [{ 'align': [] }],
                                             ['blockquote', 'code-block'],
                                             ['link'],
                                             ['clean']
@@ -513,7 +516,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                         </div>
 
                         <div
-                            class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                            class="flex min-h-15 flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
                             @forelse ($included_items as $index => $item)
                                 <div wire:key="included-item-{{ $index }}"
                                     class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
@@ -611,7 +614,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                     <div class="flex flex-col items-center justify-center rounded-lg bg-blue-50/50 p-5 text-center">
                         <span class="material-symbols-outlined mb-2 text-4xl text-primary-container">info</span>
 
-                        <p class="max-w-[220px] text-xs font-body-sm text-on-secondary-container">
+                        <p class="max-w-55 text-xs font-body-sm text-on-secondary-container">
                             Audience data helps your service page show clearer value to specific user groups.
                         </p>
                     </div>

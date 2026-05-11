@@ -303,10 +303,12 @@ new #[Layout('layouts.admin-app')] #[Title('Create Blog')] class extends Compone
                                         placeholder: 'Write your full blog content here...',
                                         modules: {
                                             toolbar: [
-                                                [{ header: [1, 2, 3, false] }],
+                                                [{ header: [2, 3, false] }],
+                                                [{ 'font': [] }],
                                                 ['bold', 'italic', 'underline', 'strike'],
+                                                [{ 'color': [] }, { 'background': [] }],
                                                 [{ list: 'ordered' }, { list: 'bullet' }],
-                                                [{ align: [] }],
+                                                [{ 'align': [] }],
                                                 ['blockquote', 'code-block'],
                                                 ['link'],
                                                 ['clean']

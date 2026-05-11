@@ -387,9 +387,63 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Project')] class extends Compon
                         <div class="space-y-2 md:col-span-2">
                             <label class="block font-label-md text-on-surface">Project Overview</label>
 
-                            <textarea wire:model.live="overview" placeholder="Write project details, challenges, solution and results..."
-                                rows="6"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"></textarea>
+                            <div wire:ignore x-data="{
+                                quill: null,
+                                value: @entangle('overview').live,
+                                isUpdatingFromQuill: false,
+                            
+                                init() {
+                                    this.quill = new Quill(this.$refs.editor, {
+                                        theme: 'snow',
+                                        placeholder: 'Describe the service technical architecture and business value...',
+                                        modules: {
+                                            toolbar: [
+                                                [{ header: [2, 3, false] }],
+                                                [{ 'font': [] }],
+                                                ['bold', 'italic', 'underline', 'strike'],
+                                                [{ 'color': [] }, { 'background': [] }],
+                                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                                [{ 'align': [] }],
+                                                ['blockquote', 'code-block'],
+                                                ['link'],
+                                                ['clean']
+                                            ]
+                                        }
+                                    });
+                            
+                                    if (this.value) {
+                                        this.quill.root.innerHTML = this.value;
+                                    }
+                            
+                                    this.quill.on('text-change', () => {
+                                        this.isUpdatingFromQuill = true;
+                                        this.value = this.quill.root.innerHTML;
+                            
+                                        setTimeout(() => {
+                                            this.isUpdatingFromQuill = false;
+                                        }, 100);
+                                    });
+                            
+                                    this.$watch('value', (newValue) => {
+                                        if (this.isUpdatingFromQuill) {
+                                            return;
+                                        }
+                            
+                                        if (this.quill.root.innerHTML !== newValue) {
+                                            let range = this.quill.getSelection();
+                            
+                                            this.quill.root.innerHTML = newValue || '';
+                            
+                                            if (range) {
+                                                this.quill.setSelection(range.index, range.length);
+                                            }
+                                        }
+                                    });
+                                }
+                            }"
+                                class="overflow-hidden rounded-lg border border-outline-variant bg-white">
+                                <div x-ref="editor"></div>
+                            </div>
 
                             @error('overview')
                                 <p class="text-sm text-red-500">{{ $message }}</p>

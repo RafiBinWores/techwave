@@ -1,13 +1,137 @@
 <?php
 
+use App\Models\Blog;
+use App\Models\Category;
+use App\Models\SiteSetting;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
-new class extends Component {
-    //
+new #[Title('Blogs | Techwave')] class extends Component {
+    use WithPagination;
+
+    #[Url]
+    public string $search = '';
+
+    #[Url]
+    public string $category = '';
+
+    #[Url]
+    public string $tag = '';
+
+    public int $perPage = 6;
+
+    public SiteSetting $siteSetting;
+
+    public function mount(): void
+    {
+        $this->siteSetting = SiteSetting::current();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCategory(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTag(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->search = '';
+        $this->category = '';
+        $this->tag = '';
+
+        $this->resetPage();
+    }
+
+    public function blogs()
+    {
+        $search = trim($this->search);
+
+        return Blog::query()
+            ->with('category')
+            ->where('is_active', true)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('excerpt', 'like', '%' . $search . '%')
+                        ->orWhere('author_name', 'like', '%' . $search . '%')
+                        ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                            $categoryQuery->where('name', 'like', '%' . $search . '%');
+                        });
+                });
+            })
+            ->when($this->category !== '', function ($query) {
+                $query->whereHas('category', function ($categoryQuery) {
+                    $categoryQuery->where('slug', $this->category)->orWhere('id', $this->category);
+                });
+            })
+            ->when($this->tag !== '', function ($query) {
+                $query->whereJsonContains('tags', $this->tag);
+            })
+            ->latest('published_at')
+            ->latest()
+            ->paginate($this->perPage);
+    }
+
+    public function getCategoriesProperty()
+    {
+        return Category::query()
+            ->whereHas('blogs', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->withCount([
+                'blogs as active_blogs_count' => function ($query) {
+                    $query->where('is_active', true);
+                },
+            ])
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+    }
+
+    public function getRecentBlogsProperty()
+    {
+        return Blog::query()->with('category')->where('is_active', true)->latest('published_at')->latest()->limit(3)->get();
+    }
+
+    public function getKeywordTagsProperty(): array
+    {
+        return Blog::query()->where('is_active', true)->whereNotNull('tags')->pluck('tags')->flatten()->filter()->unique()->take(14)->values()->toArray();
+    }
+
+    public function blogImage(Blog $blog): ?string
+    {
+        if (blank($blog->thumbnail)) {
+            return null;
+        }
+
+        if (str_starts_with($blog->thumbnail, 'http://') || str_starts_with($blog->thumbnail, 'https://')) {
+            return $blog->thumbnail;
+        }
+
+        return asset('storage/' . $blog->thumbnail);
+    }
 };
 ?>
 
 <div class="relative text-white">
+    @push('meta')
+        <meta name="title" content="Blogs | {{ $siteSetting->site_name ?: config('app.name') }}">
+        <meta name="description"
+            content="Explore expert articles on IT support, cybersecurity, business systems, websites, cloud tools, productivity, and digital transformation.">
+    @endpush
+
     <!-- Hero -->
     <section class="relative overflow-hidden py-18 sm:py-24 lg:py-28">
         <div class="absolute inset-0 pointer-events-none">
@@ -44,59 +168,35 @@ new class extends Component {
                         <div class="absolute left-8 top-8 h-24 w-24 rounded-full bg-cyan-400/12 blur-3xl"></div>
                         <div class="absolute bottom-8 right-8 h-32 w-32 rounded-full bg-blue-500/12 blur-3xl"></div>
 
-                        <div class="overflow-hidden rounded-[24px] border border-white/10">
+                        {{-- <div class="overflow-hidden rounded-3xlborder border-white/10 bg-slate-950/25">
+                            <div class="relative h-80 w-full overflow-hidden sm:h-100">
+                                <div class="absolute inset-0 bg-linear-to-br from-slate-950/85 via-blue-950/45 to-cyan-950/20"></div>
+                                <div class="absolute left-10 top-10 h-32 w-32 rounded-full bg-cyan-400/10 blur-3xl"></div>
+                                <div class="absolute bottom-10 right-10 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl"></div>
+
+                                <div class="relative z-10 flex h-full flex-col justify-center p-8">
+                                    <span class="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-200/80">
+                                        Knowledge Hub
+                                    </span>
+
+                                    <h2 class="mt-4 max-w-md text-3xl font-bold leading-tight text-white sm:text-4xl">
+                                        Smart ideas for digital business growth.
+                                    </h2>
+
+                                    <p class="mt-4 max-w-md text-sm leading-7 text-blue-100/65">
+                                        Read practical guides, updates, and expert insights from our team.
+                                    </p>
+                                </div>
+                            </div>
+                        </div> --}}
+
+                        <div class="overflow-hidden rounded-3xl border border-white/10">
                             <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80"
-                                alt="Blog hero" class="h-[320px] w-full object-cover sm:h-[400px]">
+                                alt="Blog hero" class="h-80 w-full object-cover sm:h-100">
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Featured Post -->
-    <section class="relative overflow-hidden pb-12 sm:pb-16">
-        <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
-            <article
-                class="group relative overflow-hidden rounded-[34px] border border-white/10 bg-white/6 p-4 sm:p-5 backdrop-blur-2xl shadow-[0_22px_70px_rgba(0,0,0,0.2)]">
-                <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-                    <div class="overflow-hidden rounded-[26px] border border-white/10">
-                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1400&q=80"
-                            alt="Featured blog"
-                            class="h-[280px] w-full object-cover transition duration-700 group-hover:scale-105 sm:h-[360px]">
-                    </div>
-
-                    <div class="p-2 sm:p-4">
-                        <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
-                            <span class="rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-cyan-200">
-                                Featured Post
-                            </span>
-                            <span>Cyber Security</span>
-                            <span>•</span>
-                            <span>May 20, 2026</span>
-                        </div>
-
-                        <h2 class="mt-5 text-3xl font-bold leading-tight text-white sm:text-4xl">
-                            Why proactive cybersecurity matters more than reactive fixes
-                        </h2>
-
-                        <p class="mt-5 text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">
-                            Learn why modern businesses need a security-first mindset and how better protection,
-                            monitoring, and user awareness can reduce long-term risk.
-                        </p>
-
-                        <a href="{{ route('client.blogs.details', ['slug' => 'cyber-security']) }}"
-                            class="mt-7 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5">
-                            Read Full Article
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </article>
         </div>
     </section>
 
@@ -106,164 +206,111 @@ new class extends Component {
             <div class="grid gap-8 lg:grid-cols-[1fr_350px] xl:grid-cols-[1fr_390px]">
                 <!-- Main Grid -->
                 <div>
+                    @if ($search || $category || $tag)
+                        <div
+                            class="mb-6 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+                            <div class="text-sm text-blue-100/70">
+                                Showing results
+                                @if ($search)
+                                    for <span class="font-semibold text-white">“{{ $search }}”</span>
+                                @endif
+
+                                @if ($category)
+                                    in selected category
+                                @endif
+
+                                @if ($tag)
+                                    tagged <span class="font-semibold text-white">“{{ $tag }}”</span>
+                                @endif
+                            </div>
+
+                            <button type="button" wire:click="clearFilters"
+                                class="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/12">
+                                Clear Filters
+                                <span class="material-symbols-outlined text-[16px]">close</span>
+                            </button>
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <article class="blog-card">
-                            <div class="overflow-hidden rounded-[24px] border border-white/10">
-                                <img src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=1200&q=80"
-                                    alt="Blog post"
-                                    class="h-56 w-full object-cover transition duration-700 hover:scale-105">
-                            </div>
-                            <div class="pt-5">
-                                <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
-                                    <span class="blog-chip">Web Development</span>
-                                    <span>May 18, 2026</span>
-                                </div>
-                                <h3 class="mt-4 text-2xl font-bold text-white">
-                                    How a better website improves trust and conversion
-                                </h3>
-                                <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                                    Understand how performance, design clarity, and user experience influence customer
-                                    trust.
-                                </p>
-                                <a href="#" class="blog-link mt-5">Read More</a>
-                            </div>
-                        </article>
+                        @forelse ($this->blogs() as $blog)
+                            @php
+                                $blogImage = $this->blogImage($blog);
+                            @endphp
 
-                        <article class="blog-card">
-                            <div class="overflow-hidden rounded-[24px] border border-white/10">
-                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80"
-                                    alt="Blog post"
-                                    class="h-56 w-full object-cover transition duration-700 hover:scale-105">
-                            </div>
-                            <div class="pt-5">
-                                <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
-                                    <span class="blog-chip">Business IT</span>
-                                    <span>May 16, 2026</span>
-                                </div>
-                                <h3 class="mt-4 text-2xl font-bold text-white">
-                                    Essential IT systems every growing office should have
-                                </h3>
-                                <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                                    From networking to cloud tools, here are the systems that improve efficiency and
-                                    stability.
-                                </p>
-                                <a href="#" class="blog-link mt-5">Read More</a>
-                            </div>
-                        </article>
+                            <article class="blog-card">
+                                @if ($blogImage)
+                                    <a href="{{ route('client.blogs.details', $blog->slug) }}" wire:navigate
+                                        class="block overflow-hidden rounded-[24px] border border-white/10">
+                                        <img src="{{ $blogImage }}" alt="{{ $blog->title }}"
+                                            class="h-56 w-full object-cover transition duration-700 hover:scale-105">
+                                    </a>
+                                @else
+                                    <a href="{{ route('client.blogs.details', $blog->slug) }}" wire:navigate
+                                        class="relative block h-56 overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/25">
+                                        <div
+                                            class="absolute inset-0 bg-linear-to-br from-slate-950/85 via-blue-950/40 to-cyan-950/20">
+                                        </div>
+                                        <div
+                                            class="absolute left-6 top-6 h-24 w-24 rounded-full bg-cyan-400/10 blur-3xl">
+                                        </div>
+                                        <div
+                                            class="absolute bottom-6 right-6 h-28 w-28 rounded-full bg-blue-500/10 blur-3xl">
+                                        </div>
 
-                        <article class="blog-card">
-                            <div class="overflow-hidden rounded-[24px] border border-white/10">
-                                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
-                                    alt="Blog post"
-                                    class="h-56 w-full object-cover transition duration-700 hover:scale-105">
-                            </div>
-                            <div class="pt-5">
-                                <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
-                                    <span class="blog-chip">Cloud & Email</span>
-                                    <span>May 12, 2026</span>
-                                </div>
-                                <h3 class="mt-4 text-2xl font-bold text-white">
-                                    Why professional business email still matters
-                                </h3>
-                                <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                                    Branded email, stronger trust, and better communication control for serious
-                                    businesses.
-                                </p>
-                                <a href="#" class="blog-link mt-5">Read More</a>
-                            </div>
-                        </article>
+                                        <div
+                                            class="relative z-10 flex h-full items-center justify-center px-6 text-center">
+                                            <span
+                                                class="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100/45">
+                                                {{ $blog->category?->name ?? 'Blog Insight' }}
+                                            </span>
+                                        </div>
+                                    </a>
+                                @endif
 
-                        <article class="blog-card">
-                            <div class="overflow-hidden rounded-[24px] border border-white/10">
-                                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80"
-                                    alt="Blog post"
-                                    class="h-56 w-full object-cover transition duration-700 hover:scale-105">
-                            </div>
-                            <div class="pt-5">
-                                <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
-                                    <span class="blog-chip">Productivity</span>
-                                    <span>May 10, 2026</span>
-                                </div>
-                                <h3 class="mt-4 text-2xl font-bold text-white">
-                                    Small workflow changes that create big productivity gains
-                                </h3>
-                                <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                                    Practical improvements that help teams work faster and with fewer interruptions.
-                                </p>
-                                <a href="#" class="blog-link mt-5">Read More</a>
-                            </div>
-                        </article>
+                                <div class="pt-5">
+                                    <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
+                                        <span class="blog-chip">
+                                            {{ $blog->category?->name ?? 'Blog' }}
+                                        </span>
 
-                        <article class="blog-card">
-                            <div class="overflow-hidden rounded-[24px] border border-white/10">
-                                <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80"
-                                    alt="Blog post"
-                                    class="h-56 w-full object-cover transition duration-700 hover:scale-105">
-                            </div>
-                            <div class="pt-5">
-                                <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
-                                    <span class="blog-chip">Security</span>
-                                    <span>May 08, 2026</span>
-                                </div>
-                                <h3 class="mt-4 text-2xl font-bold text-white">
-                                    What makes a company vulnerable to avoidable cyber risk
-                                </h3>
-                                <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                                    A look at common mistakes businesses make and how to reduce risk more effectively.
-                                </p>
-                                <a href="#" class="blog-link mt-5">Read More</a>
-                            </div>
-                        </article>
+                                        @if ($blog->published_at)
+                                            <span>{{ $blog->published_at->format('M d, Y') }}</span>
+                                        @endif
+                                    </div>
 
-                        <article class="blog-card">
-                            <div class="overflow-hidden rounded-[24px] border border-white/10">
-                                <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80"
-                                    alt="Blog post"
-                                    class="h-56 w-full object-cover transition duration-700 hover:scale-105">
-                            </div>
-                            <div class="pt-5">
-                                <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
-                                    <span class="blog-chip">Business Growth</span>
-                                    <span>May 06, 2026</span>
+                                    <a href="{{ route('client.blogs.details', $blog->slug) }}" wire:navigate>
+                                        <h3 class="mt-4 text-2xl font-bold text-white transition hover:text-cyan-200">
+                                            {{ $blog->title }}
+                                        </h3>
+                                    </a>
+
+                                    @if ($blog->excerpt)
+                                        <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                                            {{ Str::limit($blog->excerpt, 145) }}
+                                        </p>
+                                    @endif
+
+                                    <a href="{{ route('client.blogs.details', $blog->slug) }}" wire:navigate
+                                        class="blog-link mt-5">
+                                        Read More
+                                    </a>
                                 </div>
-                                <h3 class="mt-4 text-2xl font-bold text-white">
-                                    Why digital systems are now essential for scaling operations
-                                </h3>
-                                <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                                    Growth needs better systems, stronger structure, and more reliable digital support.
+                            </article>
+                        @empty
+                            <div
+                                class="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-10 text-center backdrop-blur-2xl">
+                                <h3 class="text-2xl font-bold text-white">No blogs found</h3>
+                                <p class="mt-3 text-sm text-blue-100/70">
+                                    Please add active blogs from your admin panel or change your filters.
                                 </p>
-                                <a href="#" class="blog-link mt-5">Read More</a>
                             </div>
-                        </article>
+                        @endforelse
                     </div>
 
                     <!-- Pagination -->
-                    <div class="mt-10 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-                        <a href="#" class="pagination-btn">
-                            Prev
-                        </a>
-
-                        <a href="#" class="pagination-btn pagination-btn-active">
-                            1
-                        </a>
-
-                        <a href="#" class="pagination-btn">
-                            2
-                        </a>
-
-                        <a href="#" class="pagination-btn">
-                            3
-                        </a>
-
-                        <span class="px-2 text-blue-100/45">...</span>
-
-                        <a href="#" class="pagination-btn">
-                            8
-                        </a>
-
-                        <a href="#" class="pagination-btn">
-                            Next
-                        </a>
+                    <div class="mt-10">
+                        {{ $this->blogs()->links() }}
                     </div>
                 </div>
 
@@ -273,10 +320,10 @@ new class extends Component {
                     <div class="blog-sidebar-card">
                         <h3 class="text-2xl font-bold text-white">Search Blog</h3>
 
-                        <form class="mt-6">
+                        <form wire:submit.prevent="$refresh" class="mt-6">
                             <div class="relative">
-                                <input type="text" placeholder="Search articles..."
-                                    class="blog-search-input pr-12" />
+                                <input type="text" wire:model.live.debounce.400ms="search"
+                                    placeholder="Search articles..." class="blog-search-input pr-12" />
 
                                 <button type="submit"
                                     class="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/8 text-blue-100/70 transition hover:bg-white/12 hover:text-white">
@@ -291,76 +338,88 @@ new class extends Component {
                     </div>
 
                     <!-- Categories -->
-                    <div class="blog-sidebar-card">
-                        <h3 class="text-2xl font-bold text-white">Categories</h3>
+                    @if ($this->categories->count())
+                        <div class="blog-sidebar-card">
+                            <h3 class="text-2xl font-bold text-white">Categories</h3>
 
-                        <div class="mt-6 space-y-3">
-                            <a href="#" class="blog-category-item">
-                                <span>Cyber Security</span>
-                                <span>12</span>
-                            </a>
-                            <a href="#" class="blog-category-item">
-                                <span>Web Development</span>
-                                <span>8</span>
-                            </a>
-                            <a href="#" class="blog-category-item">
-                                <span>Business IT</span>
-                                <span>10</span>
-                            </a>
-                            <a href="#" class="blog-category-item">
-                                <span>Cloud & Email</span>
-                                <span>6</span>
-                            </a>
-                            <a href="#" class="blog-category-item">
-                                <span>Productivity</span>
-                                <span>7</span>
-                            </a>
-                            <a href="#" class="blog-category-item">
-                                <span>Business Growth</span>
-                                <span>5</span>
-                            </a>
+                            <div class="mt-6 space-y-3">
+                                @foreach ($this->categories as $item)
+                                    <button type="button"
+                                        wire:click="$set('category', '{{ $item->slug ?? $item->id }}')"
+                                        @class([
+                                            'blog-category-item w-full',
+                                            'border-cyan-300/20 bg-cyan-400/10 text-cyan-100' =>
+                                                $category === ($item->slug ?? (string) $item->id),
+                                        ])>
+                                        <span>{{ $item->name }}</span>
+                                        <span>{{ $item->active_blogs_count }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
 
                     <!-- Recent Posts -->
-                    <div class="blog-sidebar-card">
-                        <h3 class="text-2xl font-bold text-white">Recent Posts</h3>
+                    @if ($this->recentBlogs->count())
+                        <div class="blog-sidebar-card">
+                            <h3 class="text-2xl font-bold text-white">Recent Posts</h3>
 
-                        <div class="mt-6 space-y-4">
-                            <a href="#" class="recent-post-item">
-                                <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80"
-                                    alt="Recent post" class="h-18 w-18 rounded-2xl object-cover">
-                                <div>
-                                    <h4 class="text-sm font-semibold leading-6 text-white">
-                                        Why proactive cybersecurity matters more than reactive fixes
-                                    </h4>
-                                    <p class="mt-1 text-xs text-blue-100/50">May 20, 2026</p>
-                                </div>
-                            </a>
+                            <div class="mt-6 space-y-4">
+                                @foreach ($this->recentBlogs as $recentBlog)
+                                    @php
+                                        $recentBlogImage = $this->blogImage($recentBlog);
+                                    @endphp
 
-                            <a href="#" class="recent-post-item">
-                                <img src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=600&q=80"
-                                    alt="Recent post" class="h-18 w-18 rounded-2xl object-cover">
-                                <div>
-                                    <h4 class="text-sm font-semibold leading-6 text-white">
-                                        How a better website improves trust and conversion
-                                    </h4>
-                                    <p class="mt-1 text-xs text-blue-100/50">May 18, 2026</p>
-                                </div>
-                            </a>
+                                    <a href="{{ route('client.blogs.details', $recentBlog->slug) }}" wire:navigate
+                                        class="recent-post-item">
 
-                            <a href="#" class="recent-post-item">
-                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
-                                    alt="Recent post" class="h-18 w-18 rounded-2xl object-cover">
-                                <div>
-                                    <h4 class="text-sm font-semibold leading-6 text-white">
-                                        Essential IT systems every growing office should have
-                                    </h4>
-                                    <p class="mt-1 text-xs text-blue-100/50">May 16, 2026</p>
-                                </div>
-                            </a>
+                                        @if ($recentBlogImage)
+                                            <img src="{{ $recentBlogImage }}" alt="{{ $recentBlog->title }}"
+                                                class="h-18 w-18 rounded-2xl object-cover">
+                                        @else
+                                            <div
+                                                class="flex h-18 w-18 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-cyan-200">
+                                                <span class="material-symbols-outlined text-[22px]">
+                                                    article
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <div>
+                                            <h4 class="text-sm font-semibold leading-6 text-white">
+                                                {{ Str::limit($recentBlog->title, 58) }}
+                                            </h4>
+
+                                            @if ($recentBlog->published_at)
+                                                <p class="mt-1 text-xs text-blue-100/50">
+                                                    {{ $recentBlog->published_at->format('M d, Y') }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
+
+                    <!-- Keyword Tags -->
+                    @if (!empty($this->keywordTags))
+                        <div class="blog-sidebar-card">
+                            <h3 class="text-2xl font-bold text-white">Keyword Tags</h3>
+
+                            <div class="mt-6 flex flex-wrap gap-2">
+                                @foreach ($this->keywordTags as $item)
+                                    <button type="button" wire:click="$set('tag', '{{ $item }}')"
+                                        @class([
+                                            'blog-tag',
+                                            'border-cyan-300/20 bg-cyan-400/10 text-cyan-100' => $tag === $item,
+                                        ])>
+                                        {{ $item }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                     <!-- CTA -->
                     <div class="blog-sidebar-card">
@@ -369,9 +428,9 @@ new class extends Component {
                             Talk to our team about support, security, websites, cloud systems, and custom solutions.
                         </p>
 
-                        <a href="#contact"
+                        <a href="{{ route('client.services') }}" wire:navigate
                             class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5">
-                            Contact Us
+                            Explore Services
                         </a>
                     </div>
                 </aside>

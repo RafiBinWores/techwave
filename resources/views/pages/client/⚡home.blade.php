@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Blog;
 use App\Models\CompanyLogo;
 use App\Models\PricingPlan;
+use App\Models\Project;
 use App\Models\Service;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
@@ -35,6 +37,67 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             ->latest()
             ->take(3)
             ->get();
+    }
+
+    public function getProjectsProperty()
+    {
+        return Project::query()->with('category')->where('is_active', true)->where('is_featured', true)->latest('completed_at')->latest()->limit(6)->get();
+    }
+
+    public function projectImage(Project $project): string
+    {
+        if ($project->thumbnail) {
+            if (str_starts_with($project->thumbnail, 'http://') || str_starts_with($project->thumbnail, 'https://')) {
+                return $project->thumbnail;
+            }
+
+            return asset('storage/' . $project->thumbnail);
+        }
+
+        return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80';
+    }
+
+    public function projectType(Project $project): string
+    {
+        return $project->project_type ?: $project->category?->name ?: 'Project';
+    }
+
+    public function projectTechnologies(Project $project, int $limit = 3): array
+    {
+        if (empty($project->technologies)) {
+            return [];
+        }
+
+        return collect($project->technologies)
+            ->take($limit)
+            ->map(function ($item) {
+                if (is_array($item)) {
+                    return $item['name'] ?? ($item['title'] ?? null);
+                }
+
+                return $item;
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    public function getFeaturedBlogsProperty()
+    {
+        return Blog::query()->with('category')->where('is_active', true)->where('is_featured', true)->latest('published_at')->limit(3)->get();
+    }
+
+    public function blogImage(Blog $blog): ?string
+    {
+        if (blank($blog->thumbnail)) {
+            return null;
+        }
+
+        if (str_starts_with($blog->thumbnail, 'http://') || str_starts_with($blog->thumbnail, 'https://')) {
+            return $blog->thumbnail;
+        }
+
+        return asset('storage/' . $blog->thumbnail);
     }
 };
 ?>
@@ -688,203 +751,180 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
             <!-- Bento Grid -->
             <div class="grid grid-cols-1 gap-6 md:grid-cols-6 auto-rows-[240px]">
-                <!-- Project 1 -->
-                <article
-                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.20)] md:col-span-4 md:row-span-2 cursor-pointer">
-                    <div class="absolute inset-0">
-                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80"
-                            alt="Analytics dashboard project"
-                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/50 to-slate-900/10">
-                        </div>
-                    </div>
+                @forelse ($this->projects as $project)
+                    @php
+                        $projectImage = $this->projectImage($project);
+                    @endphp
 
-                    <div
-                        class="relative z-10 flex h-full flex-col justify-between rounded-[22px] border border-white/8 p-4 sm:p-6">
-                        <div class="flex items-start justify-between gap-4">
-                            <span
-                                class="inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-cyan-200">
-                                Web Platform
-                            </span>
+                    @if ($loop->first && $projectImage)
+                        <!-- Big Project With Image -->
+                        <a href="{{ route('client.projects.details', $project->slug) }}" wire:navigate
+                            class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.20)] md:col-span-4 md:row-span-2 cursor-pointer">
+                            <div class="absolute inset-0">
+                                <img src="{{ $projectImage }}" alt="{{ $project->title }}"
+                                    class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+
+                                <div
+                                    class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/50 to-slate-900/10">
+                                </div>
+                            </div>
 
                             <div
-                                class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white/90 backdrop-blur-xl">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
-                                </svg>
+                                class="relative z-10 flex h-full flex-col justify-between rounded-[22px] border border-white/8 p-4 sm:p-6">
+                                <div class="flex items-start justify-between gap-4">
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-cyan-200">
+                                        {{ $this->projectType($project) }}
+                                    </span>
+
+                                    @if ($project->live_url || $project->case_study_url)
+                                        <a href="{{ $project->case_study_url ?: $project->live_url }}"
+                                            target="_blank"
+                                            class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white/90 backdrop-blur-xl">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                                            </svg>
+                                        </a>
+                                    @else
+                                        <div
+                                            class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white/90 backdrop-blur-xl">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                                            </svg>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="max-w-xl">
+                                    <h3 class="text-2xl font-bold text-white sm:text-3xl">
+                                        {{ $project->title }}
+                                    </h3>
+
+                                    @if ($project->short_description)
+                                        <p class="mt-3 max-w-lg text-sm leading-7 text-blue-100/72 sm:text-base">
+                                            {{ Str::limit($project->short_description, 160) }}
+                                        </p>
+                                    @endif
+
+                                    @if (!empty($this->projectTechnologies($project)))
+                                        <div class="mt-5 flex flex-wrap gap-2">
+                                            @foreach ($this->projectTechnologies($project) as $technology)
+                                                <span
+                                                    class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">
+                                                    {{ $technology }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
+                        </a>
+                    @elseif ($projectImage)
+                        <!-- Normal Project With Image -->
+                        <a href="{{ route('client.projects.details', $project->slug) }}" wire:navigate
+                            class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
+                            <div class="absolute inset-0">
+                                <img src="{{ $projectImage }}" alt="{{ $project->title }}"
+                                    class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
 
-                        <div class="max-w-xl">
-                            <h3 class="text-2xl font-bold text-white sm:text-3xl">
-                                Enterprise Analytics Dashboard
-                            </h3>
-                            <p class="mt-3 max-w-lg text-sm leading-7 text-blue-100/72 sm:text-base">
-                                A modern business intelligence interface built for real-time reporting, executive
-                                visibility,
-                                and operational decision-making.
-                            </p>
-
-                            <div class="mt-5 flex flex-wrap gap-2">
-                                <span
-                                    class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">Dashboard
-                                    UI</span>
-                                <span
-                                    class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">Data
-                                    Visualization</span>
-                                <span
-                                    class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">SaaS</span>
+                                <div
+                                    class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </article>
 
-                <!-- Project 2 -->
-                <article
-                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
-                    <div class="absolute inset-0">
-                        <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=80"
-                            alt="Team planning project"
-                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
-                        </div>
-                    </div>
+                            <div
+                                class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
+                                <span
+                                    class="mb-3 inline-flex w-fit items-center rounded-full border border-sky-300/20 bg-sky-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-200">
+                                    {{ $this->projectType($project) }}
+                                </span>
 
-                    <div
-                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
-                        <span
-                            class="mb-3 inline-flex w-fit items-center rounded-full border border-sky-300/20 bg-sky-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-200">
-                            Cyber Security
-                        </span>
-                        <h3 class="text-xl font-bold text-white">Security Operations Portal</h3>
-                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
-                            Clean monitoring and response interface for security-focused teams.
-                        </p>
-                    </div>
-                </article>
+                                <h3 class="text-xl font-bold text-white">
+                                    {{ $project->title }}
+                                </h3>
 
-                <!-- Project 3 -->
-                <article
-                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
-                    <div class="absolute inset-0">
-                        <img src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=900&q=80"
-                            alt="Laptop web development project"
-                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
-                        </div>
-                    </div>
+                                @if ($project->short_description)
+                                    <p class="mt-2 text-sm leading-6 text-blue-100/70">
+                                        {{ Str::limit($project->short_description, 105) }}
+                                    </p>
+                                @endif
 
-                    <div
-                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
-                        <span
-                            class="mb-3 inline-flex w-fit items-center rounded-full border border-indigo-300/20 bg-indigo-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-200">
-                            Development
-                        </span>
-                        <h3 class="text-xl font-bold text-white">Custom Business Website</h3>
-                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
-                            High-conversion company website with premium motion and responsive UX.
-                        </p>
-                    </div>
-                </article>
-
-                <!-- Project 4 -->
-                <article
-                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur-2xl md:col-span-2 cursor-pointer">
-                    <span
-                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent"></span>
-
-                    <div
-                        class="flex h-full flex-col justify-between rounded-[22px] border border-white/8 bg-slate-950/25 p-5">
-                        <div
-                            class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-blue-500/15 text-cyan-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M3.75 4.5h16.5v10.5H3.75zM7.5 20.25h9" />
-                            </svg>
-                        </div>
-
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.2em] text-blue-100/45">Featured Build</p>
-                            <h3 class="mt-2 text-xl font-bold text-white">Managed Hosting Stack</h3>
-                            <p class="mt-3 text-sm leading-6 text-blue-100/68">
-                                Secure, cloud-ready deployment architecture for performance-critical business platforms.
-                            </p>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Project 5 -->
-                <article
-                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
-                    <div class="absolute inset-0">
-                        <img src="https://images.unsplash.com/photo-1516321165247-4aa89a48be28?auto=format&fit=crop&w=900&q=80"
-                            alt="Email and communication project"
-                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
-                        </div>
-                    </div>
-
-                    <div
-                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
-                        <span
-                            class="mb-3 inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-200">
-                            Communication
-                        </span>
-                        <h3 class="text-xl font-bold text-white">Professional Email Setup</h3>
-                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
-                            Branded mail ecosystem with security, reliability, and admin control.
-                        </p>
-                    </div>
-                </article>
-
-                <!-- Project 6 -->
-                <article
-                    class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl md:col-span-2 cursor-pointer">
-
-                    <div class="absolute inset-0">
-                        <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=900&q=80"
-                            alt="Mobile app project"
-                            class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                        <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent">
-                        </div>
-                    </div>
-
-                    <div
-                        class="relative z-10 flex h-full flex-col justify-end rounded-[22px] border border-white/8 p-5">
-                        <span
-                            class="mb-3 inline-flex w-fit items-center rounded-full border border-violet-300/20 bg-violet-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-violet-200">
-                            Mobile App
-                        </span>
-
-                        <h3 class="text-xl font-bold text-white">
-                            Smart Service App
-                        </h3>
-
-                        <p class="mt-2 text-sm leading-6 text-blue-100/70">
-                            Premium mobile experience for booking, tracking, notifications, and customer engagement.
-                        </p>
-
-                        <div class="mt-4 flex flex-wrap gap-2">
+                                @if (!empty($this->projectTechnologies($project, 2)))
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        @foreach ($this->projectTechnologies($project, 2) as $technology)
+                                            <span
+                                                class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">
+                                                {{ $technology }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </a>
+                    @else
+                        <!-- Project Without Image -->
+                        <a href="{{ route('client.projects.details', $project->slug) }}" wire:navigate
+                            class="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur-2xl md:col-span-2 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:bg-white/8">
                             <span
-                                class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">
-                                UI/UX
-                            </span>
+                                class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent"></span>
 
-                            <span
-                                class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">
-                                Mobile First
-                            </span>
-                        </div>
+                            <div class="absolute inset-0 pointer-events-none">
+                                <div class="absolute left-6 top-6 h-24 w-24 rounded-full bg-cyan-400/10 blur-3xl">
+                                </div>
+                                <div class="absolute bottom-6 right-6 h-28 w-28 rounded-full bg-blue-500/10 blur-3xl">
+                                </div>
+                            </div>
+
+                            <div
+                                class="relative z-10 flex h-full flex-col justify-between rounded-[22px] border border-white/8 bg-slate-950/25 p-5">
+
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.2em] text-blue-100/45">
+                                        {{ $project->is_featured ? 'Featured Build' : $this->projectType($project) }}
+                                    </p>
+
+                                    <h3 class="mt-2 text-xl font-bold text-white">
+                                        {{ $project->title }}
+                                    </h3>
+
+                                    @if ($project->short_description)
+                                        <p class="mt-3 text-sm leading-6 text-blue-100/68">
+                                            {{ Str::limit($project->short_description, 120) }}
+                                        </p>
+                                    @endif
+                                </div>
+
+                                @if (!empty($this->projectTechnologies($project, 2)))
+                                    <div class="mt-5 flex flex-wrap gap-2">
+                                        @foreach ($this->projectTechnologies($project, 2) as $technology)
+                                            <span
+                                                class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-blue-100/75">
+                                                {{ $technology }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </a>
+                    @endif
+                @empty
+                    <div
+                        class="md:col-span-6 rounded-[28px] border border-white/10 bg-white/6 p-10 text-center backdrop-blur-2xl">
+                        <h3 class="text-2xl font-bold text-white">No projects found</h3>
+                        <p class="mt-3 text-sm text-blue-100/70">
+                            Please add active projects from your admin panel.
+                        </p>
                     </div>
-                </article>
+                @endforelse
             </div>
 
             <!-- bottom button -->
             <div class="mt-10 flex justify-center">
-                <a href="#" class="service-btn">
+                <a href="{{ route('client.projects') }}" wire:navigate class="service-btn">
                     View All Projects
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2">
@@ -1079,7 +1119,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                 <div
                     class="mx-auto mb-5 inline-flex items-center justify-center gap-2 rounded-full glass-chip px-4 py-2 text-xs sm:text-sm text-blue-100/85">
                     <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                    Latest Blog
+                    Featured Blog
                 </div>
 
                 <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
@@ -1095,119 +1135,83 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             </div>
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <!-- Blog Card 1 -->
-                <article
-                    class="group overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
-                    <div class="overflow-hidden rounded-[22px]">
-                        <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80"
-                            alt="Blog cover"
-                            class="h-60 w-full object-cover transition duration-700 group-hover:scale-105">
-                    </div>
+                @forelse ($this->featuredBlogs as $blog)
+                    @php
+                        $blogImage = $this->blogImage($blog);
+                    @endphp
 
-                    <div class="p-3 sm:p-4">
-                        <div class="flex items-center gap-3 text-xs text-blue-100/55">
-                            <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1">Cyber
-                                Security</span>
-                            <span>May 2026</span>
+                    <article
+                        class="group overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
+
+                        @if ($blogImage)
+                            <div class="overflow-hidden rounded-[22px]">
+                                <img src="{{ $blogImage }}" alt="{{ $blog->title }}"
+                                    class="h-60 w-full object-cover transition duration-700 group-hover:scale-105">
+                            </div>
+                        @else
+                            <div
+                                class="relative h-60 overflow-hidden rounded-[22px] border border-white/10 bg-slate-950/25">
+                                <div
+                                    class="absolute inset-0 bg-linear-to-br from-slate-950/85 via-blue-950/40 to-cyan-950/20">
+                                </div>
+                                <div class="absolute left-6 top-6 h-24 w-24 rounded-full bg-cyan-400/10 blur-3xl">
+                                </div>
+                                <div class="absolute bottom-6 right-6 h-28 w-28 rounded-full bg-blue-500/10 blur-3xl">
+                                </div>
+
+                                <div class="relative z-10 flex h-full items-center justify-center px-6 text-center">
+                                    <span class="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100/45">
+                                        {{ $blog->category?->name ?? 'Blog Insight' }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="p-3 sm:p-4">
+                            <div class="flex flex-wrap items-center gap-3 text-xs text-blue-100/55">
+                                <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1">
+                                    {{ $blog->category?->name ?? 'Blog' }}
+                                </span>
+
+                                @if ($blog->published_at)
+                                    <span>{{ $blog->published_at->format('M Y') }}</span>
+                                @endif
+                            </div>
+
+                            <h3 class="mt-4 text-xl font-bold text-white leading-snug">
+                                {{ $blog->title }}
+                            </h3>
+
+                            @if ($blog->excerpt)
+                                <p class="mt-3 text-sm leading-7 text-blue-100/68">
+                                    {{ Str::limit($blog->excerpt, 145) }}
+                                </p>
+                            @endif
+
+                            <a href="{{ route('client.blogs.details', $blog->slug) }}" wire:navigate
+                                class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white">
+                                Read More
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
+                                </svg>
+                            </a>
                         </div>
-
-                        <h3 class="mt-4 text-xl font-bold text-white leading-snug">
-                            7 essential cybersecurity practices every business should follow
-                        </h3>
-
-                        <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                            Learn the practical steps businesses can take to reduce risk, protect data, and build a
-                            stronger security posture.
+                    </article>
+                @empty
+                    <div
+                        class="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-10 text-center backdrop-blur-2xl">
+                        <h3 class="text-2xl font-bold text-white">No featured blogs found</h3>
+                        <p class="mt-3 text-sm text-blue-100/70">
+                            Please mark some active blogs as featured from your admin panel.
                         </p>
-
-                        <a href="#"
-                            class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white">
-                            Read More
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
-                            </svg>
-                        </a>
                     </div>
-                </article>
-
-                <!-- Blog Card 2 -->
-                <article
-                    class="group overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-sky-300/20">
-                    <div class="overflow-hidden rounded-[22px]">
-                        <img src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=1200&q=80"
-                            alt="Blog cover"
-                            class="h-60 w-full object-cover transition duration-700 group-hover:scale-105">
-                    </div>
-
-                    <div class="p-3 sm:p-4">
-                        <div class="flex items-center gap-3 text-xs text-blue-100/55">
-                            <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1">Web
-                                Development</span>
-                            <span>May 2026</span>
-                        </div>
-
-                        <h3 class="mt-4 text-xl font-bold text-white leading-snug">
-                            Why modern websites need performance, security, and clear UX
-                        </h3>
-
-                        <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                            A strong website is more than design. It should load fast, feel smooth, and support business
-                            growth.
-                        </p>
-
-                        <a href="#"
-                            class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white">
-                            Read More
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-
-                <!-- Blog Card 3 -->
-                <article
-                    class="group overflow-hidden rounded-[28px] border border-white/10 bg-white/6 p-3 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-violet-300/20">
-                    <div class="overflow-hidden rounded-[22px]">
-                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80"
-                            alt="Blog cover"
-                            class="h-60 w-full object-cover transition duration-700 group-hover:scale-105">
-                    </div>
-
-                    <div class="p-3 sm:p-4">
-                        <div class="flex items-center gap-3 text-xs text-blue-100/55">
-                            <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1">Cloud & IT</span>
-                            <span>May 2026</span>
-                        </div>
-
-                        <h3 class="mt-4 text-xl font-bold text-white leading-snug">
-                            How cloud-based IT support improves flexibility and business continuity
-                        </h3>
-
-                        <p class="mt-3 text-sm leading-7 text-blue-100/68">
-                            Discover how cloud-first tools and smarter support systems can reduce downtime and improve
-                            efficiency.
-                        </p>
-
-                        <a href="#"
-                            class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-white">
-                            Read More
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17.25 6.75L6.75 17.25M8.25 6.75h9v9" />
-                            </svg>
-                        </a>
-                    </div>
-                </article>
+                @endforelse
             </div>
 
             <div class="mt-10 flex justify-center">
-                <a href="#"
+                <a href="{{ route('client.blogs') }}" wire:navigate
                     class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/12">
                     View All Blogs
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"

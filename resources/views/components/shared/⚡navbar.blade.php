@@ -106,7 +106,7 @@ new class extends Component {
                     </span>
                 </a>
 
-                <a href="{{ route('client.blogs.index') }}" wire:navigate wire:current.exact="text-white"
+                <a href="{{ route('client.blogs') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                     <span class="relative z-10">Blogs</span>
                     <span
@@ -425,7 +425,7 @@ new class extends Component {
                 <a href="{{ route('client.tools.index') }}" wire:navigate
                     class="glass-soft rounded-xl px-4 py-3">Tools</a>
 
-                <a href="{{ route('client.blogs.index') }}" wire:navigate
+                <a href="{{ route('client.blogs') }}" wire:navigate
                     class="glass-soft rounded-xl px-4 py-3">Blogs</a>
 
                 <a href="{{ route('client.about') }}" wire:navigate class="glass-soft rounded-xl px-4 py-3">About</a>

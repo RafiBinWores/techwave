@@ -83,16 +83,12 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
 
     public function categories()
     {
-        return Category::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+        return Category::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
     }
 
     public function selectedCategory()
     {
-        if (! $this->category_id) {
+        if (!$this->category_id) {
             return null;
         }
 
@@ -141,7 +137,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
             return;
         }
 
-        if (! in_array($technology, $this->technologies, true)) {
+        if (!in_array($technology, $this->technologies, true)) {
             $this->technologies[] = $technology;
         }
 
@@ -203,25 +199,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
 
     public function discard(): void
     {
-        $this->reset([
-            'category_id',
-            'title',
-            'slug',
-            'client_name',
-            'client_place',
-            'project_type',
-            'short_description',
-            'overview',
-            'live_url',
-            'case_study_url',
-            'completed_at',
-            'meta_title',
-            'meta_description',
-            'meta_keywords',
-            'thumbnail',
-            'technologies',
-            'technology',
-        ]);
+        $this->reset(['category_id', 'title', 'slug', 'client_name', 'client_place', 'project_type', 'short_description', 'overview', 'live_url', 'case_study_url', 'completed_at', 'meta_title', 'meta_description', 'meta_keywords', 'thumbnail', 'technologies', 'technology']);
 
         $this->is_active = true;
         $this->is_featured = false;
@@ -242,11 +220,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
             </p>
         </div>
 
-        <a
-            href="{{ route('admin.projects.index') }}"
-            wire:navigate
-            class="inline-flex items-center justify-center gap-2 rounded-lg border border-outline-variant bg-white px-4 py-2.5 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50"
-        >
+        <a href="{{ route('admin.projects.index') }}" wire:navigate
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-outline-variant bg-white px-4 py-2.5 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50">
             <span class="material-symbols-outlined text-lg">arrow_back</span>
             Back to Projects
         </a>
@@ -266,10 +241,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                             <label class="block font-label-md text-on-surface">Project Category</label>
 
                             <div class="relative">
-                                <select
-                                    wire:model.live="category_id"
-                                    class="w-full appearance-none rounded border border-outline-variant bg-white px-4 py-2.5 pr-10 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                >
+                                <select wire:model.live="category_id"
+                                    class="w-full appearance-none rounded border border-outline-variant bg-white px-4 py-2.5 pr-10 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10">
                                     <option value="">Select a category</option>
 
                                     @foreach ($this->categories() as $category)
@@ -277,7 +250,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                                     @endforeach
                                 </select>
 
-                                <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                <span
+                                    class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                                     expand_more
                                 </span>
                             </div>
@@ -290,12 +264,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Project Title</label>
 
-                            <input
-                                type="text"
-                                wire:model.live="title"
-                                placeholder="Example: TechWave SaaS Website"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            />
+                            <input type="text" wire:model.live="title" placeholder="Example: TechWave SaaS Website"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
 
                             @error('title')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -314,12 +284,9 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Project Type</label>
 
-                            <input
-                                type="text"
-                                wire:model.live="project_type"
+                            <input type="text" wire:model.live="project_type"
                                 placeholder="Website, SaaS, ERP, E-commerce"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            />
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
 
                             @error('project_type')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -329,12 +296,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Client Name</label>
 
-                            <input
-                                type="text"
-                                wire:model.live="client_name"
-                                placeholder="Example: Happy Potato"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            />
+                            <input type="text" wire:model.live="client_name" placeholder="Example: Happy Potato"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
 
                             @error('client_name')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -344,12 +307,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Client Place</label>
 
-                            <input
-                                type="text"
-                                wire:model.live="client_place"
-                                placeholder="Example: Gulshan, Dhaka"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            />
+                            <input type="text" wire:model.live="client_place" placeholder="Example: Gulshan, Dhaka"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
 
                             @error('client_place')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -359,11 +318,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Completed Date</label>
 
-                            <input
-                                type="date"
-                                wire:model.live="completed_at"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            />
+                            <input type="date" wire:model.live="completed_at"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
 
                             @error('completed_at')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -373,12 +329,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2 md:col-span-2">
                             <label class="block font-label-md text-on-surface">Short Description</label>
 
-                            <textarea
-                                wire:model.live="short_description"
-                                placeholder="Briefly explain the project result..."
-                                rows="2"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            ></textarea>
+                            <textarea wire:model.live="short_description" placeholder="Briefly explain the project result..." rows="2"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"></textarea>
 
                             @error('short_description')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -388,12 +340,41 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2 md:col-span-2">
                             <label class="block font-label-md text-on-surface">Project Overview</label>
 
-                            <textarea
-                                wire:model.live="overview"
-                                placeholder="Write project details, challenges, solution and results..."
-                                rows="6"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            ></textarea>
+                            <div wire:ignore x-data="{
+                                quill: null,
+                                value: @entangle('overview'),
+                            
+                                init() {
+                                    this.quill = new Quill(this.$refs.editor, {
+                                        theme: 'snow',
+                                        placeholder: 'Write project details, challenges, solution and results...',
+                                        modules: {
+                                            toolbar: [
+                                                [{ header: [2, 3, false] }],
+                                                [{ 'font': [] }],
+                                                ['bold', 'italic', 'underline', 'strike'],
+                                                [{ 'color': [] }, { 'background': [] }],
+                                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                                [{ 'align': [] }],
+                                                ['blockquote', 'code-block'],
+                                                ['link'],
+                                                ['clean']
+                                            ]
+                                        }
+                                    });
+                            
+                                    if (this.value) {
+                                        this.quill.root.innerHTML = this.value;
+                                    }
+                            
+                                    this.quill.on('text-change', () => {
+                                        this.value = this.quill.root.innerHTML;
+                                    });
+                                }
+                            }"
+                                class="overflow-hidden rounded border border-outline-variant bg-white">
+                                <div x-ref="editor" class="min-h-45 px-4 py-2.5 font-body-md"></div>
+                            </div>
 
                             @error('overview')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -409,37 +390,25 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                     </h3>
 
                     <div class="mb-4 flex gap-3">
-                        <input
-                            wire:model.live="technology"
-                            wire:keydown.enter.prevent="addTechnology"
+                        <input wire:model.live="technology" wire:keydown.enter.prevent="addTechnology"
                             class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            placeholder="Laravel, React, Tailwind, Alpine"
-                            type="text"
-                        />
+                            placeholder="Laravel, React, Tailwind, Alpine" type="text" />
 
-                        <button
-                            type="button"
-                            wire:click="addTechnology"
-                            class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5"
-                        >
+                        <button type="button" wire:click="addTechnology"
+                            class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
                             <span class="material-symbols-outlined text-sm">add</span>
                             Add
                         </button>
                     </div>
 
-                    <div class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                    <div class="flex min-h-15 flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
                         @forelse ($technologies as $index => $item)
-                            <div
-                                wire:key="technology-{{ $index }}"
-                                class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm"
-                            >
+                            <div wire:key="technology-{{ $index }}"
+                                class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
                                 <span class="text-sm font-body-md">{{ $item }}</span>
 
-                                <button
-                                    type="button"
-                                    wire:click="removeTechnology({{ $index }})"
-                                    class="material-symbols-outlined text-sm text-outline hover:text-error"
-                                >
+                                <button type="button" wire:click="removeTechnology({{ $index }})"
+                                    class="material-symbols-outlined text-sm text-outline hover:text-error">
                                     close
                                 </button>
                             </div>
@@ -459,12 +428,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Live URL</label>
 
-                            <input
-                                type="url"
-                                wire:model.live="live_url"
-                                placeholder="https://example.com"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            />
+                            <input type="url" wire:model.live="live_url" placeholder="https://example.com"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
 
                             @error('live_url')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -474,12 +439,9 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Case Study URL</label>
 
-                            <input
-                                type="url"
-                                wire:model.live="case_study_url"
+                            <input type="url" wire:model.live="case_study_url"
                                 placeholder="https://example.com/case-study"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                            />
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
 
                             @error('case_study_url')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -495,49 +457,34 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                     </h3>
 
                     <div class="grid grid-cols-1 gap-6">
-                        <input
-                            wire:model.live="meta_title"
+                        <input wire:model.live="meta_title"
                             class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="Meta title"
-                            type="text"
-                        />
+                            placeholder="Meta title" type="text" />
 
-                        <textarea
-                            wire:model.live="meta_description"
+                        <textarea wire:model.live="meta_description"
                             class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="Meta description"
-                            rows="3"
-                        ></textarea>
+                            placeholder="Meta description" rows="3"></textarea>
 
-                        <textarea
-                            wire:model.live="meta_keywords"
+                        <textarea wire:model.live="meta_keywords"
                             class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="Meta keywords"
-                            rows="2"
-                        ></textarea>
+                            placeholder="Meta keywords" rows="2"></textarea>
                     </div>
                 </div>
 
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-                        <button
-                            type="button"
-                            wire:click="discard"
-                            wire:loading.attr="disabled"
-                            class="rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
+                        <button type="button" wire:click="discard" wire:loading.attr="disabled"
+                            class="rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
                             Discard Changes
                         </button>
 
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
+                        <button type="submit" wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                             <span wire:loading.remove wire:target="save">Save Project</span>
 
                             <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
-                                <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
                                 Saving...
                             </span>
                         </button>
@@ -549,16 +496,11 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="mb-6 text-h3 font-h2">Project Thumbnail</h3>
 
-                    <label
-                        for="thumbnail"
-                        class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container"
-                    >
+                    <label for="thumbnail"
+                        class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
                         @if ($thumbnail)
-                            <img
-                                src="{{ $thumbnail->temporaryUrl() }}"
-                                alt="Project preview"
-                                class="h-full w-full object-cover"
-                            />
+                            <img src="{{ $thumbnail->temporaryUrl() }}" alt="Project preview"
+                                class="h-full w-full object-cover" />
                         @else
                             <span class="material-symbols-outlined mb-2 text-5xl text-outline">
                                 add_photo_alternate
@@ -574,13 +516,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                         @endif
                     </label>
 
-                    <input
-                        id="thumbnail"
-                        type="file"
-                        wire:model="thumbnail"
-                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
-                        class="hidden"
-                    />
+                    <input id="thumbnail" type="file" wire:model="thumbnail"
+                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml" class="hidden" />
 
                     <div wire:loading wire:target="thumbnail" class="mt-3 text-sm text-primary">
                         Uploading thumbnail...
@@ -606,11 +543,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
 
                         <label class="relative inline-flex cursor-pointer items-center">
                             <input type="checkbox" wire:model.live="is_active" class="peer sr-only" />
-                            <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                            <div
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                            </div>
                         </label>
                     </div>
 
-                    <div class="mt-3 flex items-center justify-between rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                    <div
+                        class="mt-3 flex items-center justify-between rounded-lg border border-amber-100 bg-amber-50/50 p-3">
                         <div>
                             <span class="block text-label-md font-label-md text-on-surface">
                                 Featured Project
@@ -620,7 +560,9 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
 
                         <label class="relative inline-flex cursor-pointer items-center">
                             <input type="checkbox" wire:model.live="is_featured" class="peer sr-only" />
-                            <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                            <div
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white">
+                            </div>
                         </label>
                     </div>
                 </div>
@@ -631,7 +573,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                     <div class="rounded-2xl border border-slate-100 bg-slate-50 p-5">
                         <div class="mb-3 flex flex-wrap items-center gap-2">
                             @if ($this->selectedCategory())
-                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
                                     <span class="material-symbols-outlined text-[14px]">
                                         {{ $this->selectedCategory()->icon ?: 'category' }}
                                     </span>
@@ -640,19 +583,18 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
                             @endif
 
                             @if ($is_featured)
-                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
                                     <span class="material-symbols-outlined text-[14px]">stars</span>
                                     Featured
                                 </span>
                             @endif
 
-                            <span
-                                @class([
-                                    'rounded-full px-2.5 py-1 text-xs font-semibold',
-                                    'bg-emerald-100 text-emerald-700' => $is_active,
-                                    'bg-red-100 text-red-700' => ! $is_active,
-                                ])
-                            >
+                            <span @class([
+                                'rounded-full px-2.5 py-1 text-xs font-semibold',
+                                'bg-emerald-100 text-emerald-700' => $is_active,
+                                'bg-red-100 text-red-700' => !$is_active,
+                            ])>
                                 {{ $is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </div>
@@ -686,11 +628,13 @@ new #[Layout('layouts.admin-app')] #[Title('Create Project')] class extends Comp
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             @forelse ($technologies as $previewTechnology)
-                                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm">
+                                <span
+                                    class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm">
                                     {{ $previewTechnology }}
                                 </span>
                             @empty
-                                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-400 shadow-sm">
+                                <span
+                                    class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-400 shadow-sm">
                                     No technology yet
                                 </span>
                             @endforelse
