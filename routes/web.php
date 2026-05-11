@@ -227,6 +227,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/tickets', 'pages::admin.tickets.index')->name('tickets.index');
     Route::livewire('/tickets/{ticket}/show', 'pages::admin.tickets.show')->name('tickets.show');
 
+    // Contact messages
+    Route::livewire('/contact-messages', 'pages::admin.contact-messages.index')->name('contact-messages.index');
+
 
     // Icons
     Route::livewire('/icons', 'pages::admin.icons.material-icons')->name('icons.material-icons');

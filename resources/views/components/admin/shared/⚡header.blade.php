@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\ContactMessage;
 use App\Models\SupportTicket;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
@@ -10,13 +12,13 @@ new class extends Component {
     public int $notificationRefreshKey = 0;
 
     #[On('echo-private:admin.tickets,.ticket.updated')]
-    public function refreshAdminNotifications(): void
+    public function refreshAdminTicketNotifications(array $event = []): void
     {
         $action = $event['action'] ?? null;
-        
+
         $this->notificationRefreshKey++;
 
-        if ($action !== 'client_replied' && $action !== 'user_replied') {
+        if ($action !== 'client_replied' && $action !== 'user_replied' && $action !== 'created') {
             return;
         }
 
@@ -24,17 +26,84 @@ new class extends Component {
         $this->dispatch('toast', message: 'New support ticket update received.', type: 'info');
     }
 
+    #[On('echo-private:admin.contact-messages,.contact.message.created')]
+    public function refreshContactMessageNotifications(array $event = []): void
+    {
+        $this->notificationRefreshKey++;
+
+        $this->dispatch('admin-contact-notification-received');
+        $this->dispatch('toast', message: 'New contact message received.', type: 'info');
+    }
+
     public function unreadTicketCount(): int
     {
-        return SupportTicket::query()->whereNull('admin_read_at')->count();
+        return SupportTicket::query()
+            ->whereNull('admin_read_at')
+            ->count();
     }
 
-    public function latestTicketNotifications()
+    public function unreadContactMessageCount(): int
     {
-        return SupportTicket::query()->with('user')->whereNull('admin_read_at')->latest('last_reply_at')->latest()->limit(5)->get();
+        return ContactMessage::query()
+            ->whereNull('admin_read_at')
+            ->count();
     }
 
-    public function markAllTicketNotificationsRead(): void
+    public function totalUnreadCount(): int
+    {
+        return $this->unreadTicketCount() + $this->unreadContactMessageCount();
+    }
+
+    public function latestNotifications()
+{
+    $tickets = SupportTicket::query()
+        ->with('user')
+        ->whereNull('admin_read_at')
+        ->latest('last_reply_at')
+        ->latest()
+        ->limit(5)
+        ->get()
+        ->toBase()
+        ->map(function ($ticket) {
+            return [
+                'type' => 'ticket',
+                'id' => $ticket->id,
+                'title' => 'New ticket update',
+                'subject' => $ticket->subject,
+                'from' => $ticket->customer_name ?? ($ticket->user?->name ?? 'Customer'),
+                'priority' => $ticket->priority,
+                'time' => $ticket->last_reply_at ?? $ticket->created_at,
+                'url' => Route::has('admin.tickets.show') ? route('admin.tickets.show', $ticket) : '#',
+            ];
+        });
+
+    $contacts = ContactMessage::query()
+        ->whereNull('admin_read_at')
+        ->latest()
+        ->limit(5)
+        ->get()
+        ->toBase()
+        ->map(function ($message) {
+            return [
+                'type' => 'contact',
+                'id' => $message->id,
+                'title' => 'New contact message',
+                'subject' => $message->subject,
+                'from' => $message->name,
+                'priority' => 'new',
+                'time' => $message->created_at,
+                'url' => Route::has('admin.contact-messages.index') ? route('admin.contact-messages.index') : '#',
+            ];
+        });
+
+    return $tickets
+        ->merge($contacts)
+        ->sortByDesc('time')
+        ->take(7)
+        ->values();
+}
+
+    public function markAllNotificationsRead(): void
     {
         SupportTicket::query()
             ->whereNull('admin_read_at')
@@ -42,9 +111,15 @@ new class extends Component {
                 'admin_read_at' => now(),
             ]);
 
+        ContactMessage::query()
+            ->whereNull('admin_read_at')
+            ->update([
+                'admin_read_at' => now(),
+            ]);
+
         $this->notificationRefreshKey++;
 
-        $this->dispatch('toast', message: 'All ticket notifications marked as read.', type: 'success');
+        $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
     }
 };
 ?>
@@ -87,34 +162,46 @@ new class extends Component {
     <div class="flex items-center gap-1 sm:gap-3 shrink-0">
 
         <!-- Notification -->
-        <div x-data="{ notificationOpen: false }" class="relative"
-            x-on:admin-ticket-notification-received.window="$nextTick(() => {})">
+        <div
+            x-data="{ notificationOpen: false }"
+            class="relative"
+            x-on:admin-ticket-notification-received.window="$nextTick(() => {})"
+            x-on:admin-contact-notification-received.window="$nextTick(() => {})">
+
             @php
                 $unreadTicketCount = $this->unreadTicketCount();
-                $ticketNotifications = $this->latestTicketNotifications();
+                $unreadContactCount = $this->unreadContactMessageCount();
+                $totalUnreadCount = $this->totalUnreadCount();
+                $notifications = $this->latestNotifications();
             @endphp
 
             <button type="button" @click.stop="notificationOpen = !notificationOpen"
                 class="relative cursor-pointer rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100">
                 <span class="material-symbols-outlined">notifications</span>
 
-                @if ($unreadTicketCount > 0)
-                    <span wire:key="admin-ticket-badge-{{ $notificationRefreshKey }}-{{ $unreadTicketCount }}"
+                @if ($totalUnreadCount > 0)
+                    <span wire:key="admin-notification-badge-{{ $notificationRefreshKey }}-{{ $totalUnreadCount }}"
                         class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                        {{ $unreadTicketCount > 99 ? '99+' : $unreadTicketCount }}
+                        {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
                     </span>
                 @endif
             </button>
 
             <div x-cloak x-show="notificationOpen" @click.outside="notificationOpen = false"
                 x-transition.origin.top.right
-                class="absolute right-0 top-full z-9999 mt-3 w-88 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                class="absolute right-0 top-full z-9999 mt-3 w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
 
                 <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                     <div>
                         <h3 class="text-sm font-bold text-slate-900">Notifications</h3>
                         <p class="text-xs text-slate-500">
-                            {{ $unreadTicketCount }} new support {{ Str::plural('ticket', $unreadTicketCount) }}
+                            {{ $totalUnreadCount }} new notification{{ $totalUnreadCount === 1 ? '' : 's' }}
+                            @if ($unreadTicketCount || $unreadContactCount)
+                                <span class="text-slate-400">
+                                    — {{ $unreadTicketCount }} ticket{{ $unreadTicketCount === 1 ? '' : 's' }},
+                                    {{ $unreadContactCount }} contact{{ $unreadContactCount === 1 ? '' : 's' }}
+                                </span>
+                            @endif
                         </p>
                     </div>
 
@@ -124,49 +211,47 @@ new class extends Component {
                     </button>
                 </div>
 
-                <div wire:key="admin-ticket-notification-list-{{ $notificationRefreshKey }}"
+                <div wire:key="admin-notification-list-{{ $notificationRefreshKey }}"
                     class="max-h-88 divide-y divide-slate-100 overflow-y-auto">
-                    @forelse ($ticketNotifications as $ticket)
-                        <a href="{{ route('admin.tickets.show', $ticket) }}" wire:navigate
+                    @forelse ($notifications as $notification)
+                        <a href="{{ $notification['url'] }}" wire:navigate
                             @click="notificationOpen = false" class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
 
                             <div @class([
                                 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-                                'bg-blue-100 text-blue-700' => $ticket->priority === 'medium',
-                                'bg-slate-100 text-slate-700' => $ticket->priority === 'low',
-                                'bg-orange-100 text-orange-700' => $ticket->priority === 'high',
-                                'bg-red-100 text-red-700' => $ticket->priority === 'urgent',
+                                'bg-blue-100 text-blue-700' => $notification['type'] === 'ticket',
+                                'bg-emerald-100 text-emerald-700' => $notification['type'] === 'contact',
                             ])>
-                                <span class="material-symbols-outlined text-[20px]">confirmation_number</span>
+                                <span class="material-symbols-outlined text-[20px]">
+                                    {{ $notification['type'] === 'ticket' ? 'confirmation_number' : 'mail' }}
+                                </span>
                             </div>
 
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-start justify-between gap-3">
                                     <p class="truncate text-sm font-semibold text-slate-800">
-                                        New ticket update
+                                        {{ $notification['title'] }}
                                     </p>
 
                                     <span @class([
                                         'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase',
-                                        'bg-blue-50 text-blue-700' => $ticket->priority === 'medium',
-                                        'bg-slate-100 text-slate-600' => $ticket->priority === 'low',
-                                        'bg-orange-50 text-orange-700' => $ticket->priority === 'high',
-                                        'bg-red-50 text-red-700' => $ticket->priority === 'urgent',
+                                        'bg-blue-50 text-blue-700' => $notification['type'] === 'ticket',
+                                        'bg-emerald-50 text-emerald-700' => $notification['type'] === 'contact',
                                     ])>
-                                        {{ $ticket->priority }}
+                                        {{ $notification['type'] }}
                                     </span>
                                 </div>
 
                                 <p class="mt-0.5 truncate text-xs text-slate-500">
-                                    {{ $ticket->subject }}
+                                    {{ $notification['subject'] }}
                                 </p>
 
                                 <p class="mt-0.5 truncate text-xs text-slate-400">
-                                    By {{ $ticket->customer_name ?? ($ticket->user?->name ?? 'Customer') }}
+                                    By {{ $notification['from'] }}
                                 </p>
 
                                 <p class="mt-1 text-[11px] text-slate-400">
-                                    {{ $ticket->last_reply_at?->diffForHumans() ?? $ticket->created_at?->diffForHumans() }}
+                                    {{ $notification['time']?->diffForHumans() }}
                                 </p>
                             </div>
                         </a>
@@ -182,21 +267,22 @@ new class extends Component {
                             </h4>
 
                             <p class="mt-1 text-xs text-slate-500">
-                                New ticket updates will appear here.
+                                New ticket and contact form updates will appear here.
                             </p>
                         </div>
                     @endforelse
                 </div>
 
                 <div class="flex items-center gap-2 border-t border-slate-100 bg-slate-50 p-3">
-                    <a href="{{ route('admin.tickets.index') }}" wire:navigate @click="notificationOpen = false"
+                    <a href="{{ Route::has('admin.tickets.index') ? route('admin.tickets.index') : '#' }}" wire:navigate
+                        @click="notificationOpen = false"
                         class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
-                        View all tickets
+                        View tickets
                         <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </a>
 
-                    @if ($unreadTicketCount > 0)
-                        <button type="button" wire:click="markAllTicketNotificationsRead"
+                    @if ($totalUnreadCount > 0)
+                        <button type="button" wire:click="markAllNotificationsRead"
                             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
                             <span class="material-symbols-outlined text-[18px]">done_all</span>
                         </button>
@@ -224,7 +310,6 @@ new class extends Component {
                     {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                 </div>
             @endif
-
 
             <div class="hidden md:block text-left">
                 <p class="text-slate-900 font-semibold text-sm leading-tight capitalize">

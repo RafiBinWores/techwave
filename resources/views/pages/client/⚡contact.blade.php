@@ -1,15 +1,116 @@
 <?php
 
+use App\Events\ContactMessageSubmitted;
+use App\Mail\ContactMessageMail;
+use App\Models\ContactMessage;
+use App\Models\SiteSetting;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Contact | Techwave')] class extends Component
-{
-    //
+new #[Title('Contact | Techwave')] class extends Component {
+    public SiteSetting $siteSetting;
+
+    public string $name = '';
+    public string $phone = '';
+    public string $email = '';
+    public string $subject = '';
+    public string $formMessage = '';
+
+    public function mount(): void
+    {
+        $this->siteSetting = SiteSetting::current();
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:120'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'email' => ['required', 'email', 'max:160'],
+            'subject' => ['required', 'string', 'max:180'],
+            'formMessage' => ['required', 'string', 'max:5000'],
+        ];
+    }
+
+    public function submitContactForm(): void
+    {
+        $this->validate();
+
+        $contactMessage = ContactMessage::create([
+            'name' => $this->name,
+            'phone' => $this->phone,
+            'email' => $this->email,
+            'subject' => $this->subject,
+            'message' => $this->formMessage,
+        ]);
+
+        $adminEmail = $this->siteSetting->email ?: config('mail.from.address');
+
+        if ($adminEmail) {
+            Mail::to($adminEmail)->send(new ContactMessageMail($contactMessage));
+        }
+
+        ContactMessageSubmitted::dispatch($contactMessage);
+
+        $this->reset(['name', 'phone', 'email', 'subject', 'formMessage']);
+
+        $this->dispatch('toast', message: 'Your message has been sent successfully.', type: 'success');
+    }
+
+    public function phoneLink(): string
+    {
+        return preg_replace('/[^0-9+]/', '', $this->siteSetting->phone);
+    }
+
+    public function whatsappLink(): string
+    {
+        if ($this->siteSetting->whatsapp_url) {
+            return $this->siteSetting->whatsapp_url;
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $this->siteSetting->phone);
+
+        return 'https://wa.me/' . $phone;
+    }
+
+    public function mapEmbedLink(): string
+    {
+        if ($this->siteSetting->map_embed_link) {
+            $map = $this->siteSetting->map_embed_link;
+
+            if (str_contains($map, '<iframe')) {
+                preg_match('/src="([^"]+)"/', $map, $matches);
+
+                if (!empty($matches[1])) {
+                    return $matches[1];
+                }
+            }
+
+            return $map;
+        }
+
+        $location = $this->siteSetting->location ?: 'Dhaka Bangladesh';
+
+        return 'https://www.google.com/maps?q=' . urlencode($location) . '&z=13&output=embed';
+    }
+
+    public function googleMapLink(): string
+    {
+        $location = $this->siteSetting->location ?: 'Dhaka Bangladesh';
+
+        return 'https://maps.google.com/?q=' . urlencode($location);
+    }
 };
 ?>
 
 <div class="relative text-white">
+    @push('meta')
+        <meta name="title" content="Contact | {{ $siteSetting->site_name ?: config('app.name') }}">
+        <meta name="description"
+            content="Contact {{ $siteSetting->site_name ?: config('app.name') }} for IT support, cybersecurity, websites, cloud solutions, and custom business systems.">
+    @endpush
+
     <!-- Hero -->
     <section class="relative overflow-hidden py-20 sm:py-24 lg:py-28">
         <div class="absolute inset-0 pointer-events-none">
@@ -45,57 +146,79 @@ new #[Title('Contact | Techwave')] class extends Component
             <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                 <div class="contact-info-premium-card">
                     <div class="contact-info-premium-icon bg-cyan-500/15 text-cyan-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M2.25 4.5A2.25 2.25 0 014.5 2.25h2.1c.966 0 1.8.683 1.992 1.63l.383 1.915a1.125 1.125 0 01-.62 1.219l-1.412.706a11.036 11.036 0 005.318 5.318l.706-1.412a1.125 1.125 0 011.219-.62l1.915.383A2.025 2.025 0 0121.75 17.4v2.1a2.25 2.25 0 01-2.25 2.25h-.75C9.507 21.75 2.25 14.493 2.25 5.25V4.5z" />
                         </svg>
                     </div>
+
                     <h3 class="mt-5 text-xl font-bold text-white">Call Us</h3>
                     <p class="mt-2 text-sm text-blue-100/65">Talk directly with our team.</p>
-                    <a href="tel:+8801000000000" class="mt-4 inline-block text-sm font-semibold text-cyan-200 hover:text-white">
-                        +880 1XXX-XXXXXX
-                    </a>
+
+                    @if ($siteSetting->phone)
+                        <a href="tel:{{ $this->phoneLink() }}"
+                            class="mt-4 inline-block text-sm font-semibold text-cyan-200 hover:text-white">
+                            {{ $siteSetting->phone }}
+                        </a>
+                    @else
+                        <p class="mt-4 text-sm font-semibold text-cyan-200">
+                            Phone number not added
+                        </p>
+                    @endif
                 </div>
 
                 <div class="contact-info-premium-card">
                     <div class="contact-info-premium-icon bg-blue-500/15 text-blue-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M21.75 7.5v9a2.25 2.25 0 01-2.25 2.25h-15A2.25 2.25 0 012.25 16.5v-9m19.5 0A2.25 2.25 0 0019.5 5.25h-15A2.25 2.25 0 002.25 7.5m19.5 0-8.69 5.794a1.5 1.5 0 01-1.662 0L2.25 7.5" />
                         </svg>
                     </div>
+
                     <h3 class="mt-5 text-xl font-bold text-white">Email Us</h3>
                     <p class="mt-2 text-sm text-blue-100/65">Send us your requirement anytime.</p>
-                    <a href="mailto:hello@yourcompany.com" class="mt-4 inline-block text-sm font-semibold text-cyan-200 hover:text-white">
-                        hello@yourcompany.com
-                    </a>
+
+                    @if ($siteSetting->email)
+                        <a href="mailto:{{ $siteSetting->email }}"
+                            class="mt-4 inline-block text-sm font-semibold text-cyan-200 hover:text-white">
+                            {{ $siteSetting->email }}
+                        </a>
+                    @else
+                        <p class="mt-4 text-sm font-semibold text-cyan-200">
+                            Email not added
+                        </p>
+                    @endif
                 </div>
 
                 <div class="contact-info-premium-card">
                     <div class="contact-info-premium-icon bg-emerald-500/15 text-emerald-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M16.862 4.487A9.958 9.958 0 0012 3.25c-5.385 0-9.75 4.253-9.75 9.5 0 1.676.445 3.25 1.224 4.618L2.25 21.75l4.567-1.194A9.819 9.819 0 0012 22.25c5.385 0 9.75-4.253 9.75-9.5 0-3.116-1.54-5.885-3.888-7.63z" />
                         </svg>
                     </div>
+
                     <h3 class="mt-5 text-xl font-bold text-white">WhatsApp</h3>
                     <p class="mt-2 text-sm text-blue-100/65">Fast responses for quick inquiries.</p>
-                    <a href="https://wa.me/8801000000000" class="mt-4 inline-block text-sm font-semibold text-cyan-200 hover:text-white">
+
+                    <a href="{{ $this->whatsappLink() }}" target="_blank"
+                        class="mt-4 inline-block text-sm font-semibold text-cyan-200 hover:text-white">
                         Chat on WhatsApp
                     </a>
                 </div>
 
                 <div class="contact-info-premium-card">
                     <div class="contact-info-premium-icon bg-violet-500/15 text-violet-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
+
                     <h3 class="mt-5 text-xl font-bold text-white">Working Hours</h3>
                     <p class="mt-2 text-sm text-blue-100/65">We are available during business hours.</p>
                     <p class="mt-4 text-sm font-semibold text-cyan-200">Sat - Thu : 9:00 AM - 8:00 PM</p>
@@ -119,62 +242,68 @@ new #[Title('Contact | Techwave')] class extends Component
                         </p>
                     </div>
 
-                    <form class="mt-8 space-y-5">
+                    <form wire:submit.prevent="submitContactForm" class="mt-8 space-y-5">
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Full Name</label>
-                                <input type="text" placeholder="Enter your name" class="contact-input">
+                                <input wire:model.defer="name" type="text" placeholder="Enter your name"
+                                    class="contact-input">
+                                @error('name')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Phone Number</label>
-                                <input type="text" placeholder="Enter your phone number" class="contact-input">
+                                <input wire:model.defer="phone" type="text" placeholder="Enter your phone number"
+                                    class="contact-input">
+                                @error('phone')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
 
                         <div class="grid gap-5 sm:grid-cols-1">
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Email Address</label>
-                                <input type="email" placeholder="Enter your email" class="contact-input">
+                                <input wire:model.defer="email" type="email" placeholder="Enter your email"
+                                    class="contact-input">
+                                @error('email')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Subject</label>
-                                <input type="text" placeholder="Subject" class="contact-input">
+                                <input wire:model.defer="subject" type="text" placeholder="Subject"
+                                    class="contact-input">
+                                @error('subject')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
-
-                        {{-- <div>
-                            <label class="mb-2 block text-sm font-medium text-blue-50/85">Service Needed</label>
-                            <div class="relative">
-                                <select class="contact-input contact-select appearance-none pr-12">
-                                    <option value="" selected disabled>Choose a service</option>
-                                    <option>Managed IT Support</option>
-                                    <option>Cyber Security</option>
-                                    <option>Website Development</option>
-                                    <option>Cloud & Email Setup</option>
-                                    <option>Office Infrastructure</option>
-                                </select>
-
-                                <div class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-blue-100/60">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div> --}}
 
                         <div>
                             <label class="mb-2 block text-sm font-medium text-blue-50/85">Your Message</label>
-                            <textarea rows="6" placeholder="Write your message here..."
+                            <textarea wire:model.defer="formMessage" rows="6" placeholder="Write your message here..."
                                 class="contact-input resize-none"></textarea>
+                            @error('formMessage')
+                                <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                            @enderror
                         </div>
 
-                        <button type="submit"
-                            class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer">
-                            Send Message
+                        <button type="submit" wire:loading.attr="disabled" wire:target="submitContactForm"
+                            class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+
+                            <span wire:loading.remove wire:target="submitContactForm">
+                                Send Message
+                            </span>
+
+                            <span wire:loading wire:target="submitContactForm" class="inline-flex items-center gap-2">
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                Sending...
+                            </span>
                         </button>
                     </form>
                 </div>
@@ -184,15 +313,9 @@ new #[Title('Contact | Techwave')] class extends Component
                     <div
                         class="overflow-hidden rounded-[34px] border border-white/10 bg-white/6 p-4 backdrop-blur-2xl shadow-[0_20px_70px_rgba(0,0,0,0.18)]">
                         <div class="overflow-hidden rounded-[28px] border border-white/10">
-                            <iframe
-                                src="https://www.google.com/maps?q=Dhaka%20Bangladesh&z=13&output=embed"
-                                width="100%"
-                                height="420"
-                                style="border:0;"
-                                allowfullscreen=""
-                                loading="lazy"
-                                referrerpolicy="no-referrer-when-downgrade"
-                                class="block w-full">
+                            <iframe src="{{ $this->mapEmbedLink() }}" width="100%" height="420"
+                                style="border:0;" allowfullscreen="" loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade" class="block w-full">
                             </iframe>
                         </div>
                     </div>
@@ -201,21 +324,66 @@ new #[Title('Contact | Techwave')] class extends Component
                         class="rounded-[34px] border border-white/10 bg-white/6 p-6 sm:p-7 backdrop-blur-2xl shadow-[0_20px_70px_rgba(0,0,0,0.18)]">
                         <p class="text-xs uppercase tracking-[0.22em] text-blue-100/45">Office Location</p>
                         <h3 class="mt-4 text-2xl font-bold text-white">Visit our office</h3>
+
                         <p class="mt-4 text-sm leading-7 text-blue-100/68 sm:text-base">
-                            House #00, Road #00, Area Name, Dhaka, Bangladesh
+                            {{ $siteSetting->location ?: 'Office location not added yet.' }}
                         </p>
 
                         <div class="mt-6 flex flex-wrap gap-4">
-                            <a href="https://maps.google.com/?q=Dhaka%20Bangladesh"
+                            <a href="{{ $this->googleMapLink() }}" target="_blank"
                                 class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/8 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/12">
                                 Open in Google Maps
                             </a>
 
-                            <a href="https://wa.me/8801000000000"
+                            <a href="{{ $this->whatsappLink() }}" target="_blank"
                                 class="inline-flex items-center justify-center rounded-full bg-linear-to-r from-emerald-500 to-green-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5">
                                 WhatsApp Now
                             </a>
                         </div>
+
+                        @if (
+                            $siteSetting->facebook_url ||
+                                $siteSetting->linkedin_url ||
+                                $siteSetting->twitter_url ||
+                                $siteSetting->instagram_url ||
+                                $siteSetting->youtube_url ||
+                                $siteSetting->github_url)
+                            <div class="mt-6 border-t border-white/10 pt-6">
+                                <p class="text-xs uppercase tracking-[0.22em] text-blue-100/45">Follow Us</p>
+
+                                <div class="mt-4 flex flex-wrap gap-3">
+                                    @if ($siteSetting->facebook_url)
+                                        <a href="{{ $siteSetting->facebook_url }}" target="_blank"
+                                            class="share-btn">Fb</a>
+                                    @endif
+
+                                    @if ($siteSetting->linkedin_url)
+                                        <a href="{{ $siteSetting->linkedin_url }}" target="_blank"
+                                            class="share-btn">In</a>
+                                    @endif
+
+                                    @if ($siteSetting->twitter_url)
+                                        <a href="{{ $siteSetting->twitter_url }}" target="_blank"
+                                            class="share-btn">X</a>
+                                    @endif
+
+                                    @if ($siteSetting->instagram_url)
+                                        <a href="{{ $siteSetting->instagram_url }}" target="_blank"
+                                            class="share-btn">Ig</a>
+                                    @endif
+
+                                    @if ($siteSetting->youtube_url)
+                                        <a href="{{ $siteSetting->youtube_url }}" target="_blank"
+                                            class="share-btn">Yt</a>
+                                    @endif
+
+                                    @if ($siteSetting->github_url)
+                                        <a href="{{ $siteSetting->github_url }}" target="_blank"
+                                            class="share-btn">Gh</a>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

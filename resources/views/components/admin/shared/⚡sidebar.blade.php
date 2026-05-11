@@ -245,7 +245,18 @@ new class extends Component {
                     Proposals
                 </span>
             </a>
-            <a href="{{ route('admin.tickets.index') }}" wire:navigate wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+
+            <a href="{{ route('admin.contact-messages.index') }}" wire:navigate
+        wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+        class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+        <span class="material-symbols-outlined shrink-0">mail</span>
+        <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+            Contact Messages
+        </span>
+    </a>
+
+            <a href="{{ route('admin.tickets.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
                 class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
                 <span class="material-symbols-outlined shrink-0">confirmation_number</span>
                 <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
