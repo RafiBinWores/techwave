@@ -198,7 +198,7 @@
 
 
     {{-- Footer --}}
-    <x-layouts::partials.footer />
+    <livewire:shared.footer />
 
     {{-- Auth Modal --}}
     <livewire:auth.auth-modal wire:key="global-auth-modal" />

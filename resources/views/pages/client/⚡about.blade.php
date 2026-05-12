@@ -340,7 +340,7 @@ new #[Title('About Us | Techwave')] class extends Component
     </section>
 
     <!-- Culture / Gallery -->
-    <section class="pb-18 sm:pb-22">
+    {{-- <section class="pb-18 sm:pb-22">
         <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold sm:text-4xl lg:text-5xl">
@@ -362,10 +362,10 @@ new #[Title('About Us | Techwave')] class extends Component
                     class="about-gallery-img" alt="">
             </div>
         </div>
-    </section>
+    </section> --}}
 
     <!-- Experts -->
-    <section class="pb-18 sm:pb-22">
+    {{-- <section class="pb-18 sm:pb-22">
         <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold sm:text-4xl lg:text-5xl">
@@ -406,5 +406,5 @@ new #[Title('About Us | Techwave')] class extends Component
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
 </div>

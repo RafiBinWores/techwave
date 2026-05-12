@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\SiteSetting;
 use App\Models\SupportTicket;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -66,9 +67,34 @@ new class extends Component {
                 'client_read_at' => now(),
             ]);
 
-            $this->notificationRefreshKey++;
+        $this->notificationRefreshKey++;
 
         $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
+    }
+
+    public function siteSetting(): SiteSetting
+    {
+        return SiteSetting::current();
+    }
+
+    public function logoUrl(): ?string
+    {
+        $logo = $this->siteSetting()->logo;
+
+        if (blank($logo)) {
+            return null;
+        }
+
+        if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
+            return $logo;
+        }
+
+        return Storage::url($logo);
+    }
+
+    public function siteName(): string
+    {
+        return $this->siteSetting()->site_name ?: config('app.name');
     }
 };
 ?>
@@ -77,8 +103,18 @@ new class extends Component {
     <nav class="glass-panel rounded-2xl px-4 py-4 sm:px-6" x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false }">
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-3">
-                <img src="https://techwave.asia/storage/services/light-logo-142x75.png" alt="Logo"
-                    class="h-10 rounded-xl">
+                @if ($this->logoUrl())
+                    <img src="{{ $this->logoUrl() }}" alt="{{ $this->siteName() }}" class="h-10 rounded-xl">
+                @else
+                    <div
+                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-r from-blue-500 to-sky-400 text-sm font-bold text-white shadow-lg shadow-blue-500/25">
+                        {{ strtoupper(substr($this->siteName(), 0, 1)) }}
+                    </div>
+
+                    <span class="text-sm font-bold text-white">
+                        {{ $this->siteName() }}
+                    </span>
+                @endif
             </a>
 
             <div class="hidden items-center gap-8 text-sm font-medium text-blue-50/85 lg:flex">
@@ -98,13 +134,13 @@ new class extends Component {
                     </span>
                 </a>
 
-                <a href="{{ route('client.tools.index') }}" wire:navigate wire:current.exact="text-white"
+                {{-- <a href="{{ route('client.tools.index') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                     <span class="relative z-10">Tools</span>
                     <span
                         class="absolute inset-x-0 -bottom-0.5 h-px bg-linear-to-r from-transparent via-cyan-300 to-transparent scale-x-0 transition-transform duration-300 group-hover:scale-x-100 group-[.text-white]:scale-x-100">
                     </span>
-                </a>
+                </a> --}}
 
                 <a href="{{ route('client.blogs') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
@@ -422,11 +458,10 @@ new class extends Component {
                 <a href="{{ route('client.services') }}" wire:navigate
                     class="glass-soft rounded-xl px-4 py-3">Services</a>
 
-                <a href="{{ route('client.tools.index') }}" wire:navigate
-                    class="glass-soft rounded-xl px-4 py-3">Tools</a>
+                {{-- <a href="{{ route('client.tools.index') }}" wire:navigate
+                    class="glass-soft rounded-xl px-4 py-3">Tools</a> --}}
 
-                <a href="{{ route('client.blogs') }}" wire:navigate
-                    class="glass-soft rounded-xl px-4 py-3">Blogs</a>
+                <a href="{{ route('client.blogs') }}" wire:navigate class="glass-soft rounded-xl px-4 py-3">Blogs</a>
 
                 <a href="{{ route('client.about') }}" wire:navigate class="glass-soft rounded-xl px-4 py-3">About</a>
 
