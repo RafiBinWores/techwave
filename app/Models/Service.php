@@ -41,11 +41,18 @@ class Service extends Model
     {
         return $this->hasMany(ServicePlan::class);
     }
+    
 
     public function activePlans()
     {
         return $this->hasMany(ServicePlan::class)
             ->where('is_active', true)
-            ->orderBy('sort_order');
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    public function assignedUsers()
+    {
+        return $this->hasMany(UserService::class);
     }
 }

@@ -55,10 +55,10 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
             'icon' => ['nullable', 'string', 'max:80'],
 
             'short_description' => ['required', 'string', 'max:500'],
-            'overview' => ['required', 'string'],
+            'overview' => ['nullable', 'string'],
 
-            'audience_title' => ['required', 'string', 'max:160'],
-            'audience_detail' => ['required', 'string', 'max:1000'],
+            'audience_title' => ['nullable', 'string', 'max:160'],
+            'audience_detail' => ['nullable', 'string', 'max:1000'],
 
             'meta_title' => ['nullable', 'string', 'max:180'],
             'meta_description' => ['nullable', 'string', 'max:500'],
@@ -69,12 +69,12 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
 
-            'benefits' => ['required', 'array', 'min:1'],
-            'benefits.*.title' => ['required', 'string', 'max:160'],
-            'benefits.*.description' => ['required', 'string', 'max:500'],
+            'benefits' => ['nullable', 'array'],
+            'benefits.*.title' => ['nullable', 'string', 'max:160'],
+            'benefits.*.description' => ['nullable', 'string', 'max:500'],
 
-            'included_items' => ['required', 'array', 'min:1'],
-            'included_items.*' => ['required', 'string', 'max:120'],
+            'included_items' => ['nullable', 'array'],
+            'included_items.*' => ['nullable', 'string', 'max:120'],
 
             'tags' => ['nullable', 'array'],
             'tags.*' => ['nullable', 'string', 'max:80'],
@@ -86,16 +86,11 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
         return [
             'category_id.required' => 'Please select a service category.',
 
-            'benefits.required' => 'Please add at least one key benefit.',
             'benefits.min' => 'Please add at least one key benefit.',
             'benefits.*.title.required' => 'Benefit title is required.',
             'benefits.*.description.required' => 'Benefit description is required.',
 
-            'included_items.required' => 'Please add at least one included item.',
             'included_items.min' => 'Please add at least one included item.',
-
-            'audience_title.required' => 'Please enter who this service is for.',
-            'audience_detail.required' => 'Please enter the audience requirement detail.',
         ];
     }
 
@@ -195,9 +190,27 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
         return $slug;
     }
 
+    private function cleanQuillValue(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        $emptyValues = ['', '<p><br></p>', '<p></p>', '<p>&nbsp;</p>', '<div><br></div>'];
+
+        if (in_array($value, $emptyValues, true)) {
+            return null;
+        }
+
+        if (blank(trim(strip_tags($value)))) {
+            return null;
+        }
+
+        return $value;
+    }
+
     public function save(): void
     {
         $validated = $this->validate();
+        $validated['overview'] = $this->cleanQuillValue($validated['overview'] ?? null);
 
         $imagePath = null;
 
@@ -226,7 +239,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
             'image' => $imagePath,
 
             'short_description' => $validated['short_description'],
-            'overview' => $validated['overview'] ?: null,
+            'overview' => $validated['overview'],
 
             'benefits' => $benefits,
             'included_items' => array_values(array_filter($validated['included_items'])),
@@ -395,7 +408,17 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
                         <div wire:ignore x-data="{
                             quill: null,
-                            value: @entangle('overview').live,
+                            value: @entangle('overview'),
+                        
+                            cleanEditorValue() {
+                                const text = this.quill.getText().trim();
+                        
+                                if (!text.length) {
+                                    return '';
+                                }
+                        
+                                return this.quill.root.innerHTML;
+                            },
                         
                             init() {
                                 this.quill = new Quill(this.$refs.editor, {
@@ -416,17 +439,19 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                                     }
                                 });
                         
-                                if (this.value) {
+                                if (this.value && this.value !== '<p><br></p>') {
                                     this.quill.clipboard.dangerouslyPasteHTML(this.value);
                                 }
                         
                                 this.quill.on('text-change', () => {
-                                    this.value = this.quill.root.innerHTML;
+                                    this.value = this.cleanEditorValue();
                                 });
                         
                                 this.$watch('value', (newValue) => {
-                                    if (this.quill.root.innerHTML !== newValue) {
-                                        this.quill.clipboard.dangerouslyPasteHTML(newValue || '');
+                                    const cleanValue = newValue === '<p><br></p>' ? '' : newValue;
+                        
+                                    if (this.quill.root.innerHTML !== cleanValue) {
+                                        this.quill.clipboard.dangerouslyPasteHTML(cleanValue || '');
                                     }
                                 });
                             }
@@ -515,8 +540,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                             </button>
                         </div>
 
-                        <div
-                            class="flex min-h-15 flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                        <div class="flex min-h-15 flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
                             @forelse ($included_items as $index => $item)
                                 <div wire:key="included-item-{{ $index }}"
                                     class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">

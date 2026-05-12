@@ -22,10 +22,10 @@ return new class extends Migration
             $table->string('image')->nullable();
 
             $table->text('short_description');
-            $table->longText('overview');
+            $table->longText('overview')->nullable();
 
-            $table->json('benefits');
-            $table->json('included_items');
+            $table->json('benefits')->nullable();
+            $table->json('included_items')->nullable();
             $table->json('tags')->nullable();
 
             $table->string('audience_title')->nullable();

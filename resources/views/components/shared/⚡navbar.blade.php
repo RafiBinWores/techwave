@@ -277,7 +277,7 @@ new class extends Component {
                         <div x-show="userMenu" x-transition @click.outside="userMenu = false" @click.stop
                             style="display: none;"
                             class="absolute right-0 top-full z-999 mt-3 w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl">
-                            <a href="{{ route('account.dashboard') }}" wire:navigate
+                            <a href="{{ route('account.profile') }}" wire:navigate
                                 class="block rounded-xl px-4 py-3 text-sm text-white transition hover:bg-white/10">
                                 Profile
                             </a>

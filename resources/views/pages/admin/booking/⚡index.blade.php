@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ServiceBooking;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -11,7 +12,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
 
     public string $search = '';
     public string $status = 'all';
-    public int $perPage = 12;
+    public int $perPage = 10;
 
     public function updatedSearch(): void
     {
@@ -33,7 +34,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
         $search = trim($this->search);
 
         return ServiceBooking::query()
-            ->with('service')
+            ->with(['service.category', 'assignedService'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('full_name', 'like', '%' . $search . '%')
@@ -108,7 +109,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
                 </h2>
 
                 <p class="text-xs font-body-md text-secondary md:text-body-md">
-                    Manage customer service booking requests, inquiry status, contact details, and service requirements.
+                    Manage customer service booking requests, quotation status, assignment, contact details, and service requirements.
                 </p>
             </div>
 
@@ -120,19 +121,13 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
                             search
                         </span>
 
-                        <input
-                            type="search"
-                            wire:model.live.debounce.400ms="search"
-                            placeholder="Search booking..."
-                            class="w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-10 pr-4 text-label-md font-label-md text-on-surface transition-colors placeholder:text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10"
-                        />
+                        <input type="search" wire:model.live.debounce.400ms="search" placeholder="Search booking..."
+                            class="w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-10 pr-4 text-label-md font-label-md text-on-surface transition-colors placeholder:text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10" />
                     </div>
 
                     <div class="relative">
-                        <select
-                            wire:model.live="status"
-                            class="w-full appearance-none rounded-lg border border-outline-variant bg-white px-4 py-2.5 pr-10 text-label-md font-label-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/10"
-                        >
+                        <select wire:model.live="status"
+                            class="w-full appearance-none rounded-lg border border-outline-variant bg-white px-4 py-2.5 pr-10 text-label-md font-label-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option value="all">All Status</option>
                             <option value="pending">Pending</option>
                             <option value="contacted">Contacted</option>
@@ -175,6 +170,10 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Assignment
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                                 Submitted At
                             </th>
 
@@ -193,10 +192,12 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
                                             {{ $booking->full_name }}
                                         </span>
 
-                                        <a href="tel:{{ preg_replace('/[^0-9+]/', '', $booking->phone) }}"
-                                            class="block text-xs text-slate-400 transition hover:text-primary">
-                                            {{ $booking->phone }}
-                                        </a>
+                                        @if ($booking->phone)
+                                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $booking->phone) }}"
+                                                class="block text-xs text-slate-400 transition hover:text-primary">
+                                                {{ $booking->phone }}
+                                            </a>
+                                        @endif
 
                                         @if ($booking->email)
                                             <a href="mailto:{{ $booking->email }}"
@@ -243,70 +244,89 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
                                     </span>
                                 </td>
 
+                                <td class="px-6 py-4">
+                                    @if ($booking->assignedService)
+                                        <span
+                                            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                                            <span class="material-symbols-outlined text-[14px]">verified</span>
+                                            Assigned
+                                        </span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                                            <span class="material-symbols-outlined text-[14px]">hourglass_empty</span>
+                                            Not Assigned
+                                        </span>
+                                    @endif
+                                </td>
+
                                 <td class="px-6 py-4 text-body-sm text-secondary">
                                     {{ $booking->created_at?->format('M d, Y h:i A') }}
                                 </td>
 
                                 <td class="px-6 py-4 text-right">
                                     <div x-data="{ open: false }" class="relative inline-block text-left">
-                                        <button
-                                            type="button"
-                                            @click="open = !open"
-                                            class="text-slate-400 transition-colors hover:text-primary"
-                                        >
+                                        <button type="button" @click="open = !open"
+                                            class="text-slate-400 transition-colors hover:text-primary">
                                             <span class="material-symbols-outlined">more_vert</span>
                                         </button>
 
-                                        <div
-                                            x-cloak
-                                            x-show="open"
-                                            @click.outside="open = false"
-                                            x-transition
-                                            class="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
-                                        >
+                                        <div x-cloak x-show="open" @click.outside="open = false" x-transition
+                                            class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+
+                                            @if ($booking->assignedService)
+                                                <a href="{{ route('admin.assigned-services.edit', $booking->assignedService) }}" wire:navigate
+                                                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-emerald-700 transition hover:bg-emerald-50">
+                                                    <span class="material-symbols-outlined text-[18px]">verified</span>
+                                                    View Assigned Service
+                                                </a>
+                                            @else
+                                                <a href="{{ route('admin.assigned-services.create', ['booking' => $booking->id]) }}" wire:navigate
+                                                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                                                    <span class="material-symbols-outlined text-[18px]">assignment_ind</span>
+                                                    Assign Service
+                                                </a>
+                                            @endif
+
+                                            <div class="my-1 border-t border-slate-100"></div>
+
                                             @if ($booking->status !== 'pending')
-                                                <button
-                                                    type="button"
-                                                    wire:click="markAsPending({{ $booking->id }})"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                                                >
+                                                <button type="button" wire:click="markAsPending({{ $booking->id }})"
+                                                    @click="open = false"
+                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
                                                     <span class="material-symbols-outlined text-[18px]">pending</span>
                                                     Mark Pending
                                                 </button>
                                             @endif
 
                                             @if ($booking->status !== 'contacted')
-                                                <button
-                                                    type="button"
-                                                    wire:click="markAsContacted({{ $booking->id }})"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                                                >
+                                                <button type="button" wire:click="markAsContacted({{ $booking->id }})"
+                                                    @click="open = false"
+                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
                                                     <span class="material-symbols-outlined text-[18px]">call</span>
                                                     Mark Contacted
                                                 </button>
                                             @endif
 
                                             @if ($booking->status !== 'completed')
-                                                <button
-                                                    type="button"
-                                                    wire:click="markAsCompleted({{ $booking->id }})"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                                                >
+                                                <button type="button" wire:click="markAsCompleted({{ $booking->id }})"
+                                                    @click="open = false"
+                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
                                                     <span class="material-symbols-outlined text-[18px]">task_alt</span>
                                                     Mark Completed
                                                 </button>
                                             @endif
 
                                             @if ($booking->status !== 'cancelled')
-                                                <button
-                                                    type="button"
-                                                    wire:click="markAsCancelled({{ $booking->id }})"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                                                >
+                                                <button type="button" wire:click="markAsCancelled({{ $booking->id }})"
+                                                    @click="open = false"
+                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
                                                     <span class="material-symbols-outlined text-[18px]">cancel</span>
                                                     Mark Cancelled
                                                 </button>
                                             @endif
+
+                                            <div class="my-1 border-t border-slate-100"></div>
 
                                             @if ($booking->phone)
                                                 <a href="tel:{{ preg_replace('/[^0-9+]/', '', $booking->phone) }}"
@@ -324,12 +344,10 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
                                                 </a>
                                             @endif
 
-                                            <button
-                                                type="button"
-                                                wire:click="delete({{ $booking->id }})"
+                                            <button type="button" wire:click="delete({{ $booking->id }})"
                                                 wire:confirm="Are you sure you want to delete this booking?"
-                                                class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 cursor-pointer"
-                                            >
+                                                @click="open = false"
+                                                class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 cursor-pointer">
                                                 <span class="material-symbols-outlined text-[18px]">delete</span>
                                                 Delete
                                             </button>
@@ -339,7 +357,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Bookings')] class extends Co
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-14 text-center">
+                                <td colspan="8" class="px-6 py-14 text-center">
                                     <div class="mx-auto flex max-w-sm flex-col items-center">
                                         <div
                                             class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">

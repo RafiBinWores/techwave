@@ -230,8 +230,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // Contact messages
     Route::livewire('/contact-messages', 'pages::admin.contact-messages.index')->name('contact-messages.index');
 
+    // Services Management
+    Route::livewire('/assigned-services', 'pages::admin.assigned-services.index')->name('assigned-services.index');
+    Route::livewire('/assigned-services/create', 'pages::admin.assigned-services.create')->name('assigned-services.create');
+    Route::livewire('/assigned-services/{userService}/edit', 'pages::admin.assigned-services.edit')->name('assigned-services.edit');
+
 
     // Icons
     Route::livewire('/icons', 'pages::admin.icons.material-icons')->name('icons.material-icons');
-
 });

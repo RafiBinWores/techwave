@@ -94,8 +94,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
             'short_description' => ['required', 'string', 'max:500'],
             'overview' => ['nullable', 'string'],
 
-            'audience_title' => ['required', 'string', 'max:160'],
-            'audience_detail' => ['required', 'string', 'max:1000'],
+            'audience_title' => ['nullable', 'string', 'max:160'],
+            'audience_detail' => ['nullable', 'string', 'max:1000'],
 
             'meta_title' => ['nullable', 'string', 'max:180'],
             'meta_description' => ['nullable', 'string', 'max:500'],
@@ -106,12 +106,12 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
 
-            'benefits' => ['required', 'array', 'min:1'],
-            'benefits.*.title' => ['required', 'string', 'max:160'],
-            'benefits.*.description' => ['required', 'string', 'max:500'],
+            'benefits' => ['nullable', 'array'],
+            'benefits.*.title' => ['nullable', 'string', 'max:160'],
+            'benefits.*.description' => ['nullable', 'string', 'max:500'],
 
-            'included_items' => ['required', 'array', 'min:1'],
-            'included_items.*' => ['required', 'string', 'max:120'],
+            'included_items' => ['nullable', 'array'],
+            'included_items.*' => ['nullable', 'string', 'max:120'],
 
             'tags' => ['nullable', 'array'],
             'tags.*' => ['nullable', 'string', 'max:80'],
@@ -123,16 +123,11 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
         return [
             'category_id.required' => 'Please select a service category.',
 
-            'benefits.required' => 'Please add at least one key benefit.',
             'benefits.min' => 'Please add at least one key benefit.',
             'benefits.*.title.required' => 'Benefit title is required.',
             'benefits.*.description.required' => 'Benefit description is required.',
 
-            'included_items.required' => 'Please add at least one included item.',
             'included_items.min' => 'Please add at least one included item.',
-
-            'audience_title.required' => 'Please enter who this service is for.',
-            'audience_detail.required' => 'Please enter the audience requirement detail.',
         ];
     }
 
@@ -232,9 +227,27 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
         return $slug;
     }
 
+    private function cleanQuillValue(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        $emptyValues = ['', '<p><br></p>', '<p></p>', '<p>&nbsp;</p>', '<div><br></div>'];
+
+        if (in_array($value, $emptyValues, true)) {
+            return null;
+        }
+
+        if (blank(trim(strip_tags($value)))) {
+            return null;
+        }
+
+        return $value;
+    }
+
     public function update(): void
     {
         $validated = $this->validate();
+        $validated['overview'] = $this->cleanQuillValue($validated['overview'] ?? null);
 
         $imagePath = $this->service->image;
 
@@ -267,7 +280,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
             'image' => $imagePath,
 
             'short_description' => $validated['short_description'],
-            'overview' => $validated['overview'] ?: null,
+            'overview' => $validated['overview'],
 
             'benefits' => $benefits,
             'included_items' => array_values(array_filter($validated['included_items'])),
@@ -465,6 +478,16 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             value: @entangle('overview'),
                             isUpdatingFromQuill: false,
                         
+                            cleanEditorValue() {
+                                const text = this.quill.getText().trim();
+                        
+                                if (!text.length) {
+                                    return '';
+                                }
+                        
+                                return this.quill.root.innerHTML;
+                            },
+                        
                             init() {
                                 this.quill = new Quill(this.$refs.editor, {
                                     theme: 'snow',
@@ -484,13 +507,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     }
                                 });
                         
-                                if (this.value) {
-                                    this.quill.root.innerHTML = this.value;
+                                if (this.value && this.value !== '<p><br></p>') {
+                                    this.quill.clipboard.dangerouslyPasteHTML(this.value);
                                 }
                         
                                 this.quill.on('text-change', () => {
                                     this.isUpdatingFromQuill = true;
-                                    this.value = this.quill.root.innerHTML;
+                                    this.value = this.cleanEditorValue();
                         
                                     setTimeout(() => {
                                         this.isUpdatingFromQuill = false;
@@ -502,10 +525,12 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                         return;
                                     }
                         
-                                    if (this.quill.root.innerHTML !== newValue) {
-                                        let range = this.quill.getSelection();
+                                    const cleanValue = newValue === '<p><br></p>' ? '' : newValue;
                         
-                                        this.quill.root.innerHTML = newValue || '';
+                                    if (this.quill.root.innerHTML !== cleanValue) {
+                                        const range = this.quill.getSelection();
+                        
+                                        this.quill.clipboard.dangerouslyPasteHTML(cleanValue || '');
                         
                                         if (range) {
                                             this.quill.setSelection(range.index, range.length);

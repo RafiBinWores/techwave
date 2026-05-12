@@ -53,7 +53,7 @@ new class extends Component {
 
         <!-- nav -->
         <nav class="mt-8 flex-1 space-y-2">
-            <a href="{{ route('account.dashboard') }}" wire:navigate class="client-dash-link client-dash-link-active">
+            <a href="{{ route('account.dashboard') }}" wire:navigate wire:current.exact="client-dash-link-active" class="client-dash-link">
                 <span class="client-dash-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="1.8">
@@ -64,7 +64,7 @@ new class extends Component {
                 <span>Dashboard</span>
             </a>
 
-            <a href="{{ route('account.profile') }}" wire:navigate class="client-dash-link">
+            <a href="{{ route('account.profile') }}" wire:navigate wire:current.exact="client-dash-link-active" class="client-dash-link">
                 <span class="client-dash-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="1.8">
@@ -75,7 +75,7 @@ new class extends Component {
                 <span>Profile</span>
             </a>
 
-            <a href="{{ route('account.services') }}" wire:navigate class="client-dash-link">
+            <a href="{{ route('account.services') }}" wire:navigate wire:current.exact="client-dash-link-active" class="client-dash-link">
                 <span class="client-dash-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="1.8">
@@ -86,7 +86,7 @@ new class extends Component {
                 <span>Services</span>
             </a>
 
-            <a href="{{ route('client.tickets.index') }}" wire:navigate class="client-dash-link">
+            <a href="{{ route('client.tickets.index') }}" wire:navigate wire:current.exact="client-dash-link-active" class="client-dash-link">
                 <span class="client-dash-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="1.8">
@@ -97,7 +97,7 @@ new class extends Component {
                 <span>Tickets</span>
             </a>
 
-            <a href="{{ route('account.proposals') }}" wire:navigate class="client-dash-link">
+            <a href="{{ route('account.proposals') }}" wire:navigate wire:current.exact="client-dash-link-active" class="client-dash-link">
                 <span class="client-dash-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="1.8">

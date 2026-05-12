@@ -3,6 +3,7 @@
 use App\Events\SupportTicketUpdated;
 use App\Models\PricingOrder;
 use App\Models\SupportTicket;
+use App\Models\UserService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -44,9 +45,25 @@ new class extends Component {
         return PricingOrder::query()->with('pricingPlan')->where('user_id', Auth::id())->where('payment_status', 'paid')->whereNotNull('starts_at')->whereNotNull('expires_at')->where('starts_at', '<=', now())->where('expires_at', '>=', now())->latest('expires_at')->first();
     }
 
+    public function activeService(): ?UserService
+    {
+        return UserService::query()
+            ->with('service')
+            ->where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('start_date')->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')->orWhere('end_date', '>=', now());
+            })
+            ->latest()
+            ->first();
+    }
+
     public function canOpenTicket(): bool
     {
-        return (bool) $this->activeOrder();
+        return (bool) ($this->activeOrder() || $this->activeService());
     }
 
     public function tickets()
@@ -74,7 +91,7 @@ new class extends Component {
     public function openCreateModal(): void
     {
         if (!$this->canOpenTicket()) {
-            $this->dispatch('toast', message: 'You need an active purchased plan to open a support ticket.', type: 'error');
+            $this->dispatch('toast', message: 'You need an active plan or active service to open a support ticket.', type: 'error');
             return;
         }
 
@@ -117,9 +134,10 @@ new class extends Component {
     public function createTicket()
     {
         $activeOrder = $this->activeOrder();
+        $activeService = $this->activeService();
 
-        if (!$activeOrder) {
-            $this->dispatch('toast', message: 'Your support access is expired or you have no active purchased plan.', type: 'error');
+        if (!$activeOrder && !$activeService) {
+            $this->dispatch('toast', message: 'Your support access is expired or you have no active service/plan.', type: 'error');
             return;
         }
 
@@ -215,6 +233,7 @@ new class extends Component {
                     <div class="space-y-6" wire:key="client-ticket-index-{{ $refreshKey }}">
                         @php
                             $activeOrder = $this->activeOrder();
+                            $activeService = $this->activeService();
                         @endphp
 
                         {{-- Header --}}
@@ -244,7 +263,8 @@ new class extends Component {
                         </div>
 
                         {{-- Active Plan Notice --}}
-                        @if ($activeOrder)
+                        {{-- Active Support Notice --}}
+                        @if ($activeOrder || $activeService)
                             <div class="client-card p-5">
                                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                                     <div>
@@ -253,11 +273,21 @@ new class extends Component {
                                         </p>
 
                                         <h2 class="mt-1 text-xl font-bold text-white">
-                                            {{ $activeOrder->pricingPlan?->title ?? 'Active Plan' }}
+                                            @if ($activeOrder)
+                                                {{ $activeOrder->pricingPlan?->title ?? 'Active Plan' }}
+                                            @else
+                                                {{ $activeService->service?->name ?? ($activeService->service?->title ?? 'Active Service') }}
+                                            @endif
                                         </h2>
 
                                         <p class="mt-1 text-sm text-blue-100/60">
-                                            Valid until {{ $activeOrder->expires_at?->format('M d, Y') }}
+                                            @if ($activeOrder)
+                                                Valid until {{ $activeOrder->expires_at?->format('M d, Y') }}
+                                            @elseif ($activeService?->end_date)
+                                                Service valid until {{ $activeService->end_date?->format('M d, Y') }}
+                                            @else
+                                                Service is currently active
+                                            @endif
                                         </p>
                                     </div>
 
@@ -276,18 +306,18 @@ new class extends Component {
                                         </p>
 
                                         <h2 class="mt-1 text-xl font-bold text-white">
-                                            No active purchased plan found
+                                            No active plan or service found
                                         </h2>
 
                                         <p class="mt-1 text-sm text-red-100/70">
-                                            You can view previous tickets, but you need an active non-expired plan to
-                                            open a new ticket.
+                                            You can view previous tickets, but you need an active plan or active service
+                                            to open a new ticket.
                                         </p>
                                     </div>
 
                                     <a href="{{ route('home') }}" wire:navigate
                                         class="inline-flex w-fit rounded-full bg-white px-5 py-2.5 text-sm font-bold text-slate-900 transition hover:opacity-90">
-                                        View Plans
+                                        View Services
                                     </a>
                                 </div>
                             </div>

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'type', 'role', 'company_id', 'department_id', 'avatar', 'is_active'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'type', 'role', 'company_id', 'department_id', 'avatar', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -75,5 +75,10 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         $this->notify(new ResetPasswordNotification($token));
+    }
+
+    public function assignedServices()
+    {
+        return $this->hasMany(UserService::class);
     }
 }

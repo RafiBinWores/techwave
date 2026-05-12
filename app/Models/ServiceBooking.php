@@ -20,4 +20,9 @@ class ServiceBooking extends Model
     {
         return $this->belongsTo(Service::class);
     }
+
+    public function assignedService()
+    {
+        return $this->hasOne(UserService::class);
+    }
 }

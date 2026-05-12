@@ -20,6 +20,12 @@ new class extends Component {
 
     public function mount(string $slug): void
     {
+        if (auth()->check()) {
+            $this->quote_email = auth()->user()->email;
+            $this->quote_full_name = auth()->user()->name ?? '';
+            $this->quote_phone = auth()->user()->phone ?? '';
+        }
+
         $this->siteSetting = SiteSetting::current();
 
         $this->service = Service::query()
@@ -33,13 +39,22 @@ new class extends Component {
 
     public function submitQuoteRequest(): void
     {
-        $validated = $this->validate([
-            'quote_full_name' => ['required', 'string', 'max:255'],
-            'quote_phone' => ['required', 'string', 'max:50'],
-            'quote_email' => ['nullable', 'email', 'max:255'],
-            'quote_company_name' => ['nullable', 'string', 'max:255'],
-            'quote_message' => ['nullable', 'string', 'max:3000'],
-        ]);
+        if (auth()->check()) {
+            $this->quote_email = auth()->user()->email;
+        }
+
+        $validated = $this->validate(
+            [
+                'quote_full_name' => ['required', 'string', 'max:255'],
+                'quote_phone' => ['required', 'string', 'regex:/^(?:\+8801|8801|01)[3-9]\d{8}$/'],
+                'quote_email' => ['nullable', 'email', 'max:255'],
+                'quote_company_name' => ['nullable', 'string', 'max:255'],
+                'quote_message' => ['nullable', 'string', 'max:3000'],
+            ],
+            [
+                'quote_phone.regex' => 'Please enter a valid Bangladeshi phone number. Example: 017XXXXXXXX, +88017XXXXXXXX, or 88017XXXXXXXX.',
+            ],
+        );
 
         ServiceBooking::create([
             'service_id' => $this->service->id,
@@ -51,7 +66,15 @@ new class extends Component {
             'status' => 'pending',
         ]);
 
-        $this->reset(['quote_full_name', 'quote_phone', 'quote_email', 'quote_company_name', 'quote_message']);
+        $this->reset(['quote_full_name', 'quote_phone', 'quote_company_name', 'quote_message']);
+
+        if (auth()->check()) {
+            $this->quote_email = auth()->user()->email;
+            $this->quote_full_name = auth()->user()->name ?? '';
+            $this->quote_phone = auth()->user()->phone ?? '';
+        } else {
+            $this->quote_email = '';
+        }
 
         $this->dispatch('toast', message: 'Your quote request has been submitted successfully.', type: 'success');
     }
@@ -143,6 +166,20 @@ new class extends Component {
                             @endforeach
                         </div>
                     @endif
+
+                    @if ($service->activePlans->count())
+                        <div class="mt-8 flex flex-wrap gap-3">
+                            <a href="#service-plans"
+                                class="inline-flex items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
+                                View Plans
+                            </a>
+
+                            <a href="#quote-form"
+                                class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/8 px-6 py-3 text-sm font-semibold text-white backdrop-blur-xl transition hover:bg-white/12">
+                                Request Quote
+                            </a>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="relative">
@@ -153,7 +190,7 @@ new class extends Component {
 
                         <div class="overflow-hidden rounded-3xl border border-white/10">
                             <img src="{{ $this->serviceImage() }}" alt="{{ $service->card_title }}"
-                                class="h- w-full object-cover sm:h-100">
+                                class="h-80 w-full object-cover sm:h-100">
                         </div>
                     </div>
                 </div>
@@ -167,8 +204,136 @@ new class extends Component {
             <div class="grid gap-8 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px]">
                 <!-- Left Content -->
                 <div class="space-y-8">
+
+                    <!-- Service Plans -->
+                    @if ($service->activePlans->count())
+                        <div id="service-plans" class="service-detail-card scroll-mt-28">
+                            <div class="mb-8">
+                                <div
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-blue-100/80 backdrop-blur-xl">
+                                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                                    Service Plans
+                                </div>
+
+                                <h2 class="mt-5 text-2xl font-bold text-white sm:text-3xl">
+                                    Choose the right package
+                                </h2>
+
+                                <p class="mt-3 max-w-2xl text-sm leading-7 text-blue-100/66">
+                                    Select a suitable plan for {{ $service->card_title }} based on your business needs,
+                                    budget, and support requirements.
+                                </p>
+                            </div>
+
+                            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                @foreach ($service->activePlans as $plan)
+                                    @php
+                                        $isPopular = $plan->badge && str_contains(strtolower($plan->badge), 'popular');
+
+                                        $cardClass = $isPopular
+                                            ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/12 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
+                                            : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
+
+                                        $features = is_array($plan->features) ? $plan->features : [];
+                                    @endphp
+
+                                    <div
+                                        class="group relative rounded-[30px] border {{ $cardClass }} p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/25">
+
+                                        <div
+                                            class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent">
+                                        </div>
+
+                                        @if ($plan->badge)
+                                            <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                                                <span
+                                                    class="inline-flex rounded-full border border-cyan-300/70 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-cyan-400/20">
+                                                    {{ $plan->badge }}
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <div
+                                            class="flex items-start justify-between gap-4 {{ $plan->badge ? 'pt-4' : '' }}">
+                                            <div>
+                                                <p
+                                                    class="text-xs font-medium uppercase tracking-[0.22em] text-cyan-200/80">
+                                                    {{ $service->card_title }}
+                                                </p>
+
+                                                <h3 class="mt-2 text-2xl font-bold text-white">
+                                                    {{ $plan->name }}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        @if ($plan->description)
+                                            <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                                                {{ $plan->description }}
+                                            </p>
+                                        @else
+                                            <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                                                Flexible service package designed for your business requirements.
+                                            </p>
+                                        @endif
+
+                                        <div class="mt-6">
+                                            @if ($plan->price)
+                                                <div class="flex items-end gap-2">
+                                                    <span class="text-4xl font-bold text-white">
+                                                        ৳ {{ number_format((float) $plan->price, 0) }}
+                                                    </span>
+                                                </div>
+                                            @else
+                                                <span class="text-3xl font-bold text-white">Custom</span>
+                                            @endif
+                                        </div>
+
+                                        @if ($plan->buy_url)
+                                            <a href="{{ $plan->buy_url }}" target="_blank"
+                                                class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
+                                                Choose Plan
+                                            </a>
+                                        @else
+                                            <a href="#quote-form"
+                                                class="mt-6 inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3.5 font-semibold text-white backdrop-blur-xl transition hover:bg-white/12">
+                                                Request This Plan
+                                            </a>
+                                        @endif
+
+                                        <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                                            @forelse ($features as $feature)
+                                                <li class="flex gap-3">
+                                                    <span
+                                                        class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
+                                                        <span class="material-symbols-outlined text-[16px]">check</span>
+                                                    </span>
+
+                                                    <span>
+                                                        {{ is_array($feature) ? $feature['title'] ?? ($feature['name'] ?? ($feature['text'] ?? '')) : $feature }}
+                                                    </span>
+                                                </li>
+                                            @empty
+                                                <li class="flex gap-3">
+                                                    <span
+                                                        class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
+                                                        <span class="material-symbols-outlined text-[16px]">check</span>
+                                                    </span>
+
+                                                    <span>
+                                                        Custom features available on request
+                                                    </span>
+                                                </li>
+                                            @endforelse
+                                        </ul>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Overview -->
-                    @if ($service->overview)
+                    @if (!empty($service->overview))
                         <div class="service-detail-card">
                             <h2 class="text-2xl font-bold text-white sm:text-3xl">Service Overview</h2>
                             <p class="mt-5 text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">
@@ -178,7 +343,8 @@ new class extends Component {
                     @endif
 
                     <!-- Benefits -->
-                    @if (!empty($service->benefits))
+                    @if ($service->benefits)
+                    
                         <div class="service-detail-card">
                             <h2 class="text-2xl font-bold text-white sm:text-3xl">Key Benefits</h2>
 
@@ -246,6 +412,7 @@ new class extends Component {
                                     <h2 class="text-2xl font-bold text-white sm:text-3xl">Other Services</h2>
                                     <p class="mt-2 text-sm text-blue-100/66">Explore other solutions we offer.</p>
                                 </div>
+
                                 <a href="{{ route('client.services') }}" wire:navigate
                                     class="hidden sm:inline-flex items-center rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white backdrop-blur-xl transition hover:bg-white/12">
                                     View All
@@ -299,11 +466,6 @@ new class extends Component {
                                 <p class="mt-2 text-base font-semibold text-white">{{ $this->siteSetting->phone }}</p>
                             </div>
 
-                            {{-- <div class="contact-side-box">
-                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">WhatsApp</p>
-                                <p class="mt-2 text-base font-semibold text-white">+880 96381-01601</p>
-                            </div> --}}
-
                             <a href="{{ $this->whatsappLink() }}" target="_blank"
                                 class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-emerald-500 to-green-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5">
                                 Chat on WhatsApp
@@ -312,7 +474,7 @@ new class extends Component {
                     </div>
 
                     <!-- Quote Form -->
-                    <div class="sidebar-service-card">
+                    <div id="quote-form" class="sidebar-service-card scroll-mt-28">
                         <h3 class="text-2xl font-bold text-white">Request a Quote</h3>
                         <p class="mt-3 text-sm leading-7 text-blue-100/68">
                             Share your requirements and we’ll get back to you with the right solution.
@@ -325,6 +487,7 @@ new class extends Component {
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Full Name</label>
                                 <input type="text" wire:model="quote_full_name" placeholder="Enter your name"
                                     class="contact-input">
+
                                 @error('quote_full_name')
                                     <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                 @enderror
@@ -332,8 +495,9 @@ new class extends Component {
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Phone Number</label>
-                                <input type="text" wire:model="quote_phone" placeholder="Enter your phone"
+                                <input type="text" wire:model="quote_phone" placeholder="017XXXXXXXX"
                                     class="contact-input">
+
                                 @error('quote_phone')
                                     <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                 @enderror
@@ -341,8 +505,17 @@ new class extends Component {
 
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Email Address</label>
+
                                 <input type="email" wire:model="quote_email" placeholder="Enter your email"
-                                    class="contact-input">
+                                    @auth readonly @endauth
+                                    class="contact-input {{ auth()->check() ? 'cursor-not-allowed opacity-80' : '' }}">
+
+                                @auth
+                                    <p class="mt-1 text-xs text-blue-100/45">
+                                        Your login email will be used for this request.
+                                    </p>
+                                @endauth
+
                                 @error('quote_email')
                                     <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                 @enderror
@@ -352,6 +525,7 @@ new class extends Component {
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Company Name</label>
                                 <input type="text" wire:model="quote_company_name"
                                     placeholder="Enter your company name" class="contact-input">
+
                                 @error('quote_company_name')
                                     <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                 @enderror
@@ -361,13 +535,14 @@ new class extends Component {
                                 <label class="mb-2 block text-sm font-medium text-blue-50/85">Project Details</label>
                                 <textarea rows="5" wire:model="quote_message"
                                     placeholder="Tell us what you need for {{ $service->card_title }}" class="contact-input resize-none"></textarea>
+
                                 @error('quote_message')
                                     <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <button type="submit" wire:loading.attr="disabled" wire:target="submitQuoteRequest"
-                                class="inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+                                class="inline-flex w-full cursor-pointer items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
                                 <span wire:loading.remove wire:target="submitQuoteRequest">
                                     Send Quote Request
                                 </span>
