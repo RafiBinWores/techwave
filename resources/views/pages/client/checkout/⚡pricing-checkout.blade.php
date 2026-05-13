@@ -14,6 +14,7 @@ new #[Title('Checkout')] class extends Component {
     public string $customer_name = '';
     public string $customer_email = '';
     public string $customer_phone = '';
+
     public string $customer_address = '';
     public string $customer_city = '';
     public string $customer_postcode = '';
@@ -57,21 +58,29 @@ new #[Title('Checkout')] class extends Component {
             return;
         }
 
-        $this->customer_name = old('customer_name', $user->name ?? '');
-        $this->customer_email = old('customer_email', $user->email ?? '');
-        $this->customer_phone = old('customer_phone', $user->phone ?? '');
+        $this->customer_name = (string) old('customer_name', $user->name ?? '');
+        $this->customer_email = (string) old('customer_email', $user->email ?? '');
+        $this->customer_phone = (string) old('customer_phone', $user->phone ?? '');
 
         if ($user->isCompanyAccount() && $user->company) {
-            $this->company_name = old('company_name', $user->company->company_name ?? '');
-            $this->company_phone = old('company_phone', $user->company->phone ?? '');
-            $this->company_email = old('company_email', $user->company->email ?? '');
+            $this->company_name = (string) old('company_name', $user->company->company_name ?? '');
+            $this->company_phone = (string) old('company_phone', $user->company->phone ?? '');
+            $this->company_email = (string) old('company_email', $user->company->email ?? '');
+
+            $this->customer_address = (string) old('customer_address', $user->company->address ?? '');
+            $this->customer_city = (string) old('customer_city', '');
+            $this->customer_postcode = (string) old('customer_postcode', '');
 
             return;
         }
 
-        $this->company_name = old('company_name', '');
-        $this->company_phone = old('company_phone', '');
-        $this->company_email = old('company_email', '');
+        $this->company_name = (string) old('company_name', '');
+        $this->company_phone = (string) old('company_phone', '');
+        $this->company_email = (string) old('company_email', '');
+
+        $this->customer_address = (string) old('customer_address', '');
+        $this->customer_city = (string) old('customer_city', '');
+        $this->customer_postcode = (string) old('customer_postcode', '');
     }
 
     public function getAmount(): float
@@ -122,12 +131,18 @@ new #[Title('Checkout')] class extends Component {
                     @if ($this->isYearlyBooking())
                         Yearly plans are negotiable. Submit your details and our team will review your request.
                     @else
-                        {{-- Enter your details and continue to SSLCommerz secure payment gateway. --}}
+                        Review your selected plan and continue to secure payment.
                     @endif
                 </p>
             </div>
 
             <form method="POST" novalidate
+                @guest
+x-data
+                    @submit.prevent="$dispatch('toast', {
+                        type: 'error',
+                        message: 'Please login first to purchase or book a plan.'
+                    })" @endguest
                 action="{{ $this->isYearlyBooking()
                     ? route('client.checkout.pricing.booking', $pricingPlan->id)
                     : route('client.checkout.pricing.pay', $pricingPlan->id) }}">
@@ -242,6 +257,10 @@ new #[Title('Checkout')] class extends Component {
                             </div>
 
                             <div class="grid gap-5 sm:grid-cols-2">
+                                {{-- Hidden customer email for controller/payment --}}
+                                <input type="hidden" name="customer_email"
+                                    value="{{ old('customer_email', $customer_email) }}">
+
                                 <div>
                                     <label for="customer_name"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
@@ -249,8 +268,7 @@ new #[Title('Checkout')] class extends Component {
                                     </label>
 
                                     <input id="customer_name" type="text" name="customer_name"
-                                        value="{{ old('customer_name', $customer_name) }}" required
-                                        placeholder="Your full name"
+                                        value="{{ old('customer_name', $customer_name) }}" placeholder="Your full name"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
                                     @error('customer_name')
@@ -259,29 +277,13 @@ new #[Title('Checkout')] class extends Component {
                                 </div>
 
                                 <div>
-                                    <label for="customer_email"
-                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
-                                        Email Address <span class="text-red-300">*</span>
-                                    </label>
-
-                                    <input id="customer_email" type="email" name="customer_email"
-                                        value="{{ old('customer_email', $customer_email) }}" required
-                                        placeholder="you@example.com"
-                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
-
-                                    @error('customer_email')
-                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div class="sm:col-span-2">
                                     <label for="customer_phone"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
                                         Phone Number <span class="text-red-300">*</span>
                                     </label>
 
                                     <input id="customer_phone" type="text" name="customer_phone"
-                                        value="{{ old('customer_phone', $customer_phone) }}" required
+                                        value="{{ old('customer_phone', $customer_phone) }}"
                                         placeholder="Enter phone number"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
@@ -290,50 +292,11 @@ new #[Title('Checkout')] class extends Component {
                                     @enderror
                                 </div>
 
-                                <div class="sm:col-span-2">
-                                    <label for="customer_address"
-                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
-                                        Address <span class="text-red-300">*</span>
-                                    </label>
-
-                                    <textarea id="customer_address" name="customer_address" rows="3" required placeholder="House / Road / Area"
-                                        class="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">{{ old('customer_address', $customer_address) }}</textarea>
-
-                                    @error('customer_address')
+                                @error('customer_email')
+                                    <div class="sm:col-span-2">
                                         <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="customer_city"
-                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
-                                        City <span class="text-red-300">*</span>
-                                    </label>
-
-                                    <input id="customer_city" type="text" name="customer_city"
-                                        value="{{ old('customer_city', $customer_city) }}" required placeholder="Dhaka"
-                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
-
-                                    @error('customer_city')
-                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="customer_postcode"
-                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
-                                        Postcode <span class="text-red-300">*</span>
-                                    </label>
-
-                                    <input id="customer_postcode" type="text" name="customer_postcode"
-                                        value="{{ old('customer_postcode', $customer_postcode) }}" required
-                                        placeholder="1200"
-                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
-
-                                    @error('customer_postcode')
-                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                    </div>
+                                @enderror
                             </div>
                         </div>
 
@@ -357,13 +320,12 @@ new #[Title('Checkout')] class extends Component {
 
                             <div class="grid gap-5 sm:grid-cols-2">
                                 <div>
-                                    <label for="company_name"
-                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                    <label for="company_name" class="mb-2 block text-sm font-semibold text-blue-100/80">
                                         Company Name <span class="text-red-300">*</span>
                                     </label>
 
                                     <input id="company_name" type="text" name="company_name"
-                                        value="{{ old('company_name', $company_name) }}" required
+                                        value="{{ old('company_name', $company_name) }}"
                                         placeholder="Your company name"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
@@ -379,7 +341,7 @@ new #[Title('Checkout')] class extends Component {
                                     </label>
 
                                     <input id="company_email" type="email" name="company_email"
-                                        value="{{ old('company_email', $company_email) }}" required
+                                        value="{{ old('company_email', $company_email) }}"
                                         placeholder="company@example.com"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
@@ -395,11 +357,58 @@ new #[Title('Checkout')] class extends Component {
                                     </label>
 
                                     <input id="company_phone" type="text" name="company_phone"
-                                        value="{{ old('company_phone', $company_phone) }}" required
+                                        value="{{ old('company_phone', $company_phone) }}"
                                         placeholder="Company phone number"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
                                     @error('company_phone')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                {{-- Company Address --}}
+                                <div class="sm:col-span-2">
+                                    <label for="customer_address"
+                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                        Company Address <span class="text-red-300">*</span>
+                                    </label>
+
+                                    <textarea id="customer_address" name="customer_address" rows="3" placeholder="House / Road / Area"
+                                        class="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">{{ old('customer_address', $customer_address) }}</textarea>
+
+                                    @error('customer_address')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                {{-- Company City --}}
+                                <div>
+                                    <label for="customer_city"
+                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                        Company City <span class="text-red-300">*</span>
+                                    </label>
+
+                                    <input id="customer_city" type="text" name="customer_city"
+                                        value="{{ old('customer_city', $customer_city) }}" placeholder="Dhaka"
+                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
+
+                                    @error('customer_city')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                {{-- Company Postcode --}}
+                                <div>
+                                    <label for="customer_postcode"
+                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                        Company Postcode <span class="text-red-300">*</span>
+                                    </label>
+
+                                    <input id="customer_postcode" type="text" name="customer_postcode"
+                                        value="{{ old('customer_postcode', $customer_postcode) }}" placeholder="1200"
+                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
+
+                                    @error('customer_postcode')
                                         <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -534,14 +543,27 @@ new #[Title('Checkout')] class extends Component {
                                     @endif
                                 </div>
 
-                                <button type="submit"
-                                    class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 font-bold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 hover:shadow-blue-500/40">
-                                    <span class="material-symbols-outlined text-xl">
-                                        {{ $this->isYearlyBooking() ? 'send' : 'lock' }}
-                                    </span>
+                                @auth
+                                    <button type="submit"
+                                        class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 font-bold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 hover:shadow-blue-500/40">
+                                        <span class="material-symbols-outlined text-xl">
+                                            {{ $this->isYearlyBooking() ? 'send' : 'lock' }}
+                                        </span>
 
-                                    {{ $this->isYearlyBooking() ? 'SUBMIT BOOKING REQUEST' : 'PLACE ORDER' }}
-                                </button>
+                                        {{ $this->isYearlyBooking() ? 'SUBMIT BOOKING REQUEST' : 'PLACE ORDER' }}
+                                    </button>
+                                @else
+                                    <button type="button" x-data
+                                        @click="$dispatch('toast', {
+                                            type: 'error',
+                                            message: 'Please login first to purchase or book a plan.'
+                                        })"
+                                        class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 font-bold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 hover:shadow-blue-500/40">
+                                        <span class="material-symbols-outlined text-xl">lock</span>
+
+                                        {{ $this->isYearlyBooking() ? 'SUBMIT BOOKING REQUEST' : 'PLACE ORDER' }}
+                                    </button>
+                                @endauth
 
                                 <div
                                     class="flex items-center justify-center gap-2 text-center text-xs text-blue-100/50">

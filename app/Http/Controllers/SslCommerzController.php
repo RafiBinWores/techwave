@@ -16,6 +16,13 @@ class SslCommerzController extends Controller
 {
     public function pay(Request $request, PricingPlan $pricingPlan)
     {
+        if (! Auth::check()) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Please login first to purchase or book a plan.');
+        }
+
         abort_if($pricingPlan->status !== 'active', 404);
 
         $userId = Auth::id();

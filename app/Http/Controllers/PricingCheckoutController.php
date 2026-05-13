@@ -13,6 +13,14 @@ class PricingCheckoutController extends Controller
 {
     public function booking(Request $request, PricingPlan $pricingPlan)
     {
+
+        if (! Auth::check()) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Please login first to purchase or book a plan.');
+        }
+
         abort_if($pricingPlan->status !== 'active', 404);
 
         $userId = Auth::id();
@@ -123,36 +131,36 @@ class PricingCheckoutController extends Controller
     }
 
     private function userHasActiveOrPendingPlan(int $userId): bool
-{
-    $hasActiveOrder = PricingOrder::query()
-        ->where('user_id', $userId)
-        ->where(function ($query) {
-            $query
-                // Paid and not expired
-                ->where(function ($subQuery) {
-                    $subQuery
-                        ->where('payment_status', 'paid')
-                        ->whereNotNull('expires_at')
-                        ->where('expires_at', '>=', now());
-                })
+    {
+        $hasActiveOrder = PricingOrder::query()
+            ->where('user_id', $userId)
+            ->where(function ($query) {
+                $query
+                    // Paid and not expired
+                    ->where(function ($subQuery) {
+                        $subQuery
+                            ->where('payment_status', 'paid')
+                            ->whereNotNull('expires_at')
+                            ->where('expires_at', '>=', now());
+                    })
 
-                // Payment still pending
-                ->orWhere(function ($subQuery) {
-                    $subQuery->where('payment_status', 'pending');
-                });
-        })
-        ->exists();
+                    // Payment still pending
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->where('payment_status', 'pending');
+                    });
+            })
+            ->exists();
 
-    $hasActiveBooking = PricingPlanBooking::query()
-        ->where('user_id', $userId)
-        ->whereIn('status', [
-            'pending',
-            'reviewing',
-            'quoted',
-            'accepted',
-        ])
-        ->exists();
+        $hasActiveBooking = PricingPlanBooking::query()
+            ->where('user_id', $userId)
+            ->whereIn('status', [
+                'pending',
+                'reviewing',
+                'quoted',
+                'accepted',
+            ])
+            ->exists();
 
-    return $hasActiveOrder || $hasActiveBooking;
-}
+        return $hasActiveOrder || $hasActiveBooking;
+    }
 }

@@ -37,6 +37,10 @@ Route::livewire('/about', 'pages::client.about')->name('client.about');
 // Contact
 Route::livewire('/contact', 'pages::client.contact')->name('client.contact');
 
+
+    // Pricing and orders
+    Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
+
 /*
 |--------------------------------------------------------------------------
 | Email verification
@@ -108,9 +112,6 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::livewire('account/proposals', 'pages::client.account.proposals')->name('account.proposals');
     Route::livewire('account/profile', 'pages::client.account.profile')->name('account.profile');
     Route::livewire('account/change-password', 'pages::client.account.change-password')->name('account.change-password');
-
-    // Pricing and orders
-    Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
 
     // Checkout function for monthly
     Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');
@@ -239,6 +240,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/assigned-services', 'pages::admin.assigned-services.index')->name('assigned-services.index');
     Route::livewire('/assigned-services/create', 'pages::admin.assigned-services.create')->name('assigned-services.create');
     Route::livewire('/assigned-services/{userService}/edit', 'pages::admin.assigned-services.edit')->name('assigned-services.edit');
+
+    // Pricing Plan Booking Management
+    Route::livewire('/pricing-plan-bookings', 'pages::admin.pricing-plan-bookings.index')->name('pricing-plan-bookings.index');
 
 
     // Icons

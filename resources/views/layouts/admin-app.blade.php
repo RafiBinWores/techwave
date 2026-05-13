@@ -52,7 +52,7 @@
         <livewire:admin.shared.sidebar />
 
         <!-- Content -->
-        <main class="p-4 sm:p-6 lg:p-stack-lg max-w-350 mx-auto w-full">
+        <main class="p-4 sm:p-6 lg:p-stack-lg max-w-425 mx-auto w-full">
             {{ $slot }}
         </main>
 
