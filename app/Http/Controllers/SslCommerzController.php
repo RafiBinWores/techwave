@@ -286,22 +286,18 @@ class SslCommerzController extends Controller
             ->with('error', 'Payment ' . $status . '.');
     }
 
-    private function userHasActiveOrPendingPlan(int $userId, int $pricingPlanId): bool
+    private function userHasActiveOrPendingPlan(int $userId): bool
     {
         $hasActiveOrder = PricingOrder::query()
             ->where('user_id', $userId)
-            ->where('pricing_plan_id', $pricingPlanId)
             ->where(function ($query) {
                 $query
-                    // Paid and not expired
                     ->where(function ($subQuery) {
                         $subQuery
                             ->where('payment_status', 'paid')
                             ->whereNotNull('expires_at')
                             ->where('expires_at', '>=', now());
                     })
-
-                    // Payment still pending
                     ->orWhere(function ($subQuery) {
                         $subQuery->where('payment_status', 'pending');
                     });
@@ -310,7 +306,6 @@ class SslCommerzController extends Controller
 
         $hasActiveBooking = PricingPlanBooking::query()
             ->where('user_id', $userId)
-            ->where('pricing_plan_id', $pricingPlanId)
             ->whereIn('status', [
                 'pending',
                 'reviewing',

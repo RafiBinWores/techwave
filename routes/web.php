@@ -223,7 +223,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/orders', 'pages::admin.orders.index')->name('orders.index');
 
     // Service Booking
-    Route::livewire('/booking', 'pages::admin.booking.index')->name('booking.index');
+    Route::livewire('/booking', 'pages::admin.service-booking.index')->name('booking.index');
 
     //Invoice management
     Route::get('/orders/{order}/invoice/download', [PlanOrderInvoiceController::class, 'download'])->name('orders.invoice.download');
