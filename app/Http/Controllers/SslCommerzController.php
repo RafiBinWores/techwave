@@ -6,6 +6,7 @@ use App\Library\SslCommerz\SslCommerzNotification;
 use App\Mail\OrderInvoiceMail;
 use App\Models\PricingOrder;
 use App\Models\PricingPlan;
+use App\Models\PricingPlanBooking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -17,20 +18,45 @@ class SslCommerzController extends Controller
     {
         abort_if($pricingPlan->status !== 'active', 404);
 
+        $userId = Auth::id();
+
+        if ($this->userHasActiveOrPendingPlan($userId, $pricingPlan->id)) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'pricing_plan' => 'You already have this plan active or pending. You cannot purchase the same plan again until it expires or is completed.',
+                ]);
+        }
+
         $validated = $request->validate([
             'billing' => ['required', 'in:monthly,yearly'],
 
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['required', 'email', 'max:255'],
-            'customer_phone' => ['required', 'string', 'max:30'],
-            'phone_country' => ['required', 'string', 'size:2'],
-            'phone_e164' => ['required', 'string', 'max:30', 'regex:/^\+[1-9]\d{7,14}$/'],
-
+            'customer_phone' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',
+            ],
             'customer_address' => ['required', 'string', 'max:500'],
             'customer_city' => ['required', 'string', 'max:100'],
             'customer_postcode' => ['required', 'string', 'max:20'],
+
+            'company_name' => ['required', 'string', 'max:255'],
+            'company_email' => ['required', 'email', 'max:255'],
+            'company_phone' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',
+            ],
+
+            'requested_price' => ['nullable', 'numeric', 'min:0'],
+            'user_note' => ['nullable', 'string', 'max:2000'],
         ], [
-            'phone_e164.regex' => 'Please enter a valid phone number with country code.',
+            'customer_phone.regex' => 'Please enter a valid Bangladeshi phone number.',
+            'company_phone.regex' => 'Please enter a valid Bangladeshi company phone number.',
         ]);
 
         $subtotal = (float) (
@@ -68,8 +94,6 @@ class SslCommerzController extends Controller
             'customer_name' => $validated['customer_name'],
             'customer_email' => $validated['customer_email'],
             'customer_phone' => $validated['customer_phone'],
-            'phone_country' => $validated['phone_country'],
-            'phone_e164' => $validated['phone_e164'],
 
             'customer_address' => $validated['customer_address'],
             'customer_city' => $validated['customer_city'],
@@ -260,5 +284,41 @@ class SslCommerzController extends Controller
         return redirect()
             ->route('home')
             ->with('error', 'Payment ' . $status . '.');
+    }
+
+    private function userHasActiveOrPendingPlan(int $userId, int $pricingPlanId): bool
+    {
+        $hasActiveOrder = PricingOrder::query()
+            ->where('user_id', $userId)
+            ->where('pricing_plan_id', $pricingPlanId)
+            ->where(function ($query) {
+                $query
+                    // Paid and not expired
+                    ->where(function ($subQuery) {
+                        $subQuery
+                            ->where('payment_status', 'paid')
+                            ->whereNotNull('expires_at')
+                            ->where('expires_at', '>=', now());
+                    })
+
+                    // Payment still pending
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->where('payment_status', 'pending');
+                    });
+            })
+            ->exists();
+
+        $hasActiveBooking = PricingPlanBooking::query()
+            ->where('user_id', $userId)
+            ->where('pricing_plan_id', $pricingPlanId)
+            ->whereIn('status', [
+                'pending',
+                'reviewing',
+                'quoted',
+                'accepted',
+            ])
+            ->exists();
+
+        return $hasActiveOrder || $hasActiveBooking;
     }
 }

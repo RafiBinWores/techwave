@@ -19,4 +19,9 @@ class PricingPlan extends Model
     {
         return $this->hasMany(PricingOrder::class);
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(PricingPlanBooking::class);
+    }
 }

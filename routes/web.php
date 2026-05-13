@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PlanOrderInvoiceController;
+use App\Http\Controllers\PricingCheckoutController;
 use App\Http\Controllers\SslCommerzController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
@@ -111,8 +112,12 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Pricing and orders
     Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
 
-    // checkout page
+    // Checkout function for monthly
     Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');
+
+    // Booking for yearly
+Route::post('/checkout/pricing/{pricingPlan}/booking', [PricingCheckoutController::class, 'booking'])
+    ->name('client.checkout.pricing.booking');
 
     // Order success page
     Route::livewire('/checkout/success/{order}', 'pages::client.checkout.checkout-success')->name('client.checkout.success');

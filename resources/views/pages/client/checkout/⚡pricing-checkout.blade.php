@@ -11,6 +11,20 @@ new #[Title('Checkout')] class extends Component {
 
     public float $amount = 0;
 
+    public string $customer_name = '';
+    public string $customer_email = '';
+    public string $customer_phone = '';
+    public string $customer_address = '';
+    public string $customer_city = '';
+    public string $customer_postcode = '';
+
+    public string $company_name = '';
+    public string $company_phone = '';
+    public string $company_email = '';
+
+    public string $user_note = '';
+    public ?float $requested_price = null;
+
     public function mount(PricingPlan $pricingPlan): void
     {
         abort_if($pricingPlan->status !== 'active', 404);
@@ -24,6 +38,8 @@ new #[Title('Checkout')] class extends Component {
         $this->amount = $this->getAmount();
 
         abort_if($this->amount <= 0, 404);
+
+        $this->fillUserAndCompanyInfo();
     }
 
     public function updatedBilling(): void
@@ -33,9 +49,57 @@ new #[Title('Checkout')] class extends Component {
         $this->amount = $this->getAmount();
     }
 
+    public function fillUserAndCompanyInfo(): void
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return;
+        }
+
+        $this->customer_name = old('customer_name', $user->name ?? '');
+        $this->customer_email = old('customer_email', $user->email ?? '');
+        $this->customer_phone = old('customer_phone', $user->phone ?? '');
+
+        if ($user->isCompanyAccount() && $user->company) {
+            $this->company_name = old('company_name', $user->company->company_name ?? '');
+            $this->company_phone = old('company_phone', $user->company->phone ?? '');
+            $this->company_email = old('company_email', $user->company->email ?? '');
+
+            return;
+        }
+
+        $this->company_name = old('company_name', '');
+        $this->company_phone = old('company_phone', '');
+        $this->company_email = old('company_email', '');
+    }
+
     public function getAmount(): float
     {
         return (float) ($this->billing === 'yearly' ? $this->pricingPlan->yearly_price : $this->pricingPlan->monthly_price);
+    }
+
+    public function isYearlyBooking(): bool
+    {
+        return $this->billing === 'yearly';
+    }
+
+    public function getTaxAmount(): float
+    {
+        if ($this->isYearlyBooking()) {
+            return 0;
+        }
+
+        return $this->getAmount() * 0.15;
+    }
+
+    public function getTotalAmount(): float
+    {
+        if ($this->isYearlyBooking()) {
+            return $this->getAmount();
+        }
+
+        return $this->getAmount() + $this->getTaxAmount();
     }
 };
 ?>
@@ -47,26 +111,42 @@ new #[Title('Checkout')] class extends Component {
             {{-- Header --}}
             <div class="mb-10 text-center">
                 <p class="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-300">
-                    Secure Checkout
+                    {{ $this->isYearlyBooking() ? 'Booking Request' : 'Secure Checkout' }}
                 </p>
 
                 <h1 class="mt-3 text-3xl font-bold sm:text-4xl lg:text-5xl">
-                    Complete Your Order
+                    {{ $this->isYearlyBooking() ? 'Submit Your Booking Request' : 'Complete Your Order' }}
                 </h1>
 
-                {{-- <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-blue-100/60 sm:text-base">
-                    Enter your contact details and continue to SSLCommerz secure payment gateway.
-                </p> --}}
+                <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-blue-100/60 sm:text-base">
+                    @if ($this->isYearlyBooking())
+                        Yearly plans are negotiable. Submit your details and our team will review your request.
+                    @else
+                        {{-- Enter your details and continue to SSLCommerz secure payment gateway. --}}
+                    @endif
+                </p>
             </div>
 
-            <form method="POST" action="{{ route('client.checkout.pricing.pay', $pricingPlan->id) }}">
+            <form method="POST" novalidate
+                action="{{ $this->isYearlyBooking()
+                    ? route('client.checkout.pricing.booking', $pricingPlan->id)
+                    : route('client.checkout.pricing.pay', $pricingPlan->id) }}">
                 @csrf
+
+                @error('pricing_plan')
+                    <div class="mb-6 rounded-2xl border border-red-300/20 bg-red-400/10 p-4 text-sm text-red-100">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-red-200">error</span>
+                            <p>{{ $message }}</p>
+                        </div>
+                    </div>
+                @enderror
 
                 <input type="hidden" name="billing" value="{{ $billing }}">
 
                 <div class="grid gap-8 lg:grid-cols-[1fr_420px]">
 
-                    {{-- Left: Checkout Form --}}
+                    {{-- Left --}}
                     <div class="space-y-6">
 
                         {{-- Billing Option --}}
@@ -81,7 +161,7 @@ new #[Title('Checkout')] class extends Component {
                                 <div>
                                     <h2 class="text-xl font-bold">Billing Cycle</h2>
                                     <p class="mt-1 text-sm text-blue-100/55">
-                                        Choose how you want to pay for this plan.
+                                        Choose how you want to continue with this plan.
                                     </p>
                                 </div>
                             </div>
@@ -96,7 +176,7 @@ new #[Title('Checkout')] class extends Component {
                                         <div>
                                             <p class="font-bold text-white">Monthly</p>
                                             <p class="mt-1 text-sm text-blue-100/55">
-                                                Pay every month
+                                                Direct payment
                                             </p>
                                         </div>
 
@@ -121,7 +201,7 @@ new #[Title('Checkout')] class extends Component {
                                         <div>
                                             <p class="font-bold text-white">Yearly</p>
                                             <p class="mt-1 text-sm text-blue-100/55">
-                                                Pay once a year
+                                                Negotiable booking
                                             </p>
                                         </div>
 
@@ -135,11 +215,16 @@ new #[Title('Checkout')] class extends Component {
                                     <p class="mt-4 text-2xl font-bold">
                                         ৳{{ number_format((float) $pricingPlan->yearly_price, 2) }}
                                     </p>
+
+                                    <p
+                                        class="mt-2 inline-flex rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                                        Price negotiable
+                                    </p>
                                 </button>
                             </div>
                         </div>
 
-                        {{-- Customer Information --}}
+                        {{-- Personal Information --}}
                         <div
                             class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-blue-950/20 backdrop-blur-xl sm:p-8">
                             <div class="mb-6 flex items-start gap-4">
@@ -149,15 +234,14 @@ new #[Title('Checkout')] class extends Component {
                                 </div>
 
                                 <div>
-                                    <h2 class="text-xl font-bold">Customer Information</h2>
+                                    <h2 class="text-xl font-bold">Personal Information</h2>
                                     <p class="mt-1 text-sm text-blue-100/55">
-                                        Enter your details for order confirmation and payment processing.
+                                        This information will be used for account and order communication.
                                     </p>
                                 </div>
                             </div>
 
                             <div class="grid gap-5 sm:grid-cols-2">
-                                {{-- Name --}}
                                 <div>
                                     <label for="customer_name"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
@@ -165,7 +249,7 @@ new #[Title('Checkout')] class extends Component {
                                     </label>
 
                                     <input id="customer_name" type="text" name="customer_name"
-                                        value="{{ old('customer_name', auth()->user()->name ?? '') }}" required
+                                        value="{{ old('customer_name', $customer_name) }}" required
                                         placeholder="Your full name"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
@@ -174,7 +258,6 @@ new #[Title('Checkout')] class extends Component {
                                     @enderror
                                 </div>
 
-                                {{-- Email --}}
                                 <div>
                                     <label for="customer_email"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
@@ -182,7 +265,7 @@ new #[Title('Checkout')] class extends Component {
                                     </label>
 
                                     <input id="customer_email" type="email" name="customer_email"
-                                        value="{{ old('customer_email', auth()->user()->email ?? '') }}" required
+                                        value="{{ old('customer_email', $customer_email) }}" required
                                         placeholder="you@example.com"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
@@ -191,35 +274,22 @@ new #[Title('Checkout')] class extends Component {
                                     @enderror
                                 </div>
 
-                                {{-- Phone --}}
                                 <div class="sm:col-span-2">
                                     <label for="customer_phone"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
                                         Phone Number <span class="text-red-300">*</span>
                                     </label>
 
-                                    <input id="customer_phone" type="tel" name="customer_phone"
-                                        value="{{ old('customer_phone') }}" required placeholder="Enter phone number"
+                                    <input id="customer_phone" type="text" name="customer_phone"
+                                        value="{{ old('customer_phone', $customer_phone) }}" required
+                                        placeholder="Enter phone number"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
-
-                                    <input type="hidden" name="phone_country" id="phone_country"
-                                        value="{{ old('phone_country', 'BD') }}">
-                                    <input type="hidden" name="phone_e164" id="phone_e164"
-                                        value="{{ old('phone_e164') }}">
 
                                     @error('customer_phone')
                                         <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                     @enderror
-
-                                    @error('phone_e164')
-                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
-                                    @enderror
-                                    <p id="customer_phone_client_error" class="mt-1 hidden text-xs text-red-300">
-                                        Please enter a valid phone number.
-                                    </p>
                                 </div>
 
-                                {{-- Address --}}
                                 <div class="sm:col-span-2">
                                     <label for="customer_address"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
@@ -227,14 +297,13 @@ new #[Title('Checkout')] class extends Component {
                                     </label>
 
                                     <textarea id="customer_address" name="customer_address" rows="3" required placeholder="House / Road / Area"
-                                        class="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">{{ old('customer_address') }}</textarea>
+                                        class="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">{{ old('customer_address', $customer_address) }}</textarea>
 
                                     @error('customer_address')
                                         <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
 
-                                {{-- City --}}
                                 <div>
                                     <label for="customer_city"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
@@ -242,7 +311,7 @@ new #[Title('Checkout')] class extends Component {
                                     </label>
 
                                     <input id="customer_city" type="text" name="customer_city"
-                                        value="{{ old('customer_city') }}" required placeholder="Dhaka"
+                                        value="{{ old('customer_city', $customer_city) }}" required placeholder="Dhaka"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
                                     @error('customer_city')
@@ -250,27 +319,128 @@ new #[Title('Checkout')] class extends Component {
                                     @enderror
                                 </div>
 
-                                {{-- Postcode --}}
                                 <div>
                                     <label for="customer_postcode"
                                         class="mb-2 block text-sm font-semibold text-blue-100/80">
                                         Postcode <span class="text-red-300">*</span>
                                     </label>
 
-                                    <input id="customer_postcode" type="number" name="customer_postcode"
-                                        value="{{ old('customer_postcode') }}" required placeholder="1200"
+                                    <input id="customer_postcode" type="text" name="customer_postcode"
+                                        value="{{ old('customer_postcode', $customer_postcode) }}" required
+                                        placeholder="1200"
                                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
 
                                     @error('customer_postcode')
                                         <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
+                            </div>
+                        </div>
 
+                        {{-- Company Information --}}
+                        <div
+                            class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-blue-950/20 backdrop-blur-xl sm:p-8">
+                            <div class="mb-6 flex items-start gap-4">
+                                <div
+                                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-300/10 text-blue-100">
+                                    <span class="material-symbols-outlined">business_center</span>
+                                </div>
+
+                                <div>
+                                    <h2 class="text-xl font-bold">Company Information</h2>
+                                    <p class="mt-1 text-sm text-blue-100/55">
+                                        If your account has a company profile, this information will be loaded
+                                        automatically. You can change it for this order or booking.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="grid gap-5 sm:grid-cols-2">
+                                <div>
+                                    <label for="company_name"
+                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                        Company Name <span class="text-red-300">*</span>
+                                    </label>
+
+                                    <input id="company_name" type="text" name="company_name"
+                                        value="{{ old('company_name', $company_name) }}" required
+                                        placeholder="Your company name"
+                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
+
+                                    @error('company_name')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="company_email"
+                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                        Company Email <span class="text-red-300">*</span>
+                                    </label>
+
+                                    <input id="company_email" type="email" name="company_email"
+                                        value="{{ old('company_email', $company_email) }}" required
+                                        placeholder="company@example.com"
+                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
+
+                                    @error('company_email')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="sm:col-span-2">
+                                    <label for="company_phone"
+                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                        Company Phone <span class="text-red-300">*</span>
+                                    </label>
+
+                                    <input id="company_phone" type="text" name="company_phone"
+                                        value="{{ old('company_phone', $company_phone) }}" required
+                                        placeholder="Company phone number"
+                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
+
+                                    @error('company_phone')
+                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                @if ($this->isYearlyBooking())
+                                    <div>
+                                        <label for="requested_price"
+                                            class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                            Requested Price
+                                        </label>
+
+                                        <input id="requested_price" type="number" step="0.01" min="0"
+                                            name="requested_price" wire:model.live="requested_price"
+                                            placeholder="Your expected yearly price"
+                                            class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
+
+                                        @error('requested_price')
+                                            <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label for="user_note"
+                                            class="mb-2 block text-sm font-semibold text-blue-100/80">
+                                            Requirement / Message
+                                        </label>
+
+                                        <textarea id="user_note" name="user_note" rows="4"
+                                            placeholder="Write your requirement, expected service details, or negotiation message..."
+                                            class="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">{{ old('user_note', $user_note) }}</textarea>
+
+                                        @error('user_note')
+                                            <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
 
-                    {{-- Right: Order Summary --}}
+                    {{-- Right: Summary --}}
                     <div class="lg:sticky lg:top-24 lg:self-start">
                         <div
                             class="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/30 backdrop-blur-xl">
@@ -278,13 +448,17 @@ new #[Title('Checkout')] class extends Component {
                                 <div class="flex items-start gap-4">
                                     <div
                                         class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/20">
-                                        <span class="material-symbols-outlined">receipt_long</span>
+                                        <span class="material-symbols-outlined">
+                                            {{ $this->isYearlyBooking() ? 'contract' : 'receipt_long' }}
+                                        </span>
                                     </div>
 
                                     <div>
-                                        <h2 class="text-xl font-bold">Order Summary</h2>
+                                        <h2 class="text-xl font-bold">
+                                            {{ $this->isYearlyBooking() ? 'Booking Summary' : 'Order Summary' }}
+                                        </h2>
                                         <p class="mt-1 text-sm text-blue-100/55">
-                                            Review your order before payment.
+                                            {{ $this->isYearlyBooking() ? 'Review your booking request.' : 'Review your order before payment.' }}
                                         </p>
                                     </div>
                                 </div>
@@ -311,34 +485,73 @@ new #[Title('Checkout')] class extends Component {
                                     </div>
 
                                     <div class="flex justify-between gap-4">
-                                        <span class="text-blue-100/60">Subtotal</span>
+                                        <span class="text-blue-100/60">
+                                            {{ $this->isYearlyBooking() ? 'Listed Yearly Price' : 'Subtotal' }}
+                                        </span>
+
                                         <span class="font-semibold text-white">
                                             ৳{{ number_format($this->getAmount(), 2) }}
                                         </span>
                                     </div>
 
-                                    <div class="flex justify-between gap-4">
-                                        <span class="text-blue-100/60">TAX (+15%)</span>
-                                        <span
-                                            class="font-semibold text-emerald-300">৳{{ number_format($this->getAmount() * 0.15, 2) }}</span>
-                                    </div>
+                                    @if ($this->isYearlyBooking())
+                                        <div class="flex justify-between gap-4">
+                                            <span class="text-blue-100/60">Pricing Status</span>
+                                            <span class="font-semibold text-amber-300">Negotiable</span>
+                                        </div>
 
-                                    <div class="flex justify-between border-t border-white/10 pt-4 text-lg font-bold">
-                                        <span>Total</span>
-                                        <span>৳{{ number_format($this->getAmount() + $this->getAmount() * 0.15, 2) }}</span>
-                                    </div>
+                                        @if ($requested_price)
+                                            <div class="flex justify-between gap-4">
+                                                <span class="text-blue-100/60">Requested Price</span>
+                                                <span class="font-semibold text-cyan-300">
+                                                    ৳{{ number_format((float) $requested_price, 2) }}
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <div
+                                            class="rounded-2xl border border-amber-300/15 bg-amber-300/10 p-4 text-xs leading-6 text-amber-100/90">
+                                            <div class="mb-2 flex items-center gap-2 font-bold text-amber-200">
+                                                <span class="material-symbols-outlined text-base">info</span>
+                                                No payment required now
+                                            </div>
+
+                                            Our team will review your request and send a final quoted price.
+                                        </div>
+                                    @else
+                                        <div class="flex justify-between gap-4">
+                                            <span class="text-blue-100/60">TAX (+15%)</span>
+                                            <span class="font-semibold text-emerald-300">
+                                                ৳{{ number_format($this->getTaxAmount(), 2) }}
+                                            </span>
+                                        </div>
+
+                                        <div
+                                            class="flex justify-between border-t border-white/10 pt-4 text-lg font-bold">
+                                            <span>Total</span>
+                                            <span>৳{{ number_format($this->getTotalAmount(), 2) }}</span>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <button type="submit"
                                     class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-500 to-sky-400 px-6 py-4 font-bold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 hover:shadow-blue-500/40">
-                                    {{-- <span class="material-symbols-outlined text-xl">lock</span> --}}
-                                    PLACE ORDER
+                                    <span class="material-symbols-outlined text-xl">
+                                        {{ $this->isYearlyBooking() ? 'send' : 'lock' }}
+                                    </span>
+
+                                    {{ $this->isYearlyBooking() ? 'SUBMIT BOOKING REQUEST' : 'PLACE ORDER' }}
                                 </button>
 
                                 <div
                                     class="flex items-center justify-center gap-2 text-center text-xs text-blue-100/50">
-                                    <span class="material-symbols-outlined text-base">verified_user</span>
-                                    Secure payment powered by SSLCommerz
+                                    @if ($this->isYearlyBooking())
+                                        <span class="material-symbols-outlined text-base">support_agent</span>
+                                        Our team will contact you after review.
+                                    @else
+                                        <span class="material-symbols-outlined text-base">verified_user</span>
+                                        Secure payment powered by SSLCommerz
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -348,115 +561,4 @@ new #[Title('Checkout')] class extends Component {
             </form>
         </div>
     </section>
-
-
-    @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/utils.js"></script>
-
-        <script>
-            function initCheckoutPhoneInput() {
-                const phoneInput = document.querySelector('#customer_phone');
-                const phoneCountryInput = document.querySelector('#phone_country');
-                const phoneE164Input = document.querySelector('#phone_e164');
-                const phoneError = document.querySelector('#customer_phone_client_error');
-
-                if (!phoneInput || phoneInput.dataset.itiInitialized === 'true') return;
-
-                phoneInput.dataset.itiInitialized = 'true';
-
-                const iti = window.intlTelInput(phoneInput, {
-                    initialCountry: (phoneCountryInput.value || 'BD').toLowerCase(),
-                    preferredCountries: ['bd', 'in', 'pk', 'us', 'gb', 'ae', 'sa', 'my'],
-                    separateDialCode: true,
-                    nationalMode: true,
-                    utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/utils.js',
-                });
-
-                function cleanNumber(number) {
-                    return number.replace(/[\s\-()]/g, '');
-                }
-
-                function showPhoneError(message = 'Please enter a valid phone number.') {
-                    phoneInput.classList.remove('border-white/10');
-                    phoneInput.classList.add('border-red-300');
-
-                    if (phoneError) {
-                        phoneError.innerText = message;
-                        phoneError.classList.remove('hidden');
-                    }
-                }
-
-                function hidePhoneError() {
-                    phoneInput.classList.remove('border-red-300');
-                    phoneInput.classList.add('border-white/10');
-
-                    if (phoneError) {
-                        phoneError.classList.add('hidden');
-                    }
-                }
-
-                phoneInput.addEventListener('input', hidePhoneError);
-                phoneInput.addEventListener('countrychange', hidePhoneError);
-
-                phoneInput.closest('form').addEventListener('submit', function(event) {
-                    const selectedCountry = iti.getSelectedCountryData();
-                    const countryIso = selectedCountry.iso2.toUpperCase();
-
-                    let rawPhone = cleanNumber(phoneInput.value);
-
-                    phoneCountryInput.value = countryIso;
-
-                    /**
-                     * Bangladesh validation
-                     * Accept:
-                     * 01712345678
-                     * 8801712345678
-                     * +8801712345678
-                     */
-                    if (countryIso === 'BD') {
-                        rawPhone = rawPhone.replace(/^\+/, '');
-
-                        let bdLocalNumber = rawPhone;
-
-                        if (bdLocalNumber.startsWith('880')) {
-                            bdLocalNumber = '0' + bdLocalNumber.substring(3);
-                        }
-
-                        const bdRegex = /^01[3-9][0-9]{8}$/;
-
-                        if (!bdRegex.test(bdLocalNumber)) {
-                            event.preventDefault();
-                            showPhoneError('Please enter a valid Bangladeshi mobile number. Example: 01712345678');
-                            phoneInput.focus();
-                            return false;
-                        }
-
-                        phoneInput.value = bdLocalNumber;
-                        phoneE164Input.value = '+88' + bdLocalNumber;
-
-                        hidePhoneError();
-                        return true;
-                    }
-
-                    /**
-                     * Other country validation
-                     */
-                    phoneE164Input.value = iti.getNumber();
-
-                    if (!iti.isValidNumber()) {
-                        event.preventDefault();
-                        showPhoneError('Please enter a valid phone number for the selected country.');
-                        phoneInput.focus();
-                        return false;
-                    }
-
-                    hidePhoneError();
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', initCheckoutPhoneInput);
-            document.addEventListener('livewire:navigated', initCheckoutPhoneInput);
-        </script>
-    @endpush
 </div>
