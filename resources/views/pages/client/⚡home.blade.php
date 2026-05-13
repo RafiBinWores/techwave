@@ -230,7 +230,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             <div class="relative" x-ref="slider" @mouseenter="paused = true" @mouseleave="paused = false">
                 <!-- left fade -->
                 <div
-                    class="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-slate-950/90 to-transparent">
+                    class="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-linear-to-r from-slate-950/90 to-transparent">
                 </div>
 
                 <!-- right fade -->
@@ -1253,7 +1253,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
                         <!-- Card 1 -->
                         <article
-                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-140 sm:max-w-140 sm:p-6 lg:w-170 lg:max-w-170 lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
                             <div
                                 class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
                             </div>
@@ -1307,7 +1307,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
                         <!-- Card 2 -->
                         <article
-                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-140 sm:max-w-140 sm:p-6 lg:w-170 lg:max-w-170 lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
                             <div
                                 class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
                             </div>
@@ -1360,7 +1360,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
                         <!-- Card 3 -->
                         <article
-                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-140 sm:max-w-140 sm:p-6 lg:w-170 lg:max-w-170 lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
                             <div
                                 class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
                             </div>
@@ -1413,7 +1413,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
                         <!-- Card 4 -->
                         <article
-                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-140 sm:max-w-140 sm:p-6 lg:w-170 lg:max-w-170 lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
                             <div
                                 class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
                             </div>
@@ -1466,7 +1466,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
                         <!-- Card 5 -->
                         <article
-                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-[680px] lg:max-w-[680px] lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
+                            class="review-card group relative w-[86vw] max-w-[86vw] shrink-0 overflow-hidden rounded-[30px] border border-white/10 bg-white/6 p-5 sm:w-[560px] sm:max-w-[560px] sm:p-6 lg:w-170 lg:max-w-170 lg:p-7 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.18)]">
                             <div
                                 class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_58%)] opacity-0 transition duration-500 group-[.is-active]:opacity-100">
                             </div>
