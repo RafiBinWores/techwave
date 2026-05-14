@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PricingOrderCreated;
 use App\Library\SslCommerz\SslCommerzNotification;
 use App\Mail\OrderInvoiceMail;
 use App\Models\PricingOrder;
@@ -42,12 +43,12 @@ class SslCommerzController extends Controller
             // Personal info
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['required', 'email', 'max:255'],
-            'customer_phone' => ['required','string','max:20','regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
+            'customer_phone' => ['required', 'string', 'max:20', 'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
 
             // Company info
             'company_name' => ['required', 'string', 'max:255'],
             'company_email' => ['required', 'email', 'max:255'],
-            'company_phone' => ['required','string','max:20','regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
+            'company_phone' => ['required', 'string', 'max:20', 'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
             'customer_address' => ['required', 'string', 'max:500'],
         ], [
             'customer_phone.regex' => 'Please enter a valid Bangladeshi phone number. Example: 01712345678',
@@ -187,6 +188,8 @@ class SslCommerzController extends Controller
             if ($email) {
                 Mail::to($email)->send(new OrderInvoiceMail($order));
             }
+
+            event(new PricingOrderCreated($order->fresh(['pricingPlan', 'user'])));
         }
 
         // Guard: if still not paid, something went wrong
@@ -292,6 +295,22 @@ class SslCommerzController extends Controller
             ->with('error', 'Payment ' . $status . '.');
     }
 
+    private function normalizeBdPhone(?string $phone): ?string
+    {
+        if (!$phone) {
+            return null;
+        }
+
+        $phone = preg_replace('/[\s\-()]/', '', $phone);
+        $phone = ltrim($phone, '+');
+
+        if (str_starts_with($phone, '88')) {
+            $phone = substr($phone, 2);
+        }
+
+        return $phone;
+    }
+
     private function userHasActiveOrPendingPlan(int $userId): bool
     {
         $hasActiveOrder = PricingOrder::query()
@@ -312,12 +331,7 @@ class SslCommerzController extends Controller
 
         $hasActiveBooking = PricingPlanBooking::query()
             ->where('user_id', $userId)
-            ->whereIn('status', [
-                'pending',
-                'reviewing',
-                'quoted',
-                'accepted',
-            ])
+            ->whereIn('status', ['pending', 'reviewing', 'quoted', 'accepted',])
             ->exists();
 
         return $hasActiveOrder || $hasActiveBooking;

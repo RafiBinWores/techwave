@@ -246,6 +246,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Pricing Plan Booking Management
     Route::livewire('/pricing-plan-bookings', 'pages::admin.pricing-plan-bookings.index')->name('pricing-plan-bookings.index');
+    Route::livewire('/pricing-plan-bookings/{booking}/show', 'pages::admin.pricing-plan-bookings.show')->name('pricing-plan-bookings.show');
 
 
     // Icons

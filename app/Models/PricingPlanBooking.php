@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
     'admin_note',
     'status',
     'pricing_order_id',
+    'admin_read_at',
 ])]
 class PricingPlanBooking extends Model
 {
@@ -27,6 +28,7 @@ class PricingPlanBooking extends Model
         'plan_price' => 'decimal:2',
         'requested_price' => 'decimal:2',
         'quoted_price' => 'decimal:2',
+        'admin_read_at' => 'datetime',
     ];
 
     public function pricingPlan()

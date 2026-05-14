@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PricingPlanBookingCreated;
 use App\Models\PricingOrder;
 use App\Models\PricingPlan;
 use App\Models\PricingPlanBooking;
@@ -95,6 +96,8 @@ class PricingCheckoutController extends Controller
             'booking_no' => 'BK-' . now()->format('Y') . '-' . $booking->id,
         ]);
 
+        event(new PricingPlanBookingCreated($booking->fresh(['pricingPlan', 'user'])));
+
         return redirect()
             ->route('account.services', ['tab' => 'plans'])
             ->with('success', 'Your yearly plan booking request has been submitted successfully. Our team will review it and contact you soon.');
@@ -139,12 +142,7 @@ class PricingCheckoutController extends Controller
 
         $hasActiveBooking = PricingPlanBooking::query()
             ->where('user_id', $userId)
-            ->whereIn('status', [
-                'pending',
-                'reviewing',
-                'quoted',
-                'accepted',
-            ])
+            ->whereIn('status', ['pending','reviewing','quoted','accepted',])
             ->exists();
 
         return $hasActiveOrder || $hasActiveBooking;

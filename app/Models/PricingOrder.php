@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['user_id', 'pricing_plan_id', 'order_no', 'transaction_id', 'billing_cycle', 'amount', 'currency', 'payment_status', 'ssl_status', 'bank_transaction_id', 'val_id', 'payment_response', 'paid_at', 'starts_at', 'expires_at',])]
+#[Fillable(['user_id', 'pricing_plan_id', 'order_no', 'transaction_id', 'billing_cycle', 'amount', 'currency', 'payment_status', 'ssl_status', 'bank_transaction_id', 'val_id', 'payment_response', 'paid_at', 'starts_at', 'expires_at', 'admin_read_at',])]
 class PricingOrder extends Model
 {
     protected $casts = [
@@ -14,6 +14,7 @@ class PricingOrder extends Model
         'paid_at' => 'datetime',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
+        'admin_read_at' => 'datetime',
     ];
 
     public function pricingPlan()
