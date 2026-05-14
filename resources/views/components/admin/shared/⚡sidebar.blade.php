@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\SiteSetting;
 use Livewire\Component;
 
 new class extends Component {
@@ -11,6 +12,11 @@ new class extends Component {
         request()->session()->regenerateToken();
 
         $this->redirectRoute('login', navigate: true);
+    }
+
+    public function getSiteSettingProperty()
+    {
+        return SiteSetting::current();
     }
 };
 ?>
@@ -28,7 +34,13 @@ new class extends Component {
     <div class="h-16 shrink-0 border-b border-slate-200 px-4 flex items-center justify-between">
         <div class="flex items-center gap-3 overflow-hidden">
             <div class="h-12 w-12 rounded-xl bg-primary text-white flex items-center justify-center shrink-0">
-                <img src="{{ asset('assets/images/logo/logo.png') }}" alt="Logo" class="p-1">
+
+                @php
+                    $logo = $this->siteSetting->logo
+                        ? asset('storage/' . $this->siteSetting->logo)
+                        : asset('assets/images/logo/logo.png');
+                @endphp
+                <img src="{{ $logo }}" alt="Logo" class="p-1">
             </div>
 
             <div x-show="!sidebarCollapsed" class="min-w-0">

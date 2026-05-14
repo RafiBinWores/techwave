@@ -6,7 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <link rel="shortcut icon" href="{{ asset('assets/images/logo/logo.png') }}" type="image/x-icon">
+    @php
+        use App\Models\SiteSetting;
+
+        $siteSetting = SiteSetting::current();
+
+        $favicon = $siteSetting->favicon
+            ? asset('storage/' . $siteSetting->favicon)
+            : asset('assets/images/logo/logo.png');
+    @endphp
+
+    <link rel="icon" href="{{ $favicon }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ $favicon }}" type="image/x-icon">
 
     <title>{{ $title ?? config('app.name') }}</title>
 
@@ -22,20 +33,20 @@
 </head>
 
 <body>
-<!-- Global Overlay -->
+    <!-- Global Overlay -->
     <div
         class="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.30),rgba(15,23,42,0.88)_55%,rgba(2,6,23,0.95)_100%)]">
     </div>
     <div class="fixed inset-0 -z-10 bg-slate-950/30"></div>
 
-        <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-            <div class="absolute -top-30 -left-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl">
-            </div>
-            <div class="absolute top-[20%] -right-25 w-90 h-90 bg-sky-400/20 rounded-full blur-3xl">
-            </div>
-            <div class="absolute -bottom-30 left-[10%] w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl">
-            </div>
+    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute -top-30 -left-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl">
         </div>
+        <div class="absolute top-[20%] -right-25 w-90 h-90 bg-sky-400/20 rounded-full blur-3xl">
+        </div>
+        <div class="absolute -bottom-30 left-[10%] w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl">
+        </div>
+    </div>
 
 
     <div x-data="{ show: false, message: '' }"
