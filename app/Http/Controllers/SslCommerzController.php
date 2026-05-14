@@ -20,63 +20,60 @@ class SslCommerzController extends Controller
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Please login first to purchase or book a plan.');
+                ->with('error', 'Please login first to purchase a plan.');
         }
 
         abort_if($pricingPlan->status !== 'active', 404);
 
         $userId = Auth::id();
 
-        if ($this->userHasActiveOrPendingPlan($userId, $pricingPlan->id)) {
-            return back()
+        if ($this->userHasActiveOrPendingPlan($userId)) {
+            return redirect()
+                ->back()
                 ->withInput()
                 ->withErrors([
-                    'pricing_plan' => 'You already have this plan active or pending. You cannot purchase the same plan again until it expires or is completed.',
+                    'pricing_plan' => 'You already have an active or pending IT plan. You cannot purchase or book another plan until the current one expires or is completed.',
                 ]);
         }
 
         $validated = $request->validate([
             'billing' => ['required', 'in:monthly,yearly'],
 
+            // Personal info
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['required', 'email', 'max:255'],
-            'customer_phone' => [
-                'required',
-                'string',
-                'max:20',
-                'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',
-            ],
-            'customer_address' => ['required', 'string', 'max:500'],
-            'customer_city' => ['required', 'string', 'max:100'],
-            'customer_postcode' => ['required', 'string', 'max:20'],
+            'customer_phone' => ['required','string','max:20','regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
 
+            // Company info
             'company_name' => ['required', 'string', 'max:255'],
             'company_email' => ['required', 'email', 'max:255'],
-            'company_phone' => [
-                'required',
-                'string',
-                'max:20',
-                'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',
-            ],
-
-            'requested_price' => ['nullable', 'numeric', 'min:0'],
-            'user_note' => ['nullable', 'string', 'max:2000'],
+            'company_phone' => ['required','string','max:20','regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
+            'customer_address' => ['required', 'string', 'max:500'],
         ], [
-            'customer_phone.regex' => 'Please enter a valid Bangladeshi phone number.',
-            'company_phone.regex' => 'Please enter a valid Bangladeshi company phone number.',
+            'customer_phone.regex' => 'Please enter a valid Bangladeshi phone number. Example: 01712345678',
+            'company_phone.regex' => 'Please enter a valid Bangladeshi company phone number. Example: 01712345678',
         ]);
 
-        $subtotal = (float) (
-            $validated['billing'] === 'yearly'
-            ? $pricingPlan->yearly_price
-            : $pricingPlan->monthly_price
-        );
+        // Safety: yearly should not be paid directly
+        if ($validated['billing'] === 'yearly') {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'pricing_plan' => 'Yearly plans are negotiable. Please submit a booking request instead of direct payment.',
+                ]);
+        }
+
+        $subtotal = (float) $pricingPlan->monthly_price;
 
         abort_if($subtotal <= 0, 404);
 
         $taxRate = 0.15;
         $taxAmount = round($subtotal * $taxRate, 2);
         $totalAmount = round($subtotal + $taxAmount, 2);
+
+        $customerPhone = $this->normalizeBdPhone($validated['customer_phone']);
+        $companyPhone = $this->normalizeBdPhone($validated['company_phone']);
 
         $transactionId = 'TW-' . now()->format('Y') . '-' . strtoupper(Str::random(6));
 
@@ -87,9 +84,8 @@ class SslCommerzController extends Controller
             'order_no' => 'ORD-' . now()->format('Y') . '-' . strtoupper(Str::random(5)),
             'transaction_id' => $transactionId,
 
-            'billing_cycle' => $validated['billing'],
+            'billing_cycle' => 'monthly',
 
-            // Better to save subtotal, tax, and final amount separately
             'subtotal' => $subtotal,
             'tax_rate' => $taxRate * 100,
             'tax_amount' => $taxAmount,
@@ -98,13 +94,16 @@ class SslCommerzController extends Controller
             'currency' => 'BDT',
             'payment_status' => 'pending',
 
+            // Personal info snapshot
             'customer_name' => $validated['customer_name'],
             'customer_email' => $validated['customer_email'],
-            'customer_phone' => $validated['customer_phone'],
+            'customer_phone' => $customerPhone,
 
+            // Company info snapshot
+            'company_name' => $validated['company_name'],
+            'company_email' => $validated['company_email'],
+            'company_phone' => $companyPhone,
             'customer_address' => $validated['customer_address'],
-            'customer_city' => $validated['customer_city'],
-            'customer_postcode' => $validated['customer_postcode'],
         ]);
 
         $order->update([
@@ -125,11 +124,11 @@ class SslCommerzController extends Controller
             'cus_email' => $order->customer_email,
             'cus_add1' => $order->customer_address,
             'cus_add2' => '',
-            'cus_city' => $order->customer_city,
-            'cus_state' => $order->customer_city,
-            'cus_postcode' => $order->customer_postcode,
-            'cus_country' => $order->phone_country === 'BD' ? 'Bangladesh' : $order->phone_country,
-            'cus_phone' => $order->phone_e164,
+            'cus_city' => 'Dhaka',
+            'cus_state' => 'Dhaka',
+            'cus_postcode' => '1200',
+            'cus_country' => 'Bangladesh',
+            'cus_phone' => '+88' . $order->customer_phone,
 
             'shipping_method' => 'NO',
             'num_of_item' => 1,
@@ -140,7 +139,7 @@ class SslCommerzController extends Controller
 
             'order_id' => $order->id,
             'pricing_id' => $pricingPlan->id,
-            'pricing_cycle' => $validated['billing'],
+            'pricing_cycle' => 'monthly',
             'user_id' => Auth::id(),
         ];
 

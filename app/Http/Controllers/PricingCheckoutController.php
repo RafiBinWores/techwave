@@ -13,7 +13,6 @@ class PricingCheckoutController extends Controller
 {
     public function booking(Request $request, PricingPlan $pricingPlan)
     {
-
         if (! Auth::check()) {
             return redirect()
                 ->back()
@@ -25,11 +24,12 @@ class PricingCheckoutController extends Controller
 
         $userId = Auth::id();
 
-        if ($this->userHasActiveOrPendingPlan($userId, $pricingPlan->id)) {
-            return back()
+        if ($this->userHasActiveOrPendingPlan($userId)) {
+            return redirect()
+                ->back()
                 ->withInput()
                 ->withErrors([
-                    'pricing_plan' => 'You already have this plan active or pending. You cannot purchase the same plan again until it expires or is completed.',
+                    'pricing_plan' => 'You already have an active or pending IT plan. You cannot purchase or book another plan until the current one expires or is completed.',
                 ]);
         }
 
@@ -39,25 +39,13 @@ class PricingCheckoutController extends Controller
             // Personal info
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['required', 'email', 'max:255'],
-            'customer_phone' => [
-                'required',
-                'string',
-                'max:20',
-                'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',
-            ],
-            'customer_address' => ['required', 'string', 'max:500'],
-            'customer_city' => ['required', 'string', 'max:100'],
-            'customer_postcode' => ['required', 'string', 'max:20'],
+            'customer_phone' => ['required','string','max:20','regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
 
             // Company info
             'company_name' => ['required', 'string', 'max:255'],
             'company_email' => ['required', 'email', 'max:255'],
-            'company_phone' => [
-                'required',
-                'string',
-                'max:20',
-                'regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',
-            ],
+            'company_phone' => ['required','string','max:20','regex:/^(?:\+88|88)?01[3-9][0-9]{8}$/',],
+            'customer_address' => ['required', 'string', 'max:500'],
 
             // Negotiation info
             'requested_price' => ['nullable', 'numeric', 'min:0'],
@@ -85,14 +73,12 @@ class PricingCheckoutController extends Controller
             'customer_name' => $validated['customer_name'],
             'customer_email' => $validated['customer_email'],
             'customer_phone' => $customerPhone,
-            'customer_address' => $validated['customer_address'],
-            'customer_city' => $validated['customer_city'],
-            'customer_postcode' => $validated['customer_postcode'],
 
             // Company info snapshot
             'company_name' => $validated['company_name'],
             'company_email' => $validated['company_email'],
             'company_phone' => $companyPhone,
+            'customer_address' => $validated['customer_address'],
 
             // Price negotiation
             'plan_price' => $subtotal,

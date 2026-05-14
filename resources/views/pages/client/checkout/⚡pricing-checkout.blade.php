@@ -16,8 +16,6 @@ new #[Title('Checkout')] class extends Component {
     public string $customer_phone = '';
 
     public string $customer_address = '';
-    public string $customer_city = '';
-    public string $customer_postcode = '';
 
     public string $company_name = '';
     public string $company_phone = '';
@@ -66,10 +64,7 @@ new #[Title('Checkout')] class extends Component {
             $this->company_name = (string) old('company_name', $user->company->company_name ?? '');
             $this->company_phone = (string) old('company_phone', $user->company->phone ?? '');
             $this->company_email = (string) old('company_email', $user->company->email ?? '');
-
             $this->customer_address = (string) old('customer_address', $user->company->address ?? '');
-            $this->customer_city = (string) old('customer_city', '');
-            $this->customer_postcode = (string) old('customer_postcode', '');
 
             return;
         }
@@ -77,15 +72,14 @@ new #[Title('Checkout')] class extends Component {
         $this->company_name = (string) old('company_name', '');
         $this->company_phone = (string) old('company_phone', '');
         $this->company_email = (string) old('company_email', '');
-
         $this->customer_address = (string) old('customer_address', '');
-        $this->customer_city = (string) old('customer_city', '');
-        $this->customer_postcode = (string) old('customer_postcode', '');
     }
 
     public function getAmount(): float
     {
-        return (float) ($this->billing === 'yearly' ? $this->pricingPlan->yearly_price : $this->pricingPlan->monthly_price);
+        return (float) ($this->billing === 'yearly'
+            ? $this->pricingPlan->yearly_price
+            : $this->pricingPlan->monthly_price);
     }
 
     public function isYearlyBooking(): bool
@@ -138,11 +132,12 @@ new #[Title('Checkout')] class extends Component {
 
             <form method="POST" novalidate
                 @guest
-x-data
+                    x-data
                     @submit.prevent="$dispatch('toast', {
                         type: 'error',
                         message: 'Please login first to purchase or book a plan.'
-                    })" @endguest
+                    })"
+                @endguest
                 action="{{ $this->isYearlyBooking()
                     ? route('client.checkout.pricing.booking', $pricingPlan->id)
                     : route('client.checkout.pricing.pay', $pricingPlan->id) }}">
@@ -257,7 +252,6 @@ x-data
                             </div>
 
                             <div class="grid gap-5 sm:grid-cols-2">
-                                {{-- Hidden customer email for controller/payment --}}
                                 <input type="hidden" name="customer_email"
                                     value="{{ old('customer_email', $customer_email) }}">
 
@@ -377,38 +371,6 @@ x-data
                                         class="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">{{ old('customer_address', $customer_address) }}</textarea>
 
                                     @error('customer_address')
-                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                {{-- Company City --}}
-                                <div>
-                                    <label for="customer_city"
-                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
-                                        Company City <span class="text-red-300">*</span>
-                                    </label>
-
-                                    <input id="customer_city" type="text" name="customer_city"
-                                        value="{{ old('customer_city', $customer_city) }}" placeholder="Dhaka"
-                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
-
-                                    @error('customer_city')
-                                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                {{-- Company Postcode --}}
-                                <div>
-                                    <label for="customer_postcode"
-                                        class="mb-2 block text-sm font-semibold text-blue-100/80">
-                                        Company Postcode <span class="text-red-300">*</span>
-                                    </label>
-
-                                    <input id="customer_postcode" type="text" name="customer_postcode"
-                                        value="{{ old('customer_postcode', $customer_postcode) }}" placeholder="1200"
-                                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-300/70 focus:bg-white/15">
-
-                                    @error('customer_postcode')
                                         <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
