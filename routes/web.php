@@ -38,8 +38,8 @@ Route::livewire('/about', 'pages::client.about')->name('client.about');
 Route::livewire('/contact', 'pages::client.contact')->name('client.contact');
 
 
-    // Pricing and orders
-    Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
+// Pricing and orders
+Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
 
 /*
 |--------------------------------------------------------------------------
@@ -109,7 +109,6 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::livewire('account/dashboard', 'pages::client.account.dashboard')->name('account.dashboard');
 
     Route::livewire('account/services', 'pages::client.account.services')->name('account.services');
-    Route::livewire('account/proposals', 'pages::client.account.proposals')->name('account.proposals');
     Route::livewire('account/profile', 'pages::client.account.profile')->name('account.profile');
     Route::livewire('account/change-password', 'pages::client.account.change-password')->name('account.change-password');
 
@@ -117,8 +116,8 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');
 
     // Booking for yearly
-Route::post('/checkout/pricing/{pricingPlan}/booking', [PricingCheckoutController::class, 'booking'])
-    ->name('client.checkout.pricing.booking');
+    Route::post('/checkout/pricing/{pricingPlan}/booking', [PricingCheckoutController::class, 'booking'])
+        ->name('client.checkout.pricing.booking');
 
     // Order success page
     Route::livewire('/checkout/success/{order}', 'pages::client.checkout.checkout-success')->name('client.checkout.success');
@@ -129,6 +128,10 @@ Route::post('/checkout/pricing/{pricingPlan}/booking', [PricingCheckoutControlle
     // Support tickets
     Route::livewire('/support/tickets', 'pages::client.tickets.index')->name('client.tickets.index');
     Route::livewire('/support/tickets/{ticket}/show', 'pages::client.tickets.show')->name('client.tickets.show');
+
+    // Proposal
+    Route::livewire('/account/proposals', 'pages::client.proposals.index')->name('client.proposals.index');
+    Route::livewire('/account/proposals/{proposal}', 'pages::client.proposals.show')->name('client.proposals.show');
 });
 
 Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])
