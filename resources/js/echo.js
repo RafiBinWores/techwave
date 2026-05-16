@@ -19,7 +19,6 @@ import Pusher from "pusher-js";
 
 window.Pusher = Pusher;
 
-// Temporary debug log
 Pusher.logToConsole = true;
 
 window.Echo = new Echo({
@@ -33,10 +32,9 @@ window.Echo = new Echo({
     forceTLS: true,
     encrypted: true,
 
-    // Revert this
-    enabledTransports: ["ws", "wss"],
+    // Important: Pusher transport name is "ws"; it still uses wss:// when forceTLS is true
+    enabledTransports: ["ws"],
 
-    // Use this instead of disableStats
     enableStats: false,
 });
 
