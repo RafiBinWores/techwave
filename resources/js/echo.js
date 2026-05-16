@@ -32,20 +32,6 @@ window.Echo = new Echo({
     forceTLS: true,
     encrypted: true,
 
-    // Important: Pusher transport name is "ws"; it still uses wss:// when forceTLS is true
     enabledTransports: ["ws"],
-
     enableStats: false,
-});
-
-window.Echo.connector.pusher.connection.bind("connected", () => {
-    console.log("✅ Reverb connected");
-});
-
-window.Echo.connector.pusher.connection.bind("error", (error) => {
-    console.log("❌ Reverb error", error);
-});
-
-window.Echo.connector.pusher.connection.bind("state_change", (states) => {
-    console.log("🔄 Reverb state changed", states);
 });
