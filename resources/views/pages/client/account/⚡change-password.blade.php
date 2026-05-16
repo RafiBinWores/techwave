@@ -109,25 +109,6 @@ new class extends Component {
                 {{-- Main --}}
                 <div class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
 
-                    {{-- Top Header --}}
-                    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="flex items-center gap-3">
-                            <button @click="sidebarOpen = true"
-                                class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            </button>
-
-                            <div>
-                                <h1 class="mt-1 text-2xl font-bold text-white sm:text-3xl">
-                                    Change Password
-                                </h1>
-                            </div>
-                        </div>
-                    </div>
-
                     {{-- Content --}}
                     <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
 
@@ -135,8 +116,8 @@ new class extends Component {
                         <div class="space-y-6">
 
                             {{-- Password Card --}}
-                            <div class="client-card overflow-hidden p-0">
-                                <div class="border-b border-white/10 p-6">
+                            <div class="overflow-hidden p-0">
+                                <div class="border-b border-white/10 px-4 pb-4 lg:px-6 lg:pb-4">
                                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <h2 class="text-2xl font-bold text-white">
@@ -147,14 +128,14 @@ new class extends Component {
                                             </p>
                                         </div>
 
-                                        <div
+                                        {{-- <div
                                             class="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-200">
                                             <span class="material-symbols-outlined">lock_reset</span>
-                                        </div>
+                                        </div> --}}
                                     </div>
                                 </div>
 
-                                <form wire:submit.prevent="updatePassword" class="p-6">
+                                <form wire:submit.prevent="updatePassword" class="p-4 lg:p-6">
 
                                     <div class="grid gap-5">
 
