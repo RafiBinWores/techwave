@@ -9,14 +9,14 @@
 
     $logoCid = null;
 
-    if (! empty($logoPath) && file_exists($logoPath)) {
+    if (!empty($logoPath) && file_exists($logoPath)) {
         $logoCid = $message->embed($logoPath);
     }
 
     $quotationNo = $booking->booking_no ?? 'QT-' . str_pad((string) $booking->id, 6, '0', STR_PAD_LEFT);
 
-    $customerName = $booking->customer_name ?? $booking->user?->name ?? 'Valued Customer';
-    $customerEmail = $booking->customer_email ?? $booking->user?->email ?? '';
+    $customerName = $booking->customer_name ?? ($booking->user?->name ?? 'Valued Customer');
+    $customerEmail = $booking->customer_email ?? ($booking->user?->email ?? '');
     $customerPhone = $booking->customer_phone ?? '';
     $customerAddress = $booking->customer_address ?? '';
 
@@ -35,7 +35,7 @@
 
     $subtotal = $planPrice;
     $discountAmount = $quotedPrice !== null && $quotedPrice < $planPrice ? $planPrice - $quotedPrice : 0;
-    $grandTotal = $quotedPrice ?? $requestedPrice ?? $planPrice;
+    $grandTotal = $quotedPrice ?? ($requestedPrice ?? $planPrice);
 
     $currency = '৳';
     $formatMoney = fn($amount) => $currency . number_format((float) $amount, 2);
@@ -65,18 +65,46 @@
                                         <table cellpadding="0" cellspacing="0">
                                             <tr>
                                                 <td valign="middle" style="padding-right:14px;">
-                                                    <div
-                                                        style="width:52px; height:52px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid #dbe4ff;">
-                                                        @if ($logoCid)
-                                                            <img src="{{ $logoCid }}"
-                                                                alt="{{ $companyName }}" width="42"
-                                                                style="max-width:42px; max-height:42px; display:block;">
-                                                        @else
-                                                            <div
-                                                                style="width:42px; height:42px; border-radius:8px; background:{{ $brandColor }};">
-                                                            </div>
-                                                        @endif
-                                                    </div>
+                                                    @if ($logoCid)
+                                                        <table role="presentation" cellpadding="0" cellspacing="0"
+                                                            border="0"
+                                                            style="width:52px; height:52px; border-collapse:collapse;">
+                                                            <tr>
+                                                                <td align="center" valign="middle"
+                                                                    style="width:52px; height:52px; padding:0;">
+                                                                    <img src="{{ $logoCid }}"
+                                                                        alt="{{ $companyName }}" width="52"
+                                                                        height="52"
+                                                                        style="
+                            width:52px;
+                            height:52px;
+                            max-width:52px;
+                            max-height:52px;
+                            object-fit:contain;
+                            display:block;
+                            border:0;
+                            outline:none;
+                            text-decoration:none;
+                        ">
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    @else
+                                                        <table role="presentation" cellpadding="0" cellspacing="0"
+                                                            border="0"
+                                                            style="width:52px; height:52px; border-collapse:collapse;">
+                                                            <tr>
+                                                                <td align="center" valign="middle"
+                                                                    style="
+                        width:52px;
+                        height:52px;
+                        background:{{ $brandColor }};
+                        border-radius:10px;
+                    ">
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    @endif
                                                 </td>
 
                                                 <td valign="middle">
@@ -107,7 +135,7 @@
                                             @endif
 
                                             @if ($companyWebsite)
-                                                <div>{{ $companyWebsite }}</div>
+                                                <a href="{{ $companyWebsite }}">www.techwave.asia</a>
                                             @endif
                                         </div>
                                     </td>
@@ -121,7 +149,8 @@
                                         <table cellpadding="0" cellspacing="0" align="right"
                                             style="font-size:12px; line-height:1.8; color:#475569;">
                                             <tr>
-                                                <td style="padding:2px 12px 2px 0; color:#94a3b8; text-transform:uppercase; letter-spacing:.08em;">
+                                                <td
+                                                    style="padding:2px 12px 2px 0; color:#94a3b8; text-transform:uppercase; letter-spacing:.08em;">
                                                     Quote #
                                                 </td>
                                                 <td style="padding:2px 0; font-weight:700; color:#111827;">
@@ -130,7 +159,8 @@
                                             </tr>
 
                                             <tr>
-                                                <td style="padding:2px 12px 2px 0; color:#94a3b8; text-transform:uppercase; letter-spacing:.08em;">
+                                                <td
+                                                    style="padding:2px 12px 2px 0; color:#94a3b8; text-transform:uppercase; letter-spacing:.08em;">
                                                     Date
                                                 </td>
                                                 <td style="padding:2px 0; color:#334155;">
@@ -139,7 +169,8 @@
                                             </tr>
 
                                             <tr>
-                                                <td style="padding:2px 12px 2px 0; color:#94a3b8; text-transform:uppercase; letter-spacing:.08em;">
+                                                <td
+                                                    style="padding:2px 12px 2px 0; color:#94a3b8; text-transform:uppercase; letter-spacing:.08em;">
                                                     Status
                                                 </td>
                                                 <td style="padding:2px 0;">
@@ -215,7 +246,8 @@
                                             <div style="font-size:14px; line-height:1.8; color:#334155;">
                                                 <strong>Plan:</strong> {{ $planName }}<br>
                                                 <strong>Billing:</strong> {{ $billingCycle }}<br>
-                                                <strong>Status:</strong> {{ ucfirst($booking->status ?? 'quoted') }}<br>
+                                                <strong>Status:</strong>
+                                                {{ ucfirst($booking->status ?? 'quoted') }}<br>
 
                                                 @if ($booking->user_note)
                                                     <div
@@ -275,7 +307,8 @@
                                             style="padding:16px 14px; border-left:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb; font-size:14px; color:#111827; font-weight:700;">
                                             {{ $planName }}
 
-                                            <div style="margin-top:5px; font-size:12px; font-weight:400; color:#64748b; line-height:1.6;">
+                                            <div
+                                                style="margin-top:5px; font-size:12px; font-weight:400; color:#64748b; line-height:1.6;">
                                                 {{ $planDescription }}
                                             </div>
                                         </td>
@@ -309,7 +342,8 @@
                                         <tr>
                                             <td colspan="3"
                                                 style="padding:14px; border-left:1px solid #e5e7eb; border-right:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb; background:#f8fafc;">
-                                                <p style="margin:0 0 6px; font-size:11px; font-weight:700; text-transform:uppercase; color:#94a3b8; letter-spacing:.08em;">
+                                                <p
+                                                    style="margin:0 0 6px; font-size:11px; font-weight:700; text-transform:uppercase; color:#94a3b8; letter-spacing:.08em;">
                                                     Admin Note
                                                 </p>
                                                 <p style="margin:0; font-size:13px; line-height:1.7; color:#475569;">
@@ -337,7 +371,8 @@
                                             </p>
 
                                             <p style="margin:0; font-size:13px; line-height:1.7; color:#64748b;">
-                                                Please review this quotation. If everything looks good, contact us or reply to this email to confirm the plan activation process.
+                                                Please review this quotation. If everything looks good, contact us or
+                                                reply to this email to confirm the plan activation process.
                                             </p>
                                         </div>
                                     </td>
@@ -348,7 +383,8 @@
                                                 <td style="padding:6px 0; font-size:14px; color:#64748b;">
                                                     Original Price
                                                 </td>
-                                                <td align="right" style="padding:6px 0; font-size:14px; color:#334155;">
+                                                <td align="right"
+                                                    style="padding:6px 0; font-size:14px; color:#334155;">
                                                     {{ $formatMoney($subtotal) }}
                                                 </td>
                                             </tr>
@@ -358,7 +394,8 @@
                                                     <td style="padding:6px 0; font-size:14px; color:#64748b;">
                                                         Requested Price
                                                     </td>
-                                                    <td align="right" style="padding:6px 0; font-size:14px; color:#d97706;">
+                                                    <td align="right"
+                                                        style="padding:6px 0; font-size:14px; color:#d97706;">
                                                         {{ $formatMoney($requestedPrice) }}
                                                     </td>
                                                 </tr>
@@ -369,7 +406,8 @@
                                                     <td style="padding:6px 0; font-size:14px; color:#64748b;">
                                                         Discount
                                                     </td>
-                                                    <td align="right" style="padding:6px 0; font-size:14px; color:#dc2626;">
+                                                    <td align="right"
+                                                        style="padding:6px 0; font-size:14px; color:#dc2626;">
                                                         -{{ $formatMoney($discountAmount) }}
                                                     </td>
                                                 </tr>
@@ -432,7 +470,8 @@
                 </table>
 
                 <p style="margin:16px 0 0; font-size:11px; color:#94a3b8;">
-                    This quotation was generated from {{ $companyName }}. Please reply to this email for confirmation or negotiation.
+                    This quotation was generated from {{ $companyName }}. Please reply to this email for confirmation
+                    or negotiation.
                 </p>
             </td>
         </tr>
