@@ -210,9 +210,35 @@ new #[Layout('layouts.admin-auth')] class extends Component {
                         </label>
                     </div>
 
-                    <button type="submit"
-                        class="inline-flex h-13 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 cursor-pointer">
-                        Sign In
+                    <button type="submit" wire:loading.attr="disabled" wire:target="login"
+                        class="group relative inline-flex h-13 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-80">
+
+                        {{-- Shine animation --}}
+                        <span
+                            class="pointer-events-none absolute inset-y-0 -left-full w-1/3 skew-x-[-20deg] bg-white/20 transition-all duration-700 group-hover:left-[120%]">
+                        </span>
+
+                        {{-- Normal state --}}
+                        <span wire:loading.remove wire:target="login"
+                            class="relative inline-flex items-center justify-center gap-2">
+                            <span>Sign In</span>
+
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </span>
+
+                        {{-- Loading state --}}
+                        <span wire:loading wire:target="login"
+                            class="relative inline-flex items-center justify-center gap-2">
+                            <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white">
+                            </span>
+
+                            <span>Signing in...</span>
+                        </span>
                     </button>
                 </form>
 

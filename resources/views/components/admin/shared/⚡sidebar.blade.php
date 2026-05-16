@@ -11,7 +11,7 @@ new class extends Component {
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        $this->redirectRoute('login', navigate: true);
+        $this->redirectRoute('admin.login', navigate: true);
     }
 
     public function getSiteSettingProperty()
