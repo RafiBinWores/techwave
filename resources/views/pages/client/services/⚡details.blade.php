@@ -222,7 +222,7 @@ new class extends Component {
 
                     <!-- Service Plans -->
                     @if ($service->activePlans->count())
-                        <div id="service-plans" class="service-detail-card scroll-mt-28">
+                        {{-- <div id="service-plans" class="service-detail-card scroll-mt-28">
                             <div class="mb-8">
                                 <div
                                     class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-blue-100/80 backdrop-blur-xl">
@@ -240,146 +240,146 @@ new class extends Component {
                                 </p>
                             </div>
 
-                            @php
-                                $planCount = $service->activePlans->count();
+                            
+                        </div> --}}
 
-                                $planGridClass = match (true) {
-                                    $planCount === 1 => 'grid gap-6 md:grid-cols-1 md:max-w-md md:mx-auto',
-                                    $planCount === 2 => 'grid gap-6 md:grid-cols-2 md:max-w-5xl md:mx-auto',
-                                    default => 'grid gap-6 md:grid-cols-2',
-                                };
-                            @endphp
+                        @php
+                            $planCount = $service->activePlans->count();
 
-                            <div class="{{ $planGridClass }}">
-                                @foreach ($service->activePlans as $plan)
-                                    @php
-                                        $isPopular = $plan->badge && str_contains(strtolower($plan->badge), 'popular');
+                            $planGridClass = match (true) {
+                                $planCount === 1 => 'grid gap-6 md:grid-cols-1 md:max-w-md md:mx-auto pt-6',
+                                $planCount === 2 => 'grid gap-6 md:grid-cols-2 md:max-w-5xl md:mx-auto pt-6',
+                                default => 'grid gap-6 md:grid-cols-2 pt-6',
+                            };
+                        @endphp
 
-                                        $cardClass = $isPopular
-                                            ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/12 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
-                                            : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
+                        <div class="{{ $planGridClass }}">
+                            @foreach ($service->activePlans as $plan)
+                                @php
+                                    $isPopular = $plan->badge && str_contains(strtolower($plan->badge), 'popular');
 
-                                        $features = is_array($plan->features) ? $plan->features : [];
+                                    $cardClass = $isPopular
+                                        ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/12 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
+                                        : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
 
-                                        $hasDiscount =
-                                            !empty($plan->discount_price) &&
-                                            (float) $plan->discount_price > 0 &&
-                                            (float) $plan->discount_price < (float) $plan->price;
+                                    $features = is_array($plan->features) ? $plan->features : [];
 
-                                        $discountPercent = $hasDiscount
-                                            ? round((1 - (float) $plan->discount_price / (float) $plan->price) * 100)
-                                            : 0;
-                                    @endphp
+                                    $hasDiscount =
+                                        !empty($plan->discount_price) &&
+                                        (float) $plan->discount_price > 0 &&
+                                        (float) $plan->discount_price < (float) $plan->price;
+
+                                    $discountPercent = $hasDiscount
+                                        ? round((1 - (float) $plan->discount_price / (float) $plan->price) * 100)
+                                        : 0;
+                                @endphp
+
+                                <div
+                                    class="group relative rounded-[30px] border {{ $cardClass }} p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/25">
 
                                     <div
-                                        class="group relative rounded-[30px] border {{ $cardClass }} p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/25">
-
-                                        <div
-                                            class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent">
-                                        </div>
-
-                                        @if ($plan->badge)
-                                            <div class="absolute -top-4 left-1/2 -translate-x-1/2">
-                                                <span
-                                                    class="inline-flex rounded-full border border-cyan-300/70 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-cyan-400/20">
-                                                    {{ $plan->badge }}
-                                                </span>
-                                            </div>
-                                        @endif
-
-                                        <div
-                                            class="flex items-start justify-between gap-4 {{ $plan->badge ? 'pt-4' : '' }}">
-                                            <div>
-                                                <p
-                                                    class="text-xs font-medium uppercase tracking-[0.22em] text-cyan-200/80">
-                                                    {{ $service->card_title }}
-                                                </p>
-
-                                                <h3 class="mt-2 text-2xl font-bold text-white">
-                                                    {{ $plan->name }}
-                                                </h3>
-                                            </div>
-                                        </div>
-
-                                        @if ($plan->description)
-                                            <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                                                {{ $plan->description }}
-                                            </p>
-                                        @else
-                                            <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                                                Flexible service package designed for your business requirements.
-                                            </p>
-                                        @endif
-
-                                        <div class="mt-6">
-                                            @if ($plan->price)
-                                                @if ($hasDiscount)
-                                                    <div class="flex flex-wrap items-center gap-3">
-                                                        <span class="text-4xl font-bold text-white">
-                                                            ৳ {{ number_format((float) $plan->discount_price, 0) }}
-                                                        </span>
-
-                                                        <span
-                                                            class="text-lg font-semibold text-blue-100/40 line-through">
-                                                            ৳ {{ number_format((float) $plan->price, 0) }}
-                                                        </span>
-                                                        <span
-                                                            class="inline-flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
-                                                            {{ $discountPercent }}% OFF
-                                                        </span>
-                                                    </div>
-                                                @else
-                                                    <div class="flex items-end gap-2">
-                                                        <span class="text-4xl font-bold text-white">
-                                                            ৳ {{ number_format((float) $plan->price, 0) }}
-                                                        </span>
-                                                    </div>
-                                                @endif
-                                            @else
-                                                <span class="text-3xl font-bold text-white">Custom</span>
-                                            @endif
-                                        </div>
-
-                                        @if ($plan->buy_url)
-                                            <a href="{{ $plan->buy_url }}" target="_blank"
-                                                class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
-                                                Choose Plan
-                                            </a>
-                                        @else
-                                            <a href="#quote-form" wire:click="selectQuotePlan({{ $plan->id }})"
-                                                class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
-                                                Choose Plan
-                                            </a>
-                                        @endif
-
-                                        <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
-                                            @forelse ($features as $feature)
-                                                <li class="flex gap-3">
-                                                    <span
-                                                        class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
-                                                        <span class="material-symbols-outlined text-[16px]">check</span>
-                                                    </span>
-
-                                                    <span>
-                                                        {{ is_array($feature) ? $feature['title'] ?? ($feature['name'] ?? ($feature['text'] ?? '')) : $feature }}
-                                                    </span>
-                                                </li>
-                                            @empty
-                                                <li class="flex gap-3">
-                                                    <span
-                                                        class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
-                                                        <span class="material-symbols-outlined text-[16px]">check</span>
-                                                    </span>
-
-                                                    <span>
-                                                        Custom features available on request
-                                                    </span>
-                                                </li>
-                                            @endforelse
-                                        </ul>
+                                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent">
                                     </div>
-                                @endforeach
-                            </div>
+
+                                    @if ($plan->badge)
+                                        <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                                            <span
+                                                class="inline-flex rounded-full border border-cyan-300/70 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-cyan-400/20">
+                                                {{ $plan->badge }}
+                                            </span>
+                                        </div>
+                                    @endif
+
+                                    <div
+                                        class="flex items-start justify-between gap-4 {{ $plan->badge ? 'pt-4' : '' }}">
+                                        <div>
+                                            <p class="text-xs font-medium uppercase tracking-[0.22em] text-cyan-200/80">
+                                                {{ $service->card_title }}
+                                            </p>
+
+                                            <h3 class="mt-2 text-2xl font-bold text-white">
+                                                {{ $plan->name }}
+                                            </h3>
+                                        </div>
+                                    </div>
+
+                                    @if ($plan->description)
+                                        <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                                            {{ $plan->description }}
+                                        </p>
+                                    @else
+                                        <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                                            Flexible service package designed for your business requirements.
+                                        </p>
+                                    @endif
+
+                                    <div class="mt-6">
+                                        @if ($plan->price)
+                                            @if ($hasDiscount)
+                                                <div class="flex flex-wrap items-center gap-3">
+                                                    <span class="text-4xl font-bold text-white">
+                                                        ৳ {{ number_format((float) $plan->discount_price, 0) }}
+                                                    </span>
+
+                                                    <span class="text-lg font-semibold text-blue-100/40 line-through">
+                                                        ৳ {{ number_format((float) $plan->price, 0) }}
+                                                    </span>
+                                                    <span
+                                                        class="inline-flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
+                                                        {{ $discountPercent }}% OFF
+                                                    </span>
+                                                </div>
+                                            @else
+                                                <div class="flex items-end gap-2">
+                                                    <span class="text-4xl font-bold text-white">
+                                                        ৳ {{ number_format((float) $plan->price, 0) }}
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span class="text-3xl font-bold text-white">Custom</span>
+                                        @endif
+                                    </div>
+
+                                    @if ($plan->buy_url)
+                                        <a href="{{ $plan->buy_url }}" target="_blank"
+                                            class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
+                                            Choose Plan
+                                        </a>
+                                    @else
+                                        <a href="#quote-form" wire:click="selectQuotePlan({{ $plan->id }})"
+                                            class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
+                                            Choose Plan
+                                        </a>
+                                    @endif
+
+                                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                                        @forelse ($features as $feature)
+                                            <li class="flex gap-3">
+                                                <span
+                                                    class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
+                                                    <span class="material-symbols-outlined text-[16px]">check</span>
+                                                </span>
+
+                                                <span>
+                                                    {{ is_array($feature) ? $feature['title'] ?? ($feature['name'] ?? ($feature['text'] ?? '')) : $feature }}
+                                                </span>
+                                            </li>
+                                        @empty
+                                            <li class="flex gap-3">
+                                                <span
+                                                    class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
+                                                    <span class="material-symbols-outlined text-[16px]">check</span>
+                                                </span>
+
+                                                <span>
+                                                    Custom features available on request
+                                                </span>
+                                            </li>
+                                        @endforelse
+                                    </ul>
+                                </div>
+                            @endforeach
                         </div>
                     @endif
 
@@ -472,8 +472,7 @@ new class extends Component {
 
                             <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                 @foreach ($otherServices as $otherService)
-                                    <a href="{{ route('client.services.details', $otherService->slug) }}"
-                                        wire:navigate
+                                    <a href="{{ route('client.services.details', $otherService->slug) }}" wire:navigate
                                         class="other-service-card {{ $loop->last ? 'sm:col-span-2 xl:col-span-1' : '' }}">
                                         <div class="other-service-icon bg-cyan-500/15 text-cyan-200">
                                             @if ($otherService->icon)
@@ -481,9 +480,8 @@ new class extends Component {
                                                     {{ $otherService->icon }}
                                                 </span>
                                             @else
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                    stroke-width="1.8">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         d="M3.75 4.5h16.5v10.5H3.75zM7.5 20.25h9" />
                                                 </svg>
