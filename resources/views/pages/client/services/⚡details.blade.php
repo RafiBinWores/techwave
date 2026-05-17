@@ -355,18 +355,11 @@ new class extends Component {
 
                                     <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
                                         @forelse ($features as $feature)
-                                            <li class="flex gap-3">
-                                                <span
-                                                    class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
-                                                    <span class="material-symbols-outlined text-[16px]">check</span>
-                                                </span>
-
-                                                <span>
-                                                    {{ is_array($feature) ? $feature['title'] ?? ($feature['name'] ?? ($feature['text'] ?? '')) : $feature }}
-                                                </span>
+                                            <li class="pricing-li">
+                                                {{ is_array($feature) ? $feature['title'] ?? ($feature['name'] ?? ($feature['text'] ?? '')) : $feature }}
                                             </li>
                                         @empty
-                                            <li class="flex gap-3">
+                                            <li class="pricing-li">
                                                 <span
                                                     class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
                                                     <span class="material-symbols-outlined text-[16px]">check</span>
