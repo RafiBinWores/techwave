@@ -144,25 +144,14 @@ new class extends Component {
                     </div>
 
                     @php
-                        $mainTitle = $service->card_title;
-                        $detailTitle = $service->detail_title ?: $service->card_title;
-
-                        $gradientTitle = trim(str_replace($mainTitle, '', $detailTitle));
-
-                        if (blank($gradientTitle) && $service->short_description) {
-                            $gradientTitle = null;
-                        }
+                        $title = $service->detail_title ?: $service->card_title;
                     @endphp
 
                     <h1
                         class="mt-6 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-7xl">
-                        {{ $mainTitle }}
-
-                        @if ($gradientTitle)
-                            <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
-                                {{ $gradientTitle }}
-                            </span>
-                        @endif
+                        <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                            {{ $title }}
+                        </span>
                     </h1>
 
                     @if ($service->short_description)
@@ -222,27 +211,6 @@ new class extends Component {
 
                     <!-- Service Plans -->
                     @if ($service->activePlans->count())
-                        {{-- <div id="service-plans" class="service-detail-card scroll-mt-28">
-                            <div class="mb-8">
-                                <div
-                                    class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-blue-100/80 backdrop-blur-xl">
-                                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                                    Service Plans
-                                </div>
-
-                                <h2 class="mt-5 text-2xl font-bold text-white sm:text-3xl">
-                                    Choose the right package
-                                </h2>
-
-                                <p class="mt-3 max-w-2xl text-sm leading-7 text-blue-100/66">
-                                    Select a suitable plan for {{ $service->card_title }} based on your business needs,
-                                    budget, and support requirements.
-                                </p>
-                            </div>
-
-                            
-                        </div> --}}
-
                         @php
                             $planCount = $service->activePlans->count();
 
@@ -251,128 +219,342 @@ new class extends Component {
                                 $planCount === 2 => 'grid gap-6 md:grid-cols-2 md:max-w-5xl md:mx-auto pt-6',
                                 default => 'grid gap-6 md:grid-cols-2 pt-6',
                             };
+
+                            $hasAnyMonthlyPlan = $service->activePlans->contains(function ($plan) {
+                                return !empty($plan->has_monthly_price) &&
+                                    !empty($plan->monthly_price) &&
+                                    (float) $plan->monthly_price > 0;
+                            });
+
+                            $hasAnyYearlyPlan = $service->activePlans->contains(function ($plan) {
+                                return !empty($plan->has_yearly_price) &&
+                                    !empty($plan->yearly_price) &&
+                                    (float) $plan->yearly_price > 0;
+                            });
+
+                            $showGlobalBillingToggle = $hasAnyMonthlyPlan && $hasAnyYearlyPlan;
+                            $defaultBilling = $hasAnyMonthlyPlan ? 'monthly' : 'yearly';
                         @endphp
 
-                        <div class="{{ $planGridClass }}">
-                            @foreach ($service->activePlans as $plan)
-                                @php
-                                    $isPopular = $plan->badge && str_contains(strtolower($plan->badge), 'popular');
-
-                                    $cardClass = $isPopular
-                                        ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/12 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
-                                        : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
-
-                                    $features = is_array($plan->features) ? $plan->features : [];
-
-                                    $hasDiscount =
-                                        !empty($plan->discount_price) &&
-                                        (float) $plan->discount_price > 0 &&
-                                        (float) $plan->discount_price < (float) $plan->price;
-
-                                    $discountPercent = $hasDiscount
-                                        ? round((1 - (float) $plan->discount_price / (float) $plan->price) * 100)
-                                        : 0;
-                                @endphp
-
+                        <div id="service-plans" class="scroll-mt-28" x-data="{ billing: '{{ $defaultBilling }}' }">
+                            <div class="mb-8">
                                 <div
-                                    class="group relative rounded-[30px] border {{ $cardClass }} p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/25">
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-blue-100/80 backdrop-blur-xl">
+                                    <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                                    Service Plans
+                                </div>
 
-                                    <div
-                                        class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent">
+                                <div class="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-white sm:text-3xl">
+                                            Choose the right package
+                                        </h2>
+
+                                        <p class="mt-3 max-w-2xl text-sm leading-7 text-blue-100/66">
+                                            Select a suitable plan for {{ $service->card_title }} based on your
+                                            business needs,
+                                            budget, and support requirements.
+                                        </p>
                                     </div>
 
-                                    @if ($plan->badge)
-                                        <div class="absolute -top-4 left-1/2 -translate-x-1/2">
-                                            <span
-                                                class="inline-flex rounded-full border border-cyan-300/70 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-cyan-400/20">
-                                                {{ $plan->badge }}
-                                            </span>
+                                    @if ($showGlobalBillingToggle)
+                                        <div
+                                            class="inline-grid grid-cols-2 rounded-full border border-white/10 bg-white/8 p-1 backdrop-blur-xl">
+                                            <button type="button" @click="billing = 'monthly'"
+                                                class="rounded-full px-5 py-2.5 text-sm font-semibold transition sm:px-6"
+                                                :class="billing === 'monthly'
+                                                    ?
+                                                    'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20' :
+                                                    'text-blue-100/70 hover:text-white'">
+                                                Monthly
+                                            </button>
+
+                                            <button type="button" @click="billing = 'yearly'"
+                                                class="rounded-full px-5 py-2.5 text-sm font-semibold transition sm:px-6"
+                                                :class="billing === 'yearly'
+                                                    ?
+                                                    'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20' :
+                                                    'text-blue-100/70 hover:text-white'">
+                                                Yearly
+                                            </button>
                                         </div>
                                     @endif
+                                </div>
+                            </div>
+
+                            <div class="{{ $planGridClass }}">
+                                @foreach ($service->activePlans as $plan)
+                                    @php
+                                        $isPopular = $plan->badge && str_contains(strtolower($plan->badge), 'popular');
+
+                                        $cardClass = $isPopular
+                                            ? 'border-cyan-300/25 bg-linear-to-b from-blue-500/12 to-white/8 shadow-[0_25px_80px_rgba(0,0,0,0.24)]'
+                                            : 'border-white/10 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]';
+
+                                        $features = is_array($plan->features) ? $plan->features : [];
+
+                                        $hasOneTimePrice = !empty($plan->price) && (float) $plan->price > 0;
+
+                                        $hasMonthlyPrice =
+                                            !empty($plan->has_monthly_price) &&
+                                            !empty($plan->monthly_price) &&
+                                            (float) $plan->monthly_price > 0;
+
+                                        $hasYearlyPrice =
+                                            !empty($plan->has_yearly_price) &&
+                                            !empty($plan->yearly_price) &&
+                                            (float) $plan->yearly_price > 0;
+
+                                        $hasDiscount =
+                                            $hasOneTimePrice &&
+                                            !empty($plan->discount_price) &&
+                                            (float) $plan->discount_price > 0 &&
+                                            (float) $plan->discount_price < (float) $plan->price;
+
+                                        $discountPercent = $hasDiscount
+                                            ? round((1 - (float) $plan->discount_price / (float) $plan->price) * 100)
+                                            : 0;
+
+                                        $hasMonthlyDiscount =
+                                            $hasMonthlyPrice &&
+                                            !empty($plan->monthly_discount_price) &&
+                                            (float) $plan->monthly_discount_price > 0 &&
+                                            (float) $plan->monthly_discount_price < (float) $plan->monthly_price;
+
+                                        $monthlyDiscountPercent = $hasMonthlyDiscount
+                                            ? round(
+                                                (1 -
+                                                    (float) $plan->monthly_discount_price /
+                                                        (float) $plan->monthly_price) *
+                                                    100,
+                                            )
+                                            : 0;
+
+                                        $hasYearlyDiscount =
+                                            $hasYearlyPrice &&
+                                            !empty($plan->yearly_discount_price) &&
+                                            (float) $plan->yearly_discount_price > 0 &&
+                                            (float) $plan->yearly_discount_price < (float) $plan->yearly_price;
+
+                                        $yearlyDiscountPercent = $hasYearlyDiscount
+                                            ? round(
+                                                (1 -
+                                                    (float) $plan->yearly_discount_price /
+                                                        (float) $plan->yearly_price) *
+                                                    100,
+                                            )
+                                            : 0;
+                                    @endphp
 
                                     <div
-                                        class="flex items-start justify-between gap-4 {{ $plan->badge ? 'pt-4' : '' }}">
-                                        <div>
-                                            <p class="text-xs font-medium uppercase tracking-[0.22em] text-cyan-200/80">
-                                                {{ $service->card_title }}
+                                        class="group relative rounded-[30px] border {{ $cardClass }} p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/25">
+
+                                        <div
+                                            class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-300/70 to-transparent">
+                                        </div>
+
+                                        @if ($plan->badge)
+                                            <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                                                <span
+                                                    class="inline-flex rounded-full border border-cyan-300/70 bg-cyan-400 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-cyan-400/20">
+                                                    {{ $plan->badge }}
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <div
+                                            class="flex items-start justify-between gap-4 {{ $plan->badge ? 'pt-4' : '' }}">
+                                            <div>
+                                                <p
+                                                    class="text-xs font-medium uppercase tracking-[0.22em] text-cyan-200/80">
+                                                    {{ $service->card_title }}
+                                                </p>
+
+                                                <h3 class="mt-2 text-2xl font-bold text-white">
+                                                    {{ $plan->name }}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        @if ($plan->description)
+                                            <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                                                {{ $plan->description }}
                                             </p>
+                                        @else
+                                            <p class="mt-4 text-sm leading-7 text-blue-100/68">
+                                                Flexible service package designed for your business requirements.
+                                            </p>
+                                        @endif
 
-                                            <h3 class="mt-2 text-2xl font-bold text-white">
-                                                {{ $plan->name }}
-                                            </h3>
-                                        </div>
-                                    </div>
+                                        <div class="mt-6">
+                                            {{-- Monthly price --}}
+                                            @if ($hasMonthlyPrice)
+                                                <div x-show="billing === 'monthly'" x-cloak>
+                                                    @if ($hasMonthlyDiscount)
+                                                        <div class="flex flex-wrap items-center gap-3">
+                                                            <span class="text-4xl font-bold text-white">
+                                                                ৳
+                                                                {{ number_format((float) $plan->monthly_discount_price, 0) }}
+                                                            </span>
 
-                                    @if ($plan->description)
-                                        <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                                            {{ $plan->description }}
-                                        </p>
-                                    @else
-                                        <p class="mt-4 text-sm leading-7 text-blue-100/68">
-                                            Flexible service package designed for your business requirements.
-                                        </p>
-                                    @endif
+                                                            <span
+                                                                class="text-lg font-semibold text-blue-100/40 line-through">
+                                                                ৳ {{ number_format((float) $plan->monthly_price, 0) }}
+                                                            </span>
 
-                                    <div class="mt-6">
-                                        @if ($plan->price)
-                                            @if ($hasDiscount)
-                                                <div class="flex flex-wrap items-center gap-3">
-                                                    <span class="text-4xl font-bold text-white">
-                                                        ৳ {{ number_format((float) $plan->discount_price, 0) }}
-                                                    </span>
+                                                            <span
+                                                                class="inline-flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
+                                                                {{ $monthlyDiscountPercent }}% OFF
+                                                            </span>
+                                                        </div>
+                                                    @else
+                                                        <div class="flex items-end gap-2">
+                                                            <span class="text-4xl font-bold text-white">
+                                                                ৳ {{ number_format((float) $plan->monthly_price, 0) }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
 
-                                                    <span class="text-lg font-semibold text-blue-100/40 line-through">
-                                                        ৳ {{ number_format((float) $plan->price, 0) }}
-                                                    </span>
-                                                    <span
-                                                        class="inline-flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
-                                                        {{ $discountPercent }}% OFF
-                                                    </span>
-                                                </div>
-                                            @else
-                                                <div class="flex items-end gap-2">
-                                                    <span class="text-4xl font-bold text-white">
-                                                        ৳ {{ number_format((float) $plan->price, 0) }}
-                                                    </span>
+                                                    <p class="mt-2 text-sm font-medium text-blue-100/55">
+                                                        Per month
+                                                    </p>
                                                 </div>
                                             @endif
+
+                                            {{-- Yearly price --}}
+                                            @if ($hasYearlyPrice)
+                                                <div x-show="billing === 'yearly'" x-cloak>
+                                                    @if ($hasYearlyDiscount)
+                                                        <div class="flex flex-wrap items-center gap-3">
+                                                            <span class="text-4xl font-bold text-white">
+                                                                ৳
+                                                                {{ number_format((float) $plan->yearly_discount_price, 0) }}
+                                                            </span>
+
+                                                            <span
+                                                                class="text-lg font-semibold text-blue-100/40 line-through">
+                                                                ৳ {{ number_format((float) $plan->yearly_price, 0) }}
+                                                            </span>
+
+                                                            <span
+                                                                class="inline-flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
+                                                                {{ $yearlyDiscountPercent }}% OFF
+                                                            </span>
+                                                        </div>
+                                                    @else
+                                                        <div class="flex items-end gap-2">
+                                                            <span class="text-4xl font-bold text-white">
+                                                                ৳ {{ number_format((float) $plan->yearly_price, 0) }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+
+                                                    <p class="mt-2 text-sm font-medium text-blue-100/55">
+                                                        Per year
+                                                    </p>
+                                                </div>
+                                            @endif
+
+                                            {{-- Fallback when selected billing is not available for this card --}}
+                                            @if ($hasMonthlyPrice && !$hasYearlyPrice)
+                                                <div x-show="billing === 'yearly'" x-cloak>
+                                                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                                        <p class="text-lg font-bold text-white">
+                                                            Yearly unavailable
+                                                        </p>
+                                                        <p class="mt-1 text-sm leading-6 text-blue-100/60">
+                                                            This plan is available only as a monthly package.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            @if ($hasYearlyPrice && !$hasMonthlyPrice)
+                                                <div x-show="billing === 'monthly'" x-cloak>
+                                                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                                        <p class="text-lg font-bold text-white">
+                                                            Monthly unavailable
+                                                        </p>
+                                                        <p class="mt-1 text-sm leading-6 text-blue-100/60">
+                                                            This plan is available only as a yearly package.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            {{-- One-time price --}}
+                                            @if (!$hasMonthlyPrice && !$hasYearlyPrice && $hasOneTimePrice)
+                                                @if ($hasDiscount)
+                                                    <div class="flex flex-wrap items-center gap-3">
+                                                        <span class="text-4xl font-bold text-white">
+                                                            ৳ {{ number_format((float) $plan->discount_price, 0) }}
+                                                        </span>
+
+                                                        <span
+                                                            class="text-lg font-semibold text-blue-100/40 line-through">
+                                                            ৳ {{ number_format((float) $plan->price, 0) }}
+                                                        </span>
+
+                                                        <span
+                                                            class="inline-flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
+                                                            {{ $discountPercent }}% OFF
+                                                        </span>
+                                                    </div>
+                                                @else
+                                                    <div class="flex items-end gap-2">
+                                                        <span class="text-4xl font-bold text-white">
+                                                            ৳ {{ number_format((float) $plan->price, 0) }}
+                                                        </span>
+                                                    </div>
+                                                @endif
+
+                                                <p class="mt-2 text-sm font-medium text-blue-100/55">
+                                                    One-time
+                                                </p>
+                                            @endif
+
+                                            {{-- Custom price --}}
+                                            @if (!$hasMonthlyPrice && !$hasYearlyPrice && !$hasOneTimePrice)
+                                                <span class="text-3xl font-bold text-white">Custom</span>
+                                            @endif
+                                        </div>
+
+                                        @if ($plan->buy_url)
+                                            <a href="{{ $plan->buy_url }}" target="_blank"
+                                                class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
+                                                Choose Plan
+                                            </a>
                                         @else
-                                            <span class="text-3xl font-bold text-white">Custom</span>
+                                            <a href="#quote-form" wire:click="selectQuotePlan({{ $plan->id }})"
+                                                class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
+                                                Choose Plan
+                                            </a>
                                         @endif
+
+                                        <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
+                                            @forelse ($features as $feature)
+                                                <li class="pricing-li">
+                                                    <span>
+                                                        {{ is_array($feature) ? $feature['title'] ?? ($feature['name'] ?? ($feature['text'] ?? '')) : $feature }}
+                                                    </span>
+                                                </li>
+                                            @empty
+                                                <li class="pricing-li">
+                                                    <span
+                                                        class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
+                                                        <span
+                                                            class="material-symbols-outlined text-[16px]">check</span>
+                                                    </span>
+
+                                                    <span>
+                                                        Custom features available on request
+                                                    </span>
+                                                </li>
+                                            @endforelse
+                                        </ul>
                                     </div>
-
-                                    @if ($plan->buy_url)
-                                        <a href="{{ $plan->buy_url }}" target="_blank"
-                                            class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
-                                            Choose Plan
-                                        </a>
-                                    @else
-                                        <a href="#quote-form" wire:click="selectQuotePlan({{ $plan->id }})"
-                                            class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 backdrop-blur-xl transition hover:-translate-y-0.5">
-                                            Choose Plan
-                                        </a>
-                                    @endif
-
-                                    <ul class="mt-7 space-y-3 text-sm text-blue-50/85">
-                                        @forelse ($features as $feature)
-                                            <li class="pricing-li">
-                                                {{ is_array($feature) ? $feature['title'] ?? ($feature['name'] ?? ($feature['text'] ?? '')) : $feature }}
-                                            </li>
-                                        @empty
-                                            <li class="pricing-li">
-                                                <span
-                                                    class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-200">
-                                                    <span class="material-symbols-outlined text-[16px]">check</span>
-                                                </span>
-
-                                                <span>
-                                                    Custom features available on request
-                                                </span>
-                                            </li>
-                                        @endforelse
-                                    </ul>
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
                     @endif
 
@@ -465,7 +647,8 @@ new class extends Component {
 
                             <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                 @foreach ($otherServices as $otherService)
-                                    <a href="{{ route('client.services.details', $otherService->slug) }}" wire:navigate
+                                    <a href="{{ route('client.services.details', $otherService->slug) }}"
+                                        wire:navigate
                                         class="other-service-card {{ $loop->last ? 'sm:col-span-2 xl:col-span-1' : '' }}">
                                         <div class="other-service-icon bg-cyan-500/15 text-cyan-200">
                                             @if ($otherService->icon)
@@ -473,8 +656,9 @@ new class extends Component {
                                                     {{ $otherService->icon }}
                                                 </span>
                                             @else
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                    stroke-width="1.8">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         d="M3.75 4.5h16.5v10.5H3.75zM7.5 20.25h9" />
                                                 </svg>
@@ -542,20 +726,82 @@ new class extends Component {
 
                                             @foreach ($service->activePlans as $plan)
                                                 @php
+                                                    $hasOneTimePrice = !empty($plan->price) && (float) $plan->price > 0;
+                                                    $hasMonthlyPrice =
+                                                        !empty($plan->has_monthly_price) &&
+                                                        !empty($plan->monthly_price) &&
+                                                        (float) $plan->monthly_price > 0;
+                                                    $hasYearlyPrice =
+                                                        !empty($plan->has_yearly_price) &&
+                                                        !empty($plan->yearly_price) &&
+                                                        (float) $plan->yearly_price > 0;
+
                                                     $hasDiscount =
+                                                        $hasOneTimePrice &&
                                                         !empty($plan->discount_price) &&
                                                         (float) $plan->discount_price > 0 &&
                                                         (float) $plan->discount_price < (float) $plan->price;
 
-                                                    $displayPrice = $plan->price
-                                                        ? ' - ৳' .
+                                                    $hasMonthlyDiscount =
+                                                        $hasMonthlyPrice &&
+                                                        !empty($plan->monthly_discount_price) &&
+                                                        (float) $plan->monthly_discount_price > 0 &&
+                                                        (float) $plan->monthly_discount_price <
+                                                            (float) $plan->monthly_price;
+
+                                                    $hasYearlyDiscount =
+                                                        $hasYearlyPrice &&
+                                                        !empty($plan->yearly_discount_price) &&
+                                                        (float) $plan->yearly_discount_price > 0 &&
+                                                        (float) $plan->yearly_discount_price <
+                                                            (float) $plan->yearly_price;
+
+                                                    if ($hasMonthlyPrice && $hasYearlyPrice) {
+                                                        $displayPrice =
+                                                            ' - Monthly ৳' .
+                                                            number_format(
+                                                                (float) ($hasMonthlyDiscount
+                                                                    ? $plan->monthly_discount_price
+                                                                    : $plan->monthly_price),
+                                                                0,
+                                                            ) .
+                                                            ' / Yearly ৳' .
+                                                            number_format(
+                                                                (float) ($hasYearlyDiscount
+                                                                    ? $plan->yearly_discount_price
+                                                                    : $plan->yearly_price),
+                                                                0,
+                                                            );
+                                                    } elseif ($hasMonthlyPrice) {
+                                                        $displayPrice =
+                                                            ' - Monthly ৳' .
+                                                            number_format(
+                                                                (float) ($hasMonthlyDiscount
+                                                                    ? $plan->monthly_discount_price
+                                                                    : $plan->monthly_price),
+                                                                0,
+                                                            );
+                                                    } elseif ($hasYearlyPrice) {
+                                                        $displayPrice =
+                                                            ' - Yearly ৳' .
+                                                            number_format(
+                                                                (float) ($hasYearlyDiscount
+                                                                    ? $plan->yearly_discount_price
+                                                                    : $plan->yearly_price),
+                                                                0,
+                                                            );
+                                                    } elseif ($hasOneTimePrice) {
+                                                        $displayPrice =
+                                                            ' - ৳' .
                                                             number_format(
                                                                 (float) ($hasDiscount
                                                                     ? $plan->discount_price
                                                                     : $plan->price),
                                                                 0,
-                                                            )
-                                                        : ' - Custom';
+                                                            );
+                                                    } else {
+                                                        $displayPrice = ' - Custom';
+                                                    }
                                                 @endphp
 
                                                 <option class="bg-slate-950 text-white" value="{{ $plan->id }}">

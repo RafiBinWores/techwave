@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('badge')->nullable();
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2);
+            $table->decimal('price', 10, 2)->nullable();
             $table->json('features');
             $table->string('buy_url')->nullable();
             $table->unsignedInteger('sort_order')->default(0);

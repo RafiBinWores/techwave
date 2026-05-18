@@ -14,11 +14,22 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
     public string $slug = '';
     public string $badge = '';
     public string $description = '';
+
     public string $price = '';
     public string $discount_price = '';
+
+    public bool $has_monthly_price = false;
+    public string $monthly_price = '';
+    public string $monthly_discount_price = '';
+
+    public bool $has_yearly_price = false;
+    public string $yearly_price = '';
+    public string $yearly_discount_price = '';
+
     public string $buy_url = '';
     public int $sort_order = 0;
     public bool $is_active = true;
+
     public array $features = [];
     public string $feature = '';
 
@@ -30,8 +41,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
             'slug' => ['nullable', 'string', 'max:190', 'unique:service_plans,slug'],
             'badge' => ['nullable', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:800'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'price' => ['nullable', 'numeric', 'min:0'],
             'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
+            'has_monthly_price' => ['boolean'],
+            'monthly_price' => [$this->has_monthly_price ? 'required' : 'nullable', 'numeric', 'min:0'],
+            'monthly_discount_price' => ['nullable', 'numeric', 'min:0', 'lt:monthly_price'],
+            'has_yearly_price' => ['boolean'],
+            'yearly_price' => [$this->has_yearly_price ? 'required' : 'nullable', 'numeric', 'min:0'],
+            'yearly_discount_price' => ['nullable', 'numeric', 'min:0', 'lt:yearly_price'],
             'buy_url' => ['nullable', 'url', 'max:255'],
             'sort_order' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
@@ -46,6 +63,10 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
             'service_id.required' => 'Please select a service.',
             'buy_url.url' => 'Please enter a valid cart or buy URL.',
             'discount_price.lt' => 'Discount price must be less than regular price.',
+            'monthly_price.required' => 'Monthly price is required when monthly pricing is enabled.',
+            'monthly_discount_price.lt' => 'Monthly discount price must be less than monthly price.',
+            'yearly_price.required' => 'Yearly price is required when yearly pricing is enabled.',
+            'yearly_discount_price.lt' => 'Yearly discount price must be less than yearly price.',
         ];
     }
 
@@ -71,6 +92,24 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
 
         if (filled($this->slug)) {
             $this->validateOnly('slug');
+        }
+    }
+
+    public function updatedHasMonthlyPrice(): void
+    {
+        if (!$this->has_monthly_price) {
+            $this->monthly_price = '';
+            $this->monthly_discount_price = '';
+            $this->resetValidation(['monthly_price', 'monthly_discount_price']);
+        }
+    }
+
+    public function updatedHasYearlyPrice(): void
+    {
+        if (!$this->has_yearly_price) {
+            $this->yearly_price = '';
+            $this->yearly_discount_price = '';
+            $this->resetValidation(['yearly_price', 'yearly_discount_price']);
         }
     }
 
@@ -132,8 +171,16 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
             'badge' => $validated['badge'] ?: null,
             'description' => $validated['description'] ?: null,
 
-            'price' => $validated['price'] !== '' ? $validated['price'] : null,
+            'price' => filled($validated['price'] ?? null) ? $validated['price'] : null,
             'discount_price' => filled($validated['discount_price'] ?? null) ? $validated['discount_price'] : null,
+
+            'has_monthly_price' => $validated['has_monthly_price'] ?? false,
+            'monthly_price' => $validated['has_monthly_price'] ?? false ? $validated['monthly_price'] : null,
+            'monthly_discount_price' => ($validated['has_monthly_price'] ?? false) && filled($validated['monthly_discount_price'] ?? null) ? $validated['monthly_discount_price'] : null,
+
+            'has_yearly_price' => $validated['has_yearly_price'] ?? false,
+            'yearly_price' => $validated['has_yearly_price'] ?? false ? $validated['yearly_price'] : null,
+            'yearly_discount_price' => ($validated['has_yearly_price'] ?? false) && filled($validated['yearly_discount_price'] ?? null) ? $validated['yearly_discount_price'] : null,
 
             'features' => array_values(array_filter($validated['features'] ?? [])),
 
@@ -153,7 +200,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
 
     public function discard(): void
     {
-        $this->reset(['service_id', 'name', 'slug', 'badge', 'description', 'price', 'discount_price', 'buy_url', 'sort_order', 'features', 'feature']);
+        $this->reset(['service_id', 'name', 'slug', 'badge', 'description', 'price', 'discount_price', 'has_monthly_price', 'monthly_price', 'monthly_discount_price', 'has_yearly_price', 'yearly_price', 'yearly_discount_price', 'buy_url', 'sort_order', 'features', 'feature']);
 
         $this->is_active = true;
 
@@ -169,7 +216,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
         <div>
             <h1 class="text-h1 font-h1 text-on-surface">Create Service Plan</h1>
             <p class="mt-1 text-body-md font-body-md text-secondary">
-                Create service plans and connect each plan to your external cart page.
+                Create one-time, monthly, yearly, or flexible service plans.
             </p>
         </div>
 
@@ -336,7 +383,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                         </div>
 
                         <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">Regular Price</label>
+                            <label class="block font-label-md text-on-surface">One-time / Default Price</label>
 
                             <input type="number" step="0.01" min="0" wire:model.live="price"
                                 placeholder="e.g., 20000"
@@ -345,10 +392,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                             @error('price')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
+
+                            <p class="text-xs text-secondary">
+                                Leave empty if this plan only has monthly or yearly pricing.
+                            </p>
                         </div>
 
                         <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">Discount Price</label>
+                            <label class="block font-label-md text-on-surface">One-time Discount Price</label>
 
                             <input type="number" step="0.01" min="0" wire:model.live="discount_price"
                                 placeholder="e.g., 15000"
@@ -359,8 +410,102 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                             @enderror
 
                             <p class="text-xs text-secondary">
-                                Leave empty if there is no discount.
+                                Leave empty if there is no one-time discount.
                             </p>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 md:col-span-2">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <h4 class="font-semibold text-on-surface">Monthly Pricing</h4>
+                                    <p class="mt-1 text-xs text-secondary">
+                                        Enable this if this plan has a monthly price.
+                                    </p>
+                                </div>
+
+                                <label class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" wire:model.live="has_monthly_price" class="peer sr-only" />
+                                    <div
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                    </div>
+                                </label>
+                            </div>
+
+                            @if ($has_monthly_price)
+                                <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                    <div class="space-y-2">
+                                        <label class="block font-label-md text-on-surface">Monthly Price</label>
+
+                                        <input type="number" step="0.01" min="0"
+                                            wire:model.live="monthly_price" placeholder="e.g., 2500"
+                                            class="w-full rounded border border-outline-variant bg-white px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
+
+                                        @error('monthly_price')
+                                            <p class="text-sm text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block font-label-md text-on-surface">Monthly Discount
+                                            Price</label>
+
+                                        <input type="number" step="0.01" min="0"
+                                            wire:model.live="monthly_discount_price" placeholder="e.g., 2000"
+                                            class="w-full rounded border border-outline-variant bg-white px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
+
+                                        @error('monthly_discount_price')
+                                            <p class="text-sm text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 md:col-span-2">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <h4 class="font-semibold text-on-surface">Yearly Pricing</h4>
+                                    <p class="mt-1 text-xs text-secondary">
+                                        Enable this if this plan has a yearly price.
+                                    </p>
+                                </div>
+
+                                <label class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" wire:model.live="has_yearly_price" class="peer sr-only" />
+                                    <div
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                    </div>
+                                </label>
+                            </div>
+
+                            @if ($has_yearly_price)
+                                <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                    <div class="space-y-2">
+                                        <label class="block font-label-md text-on-surface">Yearly Price</label>
+
+                                        <input type="number" step="0.01" min="0"
+                                            wire:model.live="yearly_price" placeholder="e.g., 24000"
+                                            class="w-full rounded border border-outline-variant bg-white px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
+
+                                        @error('yearly_price')
+                                            <p class="text-sm text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block font-label-md text-on-surface">Yearly Discount
+                                            Price</label>
+
+                                        <input type="number" step="0.01" min="0"
+                                            wire:model.live="yearly_discount_price" placeholder="e.g., 20000"
+                                            class="w-full rounded border border-outline-variant bg-white px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
+
+                                        @error('yearly_discount_price')
+                                            <p class="text-sm text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="space-y-2">
@@ -415,7 +560,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                             placeholder="e.g., 10GB SSD Storage" type="text" />
 
                         <button type="button" wire:click="addFeature"
-                            class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
+                            class="flex cursor-pointer items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
                             <span class="material-symbols-outlined text-sm">add</span>
                             Add
                         </button>
@@ -432,7 +577,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                                 <span class="text-sm font-body-md">{{ $item }}</span>
 
                                 <button type="button" wire:click="removeFeature({{ $index }})"
-                                    class="material-symbols-outlined text-sm text-outline hover:text-error">
+                                    class="material-symbols-outlined cursor-pointer text-sm text-outline hover:text-error">
                                     close
                                 </button>
                             </div>
@@ -445,12 +590,12 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
                         <button type="button" wire:click="discard" wire:loading.attr="disabled"
-                            class="rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                            class="cursor-pointer rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
                             Discard Changes
                         </button>
 
                         <button type="submit" wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                            class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                             <span wire:loading.remove wire:target="save">Save Plan</span>
 
                             <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
@@ -525,29 +670,88 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                             {{ $description ?: 'Plan description will appear here.' }}
                         </p>
 
-                        <div class="mt-4 rounded-xl bg-white p-4 shadow-sm">
-                            <p class="text-sm text-slate-500">Price (BDT)</p>
+                        <div class="mt-4 space-y-3 rounded-xl bg-white p-4 shadow-sm">
+                            <p class="text-sm font-semibold text-slate-500">Pricing Preview</p>
 
-                            @if ($discount_price && $price && (float) $discount_price < (float) $price)
-                                <div class="mt-1">
-                                    <div class="flex items-end gap-2">
-                                        <p class="text-2xl font-bold text-on-surface">
-                                            ৳{{ number_format((float) $discount_price, 0) }}
-                                        </p>
+                            @if ($price)
+                                <div class="rounded-lg border border-slate-100 p-3">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                        One-time
+                                    </p>
 
-                                        <p class="pb-1 text-sm font-semibold text-slate-400 line-through">
+                                    @if ($discount_price && (float) $discount_price < (float) $price)
+                                        <div class="mt-1 flex items-end gap-2">
+                                            <p class="text-2xl font-bold text-on-surface">
+                                                ৳{{ number_format((float) $discount_price, 0) }}
+                                            </p>
+
+                                            <p class="pb-1 text-sm font-semibold text-slate-400 line-through">
+                                                ৳{{ number_format((float) $price, 0) }}
+                                            </p>
+                                        </div>
+                                    @else
+                                        <p class="mt-1 text-2xl font-bold text-on-surface">
                                             ৳{{ number_format((float) $price, 0) }}
                                         </p>
-                                    </div>
-
-                                    <p class="mt-1 text-xs font-semibold text-emerald-600">
-                                        {{ round((1 - (float) $discount_price / (float) $price) * 100) }}% discount
-                                        applied
-                                    </p>
+                                    @endif
                                 </div>
-                            @else
+                            @endif
+
+                            @if ($has_monthly_price && $monthly_price)
+                                <div class="rounded-lg border border-blue-100 bg-blue-50 p-3">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-500">
+                                        Monthly
+                                    </p>
+
+                                    @if ($monthly_discount_price && (float) $monthly_discount_price < (float) $monthly_price)
+                                        <div class="mt-1 flex items-end gap-2">
+                                            <p class="text-2xl font-bold text-on-surface">
+                                                ৳{{ number_format((float) $monthly_discount_price, 0) }}
+                                            </p>
+
+                                            <p class="pb-1 text-sm font-semibold text-slate-400 line-through">
+                                                ৳{{ number_format((float) $monthly_price, 0) }}
+                                            </p>
+                                        </div>
+                                    @else
+                                        <p class="mt-1 text-2xl font-bold text-on-surface">
+                                            ৳{{ number_format((float) $monthly_price, 0) }}
+                                        </p>
+                                    @endif
+
+                                    <p class="mt-1 text-xs text-blue-500">per month</p>
+                                </div>
+                            @endif
+
+                            @if ($has_yearly_price && $yearly_price)
+                                <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-500">
+                                        Yearly
+                                    </p>
+
+                                    @if ($yearly_discount_price && (float) $yearly_discount_price < (float) $yearly_price)
+                                        <div class="mt-1 flex items-end gap-2">
+                                            <p class="text-2xl font-bold text-on-surface">
+                                                ৳{{ number_format((float) $yearly_discount_price, 0) }}
+                                            </p>
+
+                                            <p class="pb-1 text-sm font-semibold text-slate-400 line-through">
+                                                ৳{{ number_format((float) $yearly_price, 0) }}
+                                            </p>
+                                        </div>
+                                    @else
+                                        <p class="mt-1 text-2xl font-bold text-on-surface">
+                                            ৳{{ number_format((float) $yearly_price, 0) }}
+                                        </p>
+                                    @endif
+
+                                    <p class="mt-1 text-xs text-emerald-500">per year</p>
+                                </div>
+                            @endif
+
+                            @if (!$price && !($has_monthly_price && $monthly_price) && !($has_yearly_price && $yearly_price))
                                 <p class="text-2xl font-bold text-on-surface">
-                                    {{ $price ? '৳' . number_format((float) $price, 0) : 'Custom' }}
+                                    Custom
                                 </p>
                             @endif
                         </div>
