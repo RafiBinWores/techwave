@@ -298,21 +298,60 @@ new #[Layout('layouts.admin-app')] #[Title('Create Blog')] class extends Compone
                                 value: @entangle('content').live,
                             
                                 init() {
+                                    if (!window.Quill) {
+                                        console.error('Quill is not loaded');
+                                        return;
+                                    }
+                            
+                                    if (!window.QuillTableBetter) {
+                                        console.error('QuillTableBetter is not loaded');
+                                        return;
+                                    }
+                            
+                                    Quill.register({
+                                        'modules/table-better': QuillTableBetter
+                                    }, true);
+                            
                                     this.quill = new Quill(this.$refs.editor, {
                                         theme: 'snow',
                                         placeholder: 'Write your full blog content here...',
                                         modules: {
                                             toolbar: [
                                                 [{ header: [2, 3, false] }],
-                                                [{ 'font': [] }],
+                                                [{ font: [] }],
                                                 ['bold', 'italic', 'underline', 'strike'],
-                                                [{ 'color': [] }, { 'background': [] }],
+                                                [{ color: [] }, { background: [] }],
                                                 [{ list: 'ordered' }, { list: 'bullet' }],
-                                                [{ 'align': [] }],
+                                                [{ align: [] }],
                                                 ['blockquote', 'code-block'],
                                                 ['link'],
+                            
+                                                // Table button
+                                                ['table-better'],
+                            
                                                 ['clean']
-                                            ]
+                                            ],
+                            
+                                            table: false,
+                            
+                                            'table-better': {
+                                                language: 'en_US',
+                                                menus: [
+                                                    'column',
+                                                    'row',
+                                                    'merge',
+                                                    'table',
+                                                    'cell',
+                                                    'wrap',
+                                                    'copy',
+                                                    'delete'
+                                                ],
+                                                toolbarTable: true
+                                            },
+                            
+                                            keyboard: {
+                                                bindings: QuillTableBetter.keyboardBindings
+                                            }
                                         }
                                     });
                             
@@ -325,13 +364,21 @@ new #[Layout('layouts.admin-app')] #[Title('Create Blog')] class extends Compone
                                     });
                             
                                     this.$watch('value', (newValue) => {
+                                        if (!this.quill) return;
+                            
                                         if (this.quill.root.innerHTML !== newValue) {
+                                            const range = this.quill.getSelection();
+                            
                                             this.quill.clipboard.dangerouslyPasteHTML(newValue || '');
+                            
+                                            if (range) {
+                                                this.quill.setSelection(range.index, range.length);
+                                            }
                                         }
                                     });
                                 }
                             }"
-                                class="overflow-hidden rounded-lg border border-outline-variant bg-white">
+                                class="rich-text-editor relative overflow-visible rounded-lg border border-outline-variant bg-white">
                                 <div x-ref="editor" class="min-h-80"></div>
                             </div>
 

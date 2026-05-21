@@ -852,240 +852,270 @@
     @apply border border-amber-300/30 bg-amber-400/10 text-amber-300;
 }
 
-/* Quill js text editor */
-.ql-toolbar.ql-snow {
+/* Reusable Rich Text Editor */
+.rich-text-editor .ql-toolbar.ql-snow {
+    position: relative;
+    z-index: 50;
+    overflow: visible !important;
     border: 0 !important;
     border-bottom: 1px solid rgb(226 232 240) !important;
     background: rgb(248 250 252);
     padding: 10px 12px;
 }
 
-.ql-container.ql-snow {
+.rich-text-editor .ql-container.ql-snow {
     border: 0 !important;
     font-family: inherit;
+    overflow: visible !important;
 }
 
-.ql-editor.ql-blank::before {
-    color: rgb(148 163 184);
-    font-style: normal;
-}
-
-.ql-toolbar button {
-    border-radius: 8px;
-}
-
-.ql-toolbar button:hover,
-.ql-toolbar button.ql-active {
-    background: white;
-    .ql-toolbar.ql-snow {
-        border: 0 !important;
-        border-bottom: 1px solid rgb(226 232 240) !important;
-        background: rgb(248 250 252);
-    }
-
-    .ql-container.ql-snow {
-        border: 0 !important;
-    }
-
-    .ql-editor {
-        min-height: 420px;
-        font-size: 14px;
-        line-height: 1.8;
-        color: rgb(51 65 85);
-    }
-
-    .ql-editor h1 {
-        font-size: 30px;
-        line-height: 1.25;
-        font-weight: 800;
-        color: rgb(15 23 42);
-    }
-
-    .ql-editor h2 {
-        font-size: 24px;
-        line-height: 1.3;
-        font-weight: 700;
-        color: rgb(15 23 42);
-    }
-
-    .ql-editor h3 {
-        font-size: 20px;
-        line-height: 1.35;
-        font-weight: 700;
-        color: rgb(15 23 42);
-    }
-
-    .ql-editor h4 {
-        font-size: 18px;
-        line-height: 1.4;
-        font-weight: 700;
-        color: rgb(15 23 42);
-    }
-
-    .ql-editor p {
-        margin-bottom: 12px;
-    }
-
-    .ql-editor ul,
-    .ql-editor ol {
-        padding-left: 24px;
-    }
-
-    .ql-editor blockquote {
-        border-left: 4px solid rgb(203 213 225);
-        padding-left: 16px;
-        color: rgb(71 85 105);
-    }
-}
-
-.ql-toolbar.ql-snow {
-    border: 0 !important;
-    border-bottom: 1px solid rgb(226 232 240) !important;
-    background: rgb(248 250 252);
-}
-
-.ql-container.ql-snow {
-    border: 0 !important;
-}
-
-.ql-editor {
+.rich-text-editor .ql-editor {
+    height: 420px;
     min-height: 420px;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding-bottom: 80px;
     font-size: 14px;
     line-height: 1.8;
     color: rgb(51 65 85);
 }
 
-.ql-editor h1 {
-    font-size: 30px;
-    line-height: 1.25;
-    font-weight: 800;
+.rich-text-editor .ql-editor.ql-blank::before {
+    color: rgb(148 163 184);
+    font-style: normal;
+}
+
+.rich-text-editor .ql-toolbar button {
+    border-radius: 8px;
+}
+
+.rich-text-editor .ql-toolbar button:hover,
+.rich-text-editor .ql-toolbar button.ql-active {
+    background: white;
+}
+
+/* Editor Typography */
+.rich-text-editor .ql-editor h1 {
+    font-size: 30px !important;
+    line-height: 1.25 !important;
+    font-weight: 800 !important;
     color: rgb(15 23 42);
 }
 
-.ql-editor h2 {
-    font-size: 24px;
-    line-height: 1.3;
-    font-weight: 700;
+.rich-text-editor .ql-editor h2 {
+    font-size: 24px !important;
+    line-height: 1.3 !important;
+    font-weight: 700 !important;
     color: rgb(15 23 42);
 }
 
-.ql-editor h3 {
-    font-size: 20px;
-    line-height: 1.35;
-    font-weight: 700;
+.rich-text-editor .ql-editor h3 {
+    font-size: 20px !important;
+    line-height: 1.35 !important;
+    font-weight: 700 !important;
     color: rgb(15 23 42);
 }
 
-.ql-editor h4 {
-    font-size: 18px;
-    line-height: 1.4;
-    font-weight: 700;
+.rich-text-editor .ql-editor h4 {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    font-weight: 700 !important;
     color: rgb(15 23 42);
 }
 
-.ql-editor p {
+.rich-text-editor .ql-editor p {
     margin-bottom: 12px;
 }
 
-.ql-editor ul,
-.ql-editor ol {
+.rich-text-editor .ql-editor ul,
+.rich-text-editor .ql-editor ol {
     padding-left: 24px;
 }
 
-.ql-editor blockquote {
+.rich-text-editor .ql-editor blockquote {
     border-left: 4px solid rgb(203 213 225);
     padding-left: 16px;
     color: rgb(71 85 105);
 }
 
-.legal-quill-editor .ql-container {
-    height: 420px;
+/* Quill dropdown and table menu */
+.rich-text-editor .ql-picker-options,
+.ql-picker-options {
+    z-index: 9999 !important;
 }
 
-.legal-quill-editor .ql-editor {
-    height: 420px;
-    min-height: 420px;
-    max-height: 420px;
-    overflow-y: auto;
-    font-size: 14px;
+.ql-table-better-picker,
+.ql-table-better,
+.qlbt-operation-menu,
+.qlbt-select-line,
+.qlbt-operation-menu * {
+    z-index: 9999 !important;
+}
+
+/* Table inside editor */
+.rich-text-editor .ql-editor table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.rich-text-editor .ql-editor table td,
+.rich-text-editor .ql-editor table th {
+    border: 1px solid #d1d5db;
+    padding: 8px;
+}
+
+/* Reusable Frontend Rich Text Content */
+.rich-text-content {
+    color: rgb(219 234 254 / 0.82);
+    font-size: 16px;
     line-height: 1.8;
-    color: rgb(51 65 85);
 }
 
-.legal-quill-editor .ql-toolbar.ql-snow {
-    border: 0 !important;
-    border-bottom: 1px solid rgb(226 232 240) !important;
-    background: rgb(248 250 252);
+/* Text */
+.rich-text-content p {
+    margin-bottom: 1rem;
+    color: inherit;
 }
 
-.legal-quill-editor .ql-container.ql-snow {
-    border: 0 !important;
+/* Headings */
+.rich-text-content h1 {
+    margin: 2rem 0 1rem;
+    font-size: 36px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: rgb(248 250 252 / 0.95);
 }
 
-/* Quill frontend list fix */
-.legal-content ol,
-.legal-content ul {
+.rich-text-content h2 {
+    margin: 1.75rem 0 1rem;
+    font-size: 30px;
+    line-height: 1.25;
+    font-weight: 800;
+    color: rgb(248 250 252 / 0.95);
+}
+
+.rich-text-content h3 {
+    margin: 1.5rem 0 0.75rem;
+    font-size: 24px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: rgb(248 250 252 / 0.95);
+}
+
+.rich-text-content h4 {
+    margin: 1.25rem 0 0.75rem;
+    font-size: 20px;
+    line-height: 1.35;
+    font-weight: 700;
+    color: rgb(248 250 252 / 0.95);
+}
+
+/* Rich text frontend list fix */
+.rich-text-content ol,
+.rich-text-content ul {
     margin: 1rem 0;
-    padding-left: 0 !important;
-    list-style: none !important;
+    padding-left: 1.5rem;
 }
 
-/* Reset browser numbering */
-.legal-content ol > li,
-.legal-content ul > li {
-    list-style: none !important;
-}
-
-/* Common list item style */
-.legal-content li {
-    position: relative;
-    margin-bottom: 0.6rem;
-    padding-left: 1.8rem;
+/* Quill can save all lists inside OL with data-list attributes */
+.rich-text-content li {
+    margin-bottom: 0.5rem;
     line-height: 1.8;
+    padding-left: 0.25rem;
 }
 
-/* Hide default marker */
-.legal-content li::marker {
-    content: "" !important;
-}
-
-/* Ordered list counter */
-.legal-content ol {
-    counter-reset: legal-counter;
-}
-
-.legal-content li[data-list="ordered"] {
-    counter-increment: legal-counter;
-}
-
-.legal-content li[data-list="ordered"]::before {
-    content: counter(legal-counter) ".";
-    position: absolute;
-    left: 0;
-    top: 0;
-    font-weight: 500;
-    color: rgba(226, 232, 240, 0.75);
-}
-
-/* Bullet list fix */
-.legal-content li[data-list="bullet"] {
-    counter-increment: none !important;
-}
-
-.legal-content li[data-list="bullet"]::before {
-    content: "•";
-    position: absolute;
-    left: 0.25rem;
-    top: 0;
-    font-size: 1.2rem;
-    line-height: 1.6;
-    color: #38bdf8;
-}
-
-/* Remove Quill UI helper span if rendered */
-.legal-content .ql-ui {
+/* Hide Quill helper UI */
+.rich-text-content .ql-ui {
     display: none !important;
 }
+
+/* Reset old/custom list pseudo markers */
+.rich-text-content li::before {
+    content: none !important;
+}
+
+/* Ordered list */
+.rich-text-content ol {
+    list-style: decimal;
+}
+
+/* Normal UL */
+.rich-text-content ul {
+    list-style: disc;
+}
+
+/* Quill bullet items inside OL */
+.rich-text-content ol li[data-list="bullet"] {
+    list-style-type: disc;
+}
+
+/* Quill ordered items */
+.rich-text-content ol li[data-list="ordered"] {
+    list-style-type: decimal;
+}
+
+/* Nested lists */
+.rich-text-content ol ol,
+.rich-text-content ul ul,
+.rich-text-content ol ul,
+.rich-text-content ul ol {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Blockquote */
+.rich-text-content blockquote {
+    margin: 1.5rem 0;
+    border-left: 4px solid #38bdf8;
+    padding-left: 1rem;
+    color: rgb(219 234 254 / 0.75);
+}
+
+/* Link */
+.rich-text-content a {
+    color: #67e8f9;
+    text-decoration: underline;
+}
+
+/* Table */
+.rich-text-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    color: rgb(219 234 254 / 0.86);
+}
+
+.rich-text-content table td,
+.rich-text-content table th {
+    border: 1px solid rgb(255 255 255 / 0.18);
+    padding: 10px;
+}
+
+.rich-text-content table th {
+    background: rgb(255 255 255 / 0.08);
+    font-weight: 700;
+}
+
+/* If old content has black inline color, make it visible on dark frontend */
+.rich-text-content span[style*="color: rgb(0, 0, 0)"],
+.rich-text-content span[style*="color:#000"],
+.rich-text-content span[style*="color: #000"],
+.rich-text-content span[style*="color: black"] {
+    color: rgb(219 234 254 / 0.86) !important;
+}
+
+
+/* Admin service plan quill js height */
+.service-plan-quill .ql-container.ql-snow {
+    height: 180px;
+}
+
+.service-plan-quill .ql-editor {
+    height: 180px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
 
 /* admin sidebar scrollbar */
 @layer utilities {

@@ -144,16 +144,16 @@ new class extends Component {
                     <!-- Featured Image -->
                     @if ($this->blogImage())
                         <div
-                            class="overflow-hidden rounded-[32px] border border-white/10 bg-white/6 p-4 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+                            class="overflow-hidden rounded-4xl border border-white/10 bg-white/6 p-4 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
                             <div class="overflow-hidden rounded-[26px] border border-white/10">
                                 <img src="{{ $this->blogImage() }}" alt="{{ $blog->title }}"
-                                    class="h-[280px] w-full object-cover sm:h-[420px] lg:h-[520px]">
+                                    class="h-70 w-full object-cover sm:h-105 lg:h-130">
                             </div>
                         </div>
                     @endif
 
                     <!-- Content -->
-                    <div class="blog-details-card">
+                    <div class="blog-details-card rich-text-content">
                         {!! $blog->content !!}
                     </div>
 

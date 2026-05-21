@@ -26,6 +26,7 @@
         rel="stylesheet" />
 
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+   <link href="https://cdn.jsdelivr.net/npm/quill-table-better@1.2.3/dist/quill-table-better.css" rel="stylesheet">
 
     <style>
         .material-symbols-outlined {
@@ -72,6 +73,7 @@
 
 
         <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/quill-table-better@1.2.3/dist/quill-table-better.js"></script>
         @stack('scripts')
         @livewireScripts
     </div>

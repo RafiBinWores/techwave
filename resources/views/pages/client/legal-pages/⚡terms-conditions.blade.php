@@ -40,7 +40,7 @@ new #[Title('Terms & Conditions')] class extends Component {
                         prose-strong:text-white 
                         prose-li:text-blue-50/80 
                         prose-blockquote:border-cyan-300 
-                        prose-blockquote:text-blue-100 legal-content">
+                        prose-blockquote:text-blue-100 rich-text-content">
                         {!! $terms_conditions !!}
                     </article>
                 @else

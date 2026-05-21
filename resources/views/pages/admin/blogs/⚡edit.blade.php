@@ -128,9 +128,11 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Blog')] class extends Component
 
     public function updated($property): void
     {
-        if ($property !== 'title') {
-            $this->validateOnly($property);
+        if (in_array($property, ['title', 'content'], true)) {
+            return;
         }
+
+        $this->validateOnly($property);
     }
 
     public function addTag(): void
@@ -346,62 +348,231 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Blog')] class extends Component
                             <label class="block font-label-md text-on-surface">Blog Content</label>
 
                             <div wire:ignore x-data="{
-                            quill: null,
-                            value: @entangle('content'),
-                            isUpdatingFromQuill: false,
-                        
-                            init() {
-                                this.quill = new Quill(this.$refs.editor, {
-                                    theme: 'snow',
-                                    placeholder: 'Describe the service technical architecture and business value...',
-                                    modules: {
-                                        toolbar: [
-                                            [{ header: [2, 3, false] }],
-                                            [{ 'font': [] }],
-                                            ['bold', 'italic', 'underline', 'strike'],
-                                            [{ 'color': [] }, { 'background': [] }],
-                                            [{ list: 'ordered' }, { list: 'bullet' }],
-                                            [{ 'align': [] }],
-                                            ['blockquote', 'code-block'],
-                                            ['link'],
-                                            ['clean']
-                                        ]
-                                    }
-                                });
-                        
-                                if (this.value) {
-                                    this.quill.root.innerHTML = this.value;
-                                }
-                        
-                                this.quill.on('text-change', () => {
-                                    this.isUpdatingFromQuill = true;
-                                    this.value = this.quill.root.innerHTML;
-                        
-                                    setTimeout(() => {
-                                        this.isUpdatingFromQuill = false;
-                                    }, 100);
-                                });
-                        
-                                this.$watch('value', (newValue) => {
-                                    if (this.isUpdatingFromQuill) {
+                                quill: null,
+                                value: @entangle('content'),
+                                isUpdatingFromQuill: false,
+                            
+                                init() {    
+                                    if (!window.Quill) {
+                                        console.error('Quill is not loaded');
                                         return;
                                     }
-                        
-                                    if (this.quill.root.innerHTML !== newValue) {
-                                        let range = this.quill.getSelection();
-                        
-                                        this.quill.root.innerHTML = newValue || '';
-                        
-                                        if (range) {
-                                            this.quill.setSelection(range.index, range.length);
-                                        }
+                            
+                                    if (!window.QuillTableBetter) {
+                                        console.error('QuillTableBetter is not loaded');
+                                        return;
                                     }
-                                });
-                            }
-                        }"
-                            class="overflow-hidden rounded-lg border border-outline-variant bg-white">
-                            <div x-ref="editor"></div>
-                        </div>
+                                        
+                                    const colorPalette = [
+        false,
+        '#000000',
+    '#ffffff',
+    '#44546a',
+    '#5b9bd5',
+    '#ed7d31',
+    '#a5a5a5',
+    '#ffc000',
+    '#4472c4',
+    '#70ad47',
+
+    // Dark shades
+    '#7f7f7f',
+    '#1f4e79',
+    '#833c0c',
+    '#525252',
+    '#7f6000',
+    '#2f5597',
+    '#375623',
+
+    // Light shades
+    '#d9eaf7',
+    '#fce4d6',
+    '#ededed',
+    '#fff2cc',
+    '#d9e2f3',
+    '#e2f0d9',
+
+    // Accent colors
+    '#c00000',
+    '#ff0000',
+    '#ffc000',
+    '#ffff00',
+    '#92d050',
+    '#00b050',
+    '#00b0f0',
+    '#0070c0',
+    '#002060',
+    '#7030a0'
+    ];
+
+    const backgroundColorPalette = [
+        false,
+        // Basic
+    '#ffffff',
+    '#000000',
+
+    // Word-like highlight colors
+    '#ffff00',
+    '#00ff00',
+    '#00ffff',
+    '#ff00ff',
+    '#0000ff',
+    '#ff0000',
+    '#000080',
+    '#008080',
+    '#008000',
+    '#800080',
+    '#800000',
+    '#808000',
+    '#808080',
+    '#c0c0c0',
+
+    // Soft background shades
+    '#f2f2f2',
+    '#d9eaf7',
+    '#fce4d6',
+    '#fff2cc',
+    '#e2f0d9',
+    '#d9e2f3',
+    '#eadcf8'
+    ];
+                            
+                                    Quill.register({
+                                        'modules/table-better': QuillTableBetter
+                                    }, true);
+                            
+                                    this.quill = new Quill(this.$refs.editor, {
+                                        theme: 'snow',
+                                        placeholder: 'Describe the service technical architecture and business value...',
+                                        modules: {
+                                            toolbar: [
+                                                [{ header: [2, 3, false] }],
+                                                [{ font: [] }],
+                                                ['bold', 'italic', 'underline', 'strike'],
+                            
+                                                [
+                                                    { color: colorPalette },
+                                                    { background: backgroundColorPalette }
+                                                ],
+                            
+                                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                                [{ align: [] }],
+                                                ['blockquote', 'code-block'],
+                                                ['link'],
+                                                ['table-better'],
+                                                ['clean']
+                                            ],
+                            
+                                            table: false,
+                            
+                                            'table-better': {
+                                                language: 'en_US',
+                                                menus: [
+                                                    'column',
+                                                    'row',
+                                                    'merge',
+                                                    'table',
+                                                    'cell',
+                                                    'wrap',
+                                                    'copy',
+                                                    'delete'
+                                                ],
+                                                toolbarTable: true
+                                            },
+                            
+                                            keyboard: {
+                                                bindings: QuillTableBetter.keyboardBindings
+                                            }
+                                        }
+                                    });
+                            
+                                    if (this.value) {
+                                        this.quill.root.innerHTML = this.value;
+                                    }
+                            
+                                    this.fixToolbarButtons();
+                            
+                                    this.quill.on('text-change', () => {
+                                        this.isUpdatingFromQuill = true;
+                                        this.value = this.quill.root.innerHTML;
+                            
+                                        setTimeout(() => {
+                                            this.isUpdatingFromQuill = false;
+                                        }, 100);
+                                    });
+                            
+                                    this.$watch('value', (newValue) => {
+                                        if (this.isUpdatingFromQuill) {
+                                            return;
+                                        }
+                            
+                                        if (this.quill.root.innerHTML !== newValue) {
+                                            let range = this.quill.getSelection();
+                            
+                                            this.quill.root.innerHTML = newValue || '';
+                            
+                                            if (range) {
+                                                this.quill.setSelection(range.index, range.length);
+                                            }
+                                        }
+                                    });
+                                },
+                            
+                                fixToolbarButtons() {
+                                    const toolbar = this.$el.querySelector('.ql-toolbar');
+                            
+                                    if (!toolbar) return;
+                            
+                                    toolbar.querySelectorAll('button').forEach((button) => {
+                                        button.setAttribute('type', 'button');
+                                    });
+                                },
+                            
+                                addNoColorButton() {
+                                    const toolbar = this.$el.querySelector('.ql-toolbar');
+                            
+                                    if (!toolbar) return;
+                            
+                                    if (toolbar.querySelector('.ql-custom-no-color')) return;
+                            
+                                    const group = document.createElement('span');
+                                    group.className = 'ql-formats';
+                            
+                                    const button = document.createElement('button');
+                                    button.type = 'button';
+                                    button.className = 'ql-custom-no-color';
+                                    button.innerText = 'No Color';
+                                    button.title = 'Remove text and background color';
+                            
+                                    button.addEventListener('mousedown', (event) => {
+                                        event.preventDefault();
+                                    });
+                            
+                                    button.addEventListener('click', () => {
+                                        const range = this.quill.getSelection(true);
+                            
+                                        if (!range) return;
+                            
+                                        if (range.length > 0) {
+                                            this.quill.formatText(range.index, range.length, {
+                                                color: false,
+                                                background: false
+                                            }, Quill.sources.USER);
+                                        } else {
+                                            this.quill.format('color', false, Quill.sources.USER);
+                                            this.quill.format('background', false, Quill.sources.USER);
+                                        }
+                            
+                                        this.value = this.quill.root.innerHTML;
+                                    });
+                            
+                                    group.appendChild(button);
+                                    toolbar.appendChild(group);
+                                }
+                            }"
+                                class="rich-text-editor relative overflow-visible rounded-lg border border-outline-variant bg-white">
+                                <div x-ref="editor" class="quill-edit-scroll"></div>
+                            </div>
 
                             @error('content')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
@@ -421,7 +592,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Blog')] class extends Component
                     </div>
                 </div>
 
-                
+
 
                 <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                     <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
@@ -452,7 +623,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Blog')] class extends Component
                         </button>
 
                         <button type="submit" wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
                             <span wire:loading.remove wire:target="update">Update Blog</span>
 
                             <span wire:loading wire:target="update" class="inline-flex items-center gap-2">
