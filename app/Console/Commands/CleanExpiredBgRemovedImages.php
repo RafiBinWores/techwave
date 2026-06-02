@@ -14,17 +14,19 @@ class CleanExpiredBgRemovedImages extends Command
 
     public function handle(): void
     {
-        $expired = UserBgRemovedImage::query()
-            ->where('expires_at', '<=', now())
-            ->get();
-
         $count = 0;
 
-        foreach ($expired as $image) {
-            $image->deleteFile();
-            $image->delete();
-            $count++;
-        }
+        UserBgRemovedImage::query()
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->chunkById(100, function ($images) use (&$count) {
+                foreach ($images as $image) {
+                    $image->deleteFile();
+                    $image->delete();
+
+                    $count++;
+                }
+            });
 
         $this->info("Cleaned up {$count} expired backed-up background-removed image(s).");
 
@@ -35,6 +37,10 @@ class CleanExpiredBgRemovedImages extends Command
 
     private function cleanTempFiles(): int
     {
+        if (! Storage::disk('public')->exists('temp/bg-remover')) {
+            return 0;
+        }
+
         $files = Storage::disk('public')->files('temp/bg-remover');
 
         $cutoff = now()->subDay()->timestamp;
@@ -46,6 +52,7 @@ class CleanExpiredBgRemovedImages extends Command
 
             if ($lastModified < $cutoff) {
                 Storage::disk('public')->delete($file);
+
                 $deleted++;
             }
         }
