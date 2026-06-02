@@ -128,17 +128,26 @@ new #[Layout('layouts.admin-app')] #[Title('Support Tickets')] class extends Com
     }
 
     public function delete(int $ticketId): void
-    {
-        $ticket = SupportTicket::findOrFail($ticketId);
+{
+    $ticket = SupportTicket::query()
+        ->with(['attachments', 'replies.attachments'])
+        ->findOrFail($ticketId);
 
-        $ticket->delete();
+    $ticketSnapshot = $ticket->replicate();
+    $ticketSnapshot->id = $ticket->id;
 
-        SupportTicketUpdated::dispatch($ticket, 'deleted');
+    $ticket->delete();
 
-        $this->refreshKey++;
+    SupportTicketUpdated::dispatch($ticketSnapshot, 'deleted');
 
-        $this->dispatch('toast', message: 'Ticket deleted successfully.', type: 'success');
-    }
+    $this->refreshKey++;
+
+    $this->dispatch(
+        'toast',
+        message: 'Ticket and all attached files deleted successfully.',
+        type: 'success'
+    );
+}
 };
 ?>
 

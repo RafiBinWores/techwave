@@ -117,45 +117,51 @@ new class extends Component {
 };
 ?>
 
-<div wire:key="client-ticket-chat-{{ $ticket->id }}-{{ $refreshKey }}" x-data="{
-    imagePreviewOpen: false,
-    imagePreviewSrc: '',
-    imagePreviewName: '',
+<div
+    wire:key="client-ticket-chat-{{ $ticket->id }}-{{ $refreshKey }}"
+    x-data="{
+        imagePreviewOpen: false,
+        imagePreviewSrc: '',
+        imagePreviewName: '',
 
-    openImagePreview(src, name = '') {
-        this.imagePreviewSrc = src;
-        this.imagePreviewName = name;
-        this.imagePreviewOpen = true;
-        document.body.style.overflow = 'hidden';
-    },
+        openImagePreview(src, name = '') {
+            this.imagePreviewSrc = src;
+            this.imagePreviewName = name;
+            this.imagePreviewOpen = true;
+            document.body.style.overflow = 'hidden';
+        },
 
-    closeImagePreview() {
-        this.imagePreviewOpen = false;
-        this.imagePreviewSrc = '';
-        this.imagePreviewName = '';
-        document.body.style.overflow = '';
-    },
+        closeImagePreview() {
+            this.imagePreviewOpen = false;
+            this.imagePreviewSrc = '';
+            this.imagePreviewName = '';
+            document.body.style.overflow = '';
+        },
 
-    scrollToBottom() {
-        this.$nextTick(() => {
-            const el = this.$refs.chatBox;
-            if (el) el.scrollTop = el.scrollHeight;
-        });
-    }
-}" x-init="scrollToBottom()"
-    x-on:ticket-replied.window="scrollToBottom()" x-on:keydown.escape.window="closeImagePreview()">
-    <div
-        class="mx-auto grid min-h-[calc(100vh-120px)] w-full max-w-350 grid-cols-12 gap-4 px-3 sm:gap-6 sm:px-6 lg:py-4 lg:px-8">
+        scrollToBottom() {
+            this.$nextTick(() => {
+                const el = this.$refs.chatBox;
+                if (el) el.scrollTop = el.scrollHeight;
+            });
+        }
+    }"
+    x-init="scrollToBottom()"
+    x-on:ticket-replied.window="scrollToBottom()"
+    x-on:keydown.escape.window="closeImagePreview()"
+>
+    <div class="mx-auto grid w-full max-w-350 grid-cols-1 gap-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_320px]">
 
         {{-- Chat Main --}}
-        <div
-            class="col-span-12 flex h-[calc(100vh-120px)] min-h-0 flex-col overflow-hidden border border-white/10 bg-white/6 backdrop-blur-xl sm:h-[calc(100vh-150px)] sm:rounded-[28px] xl:col-span-8 rounded-2xl">
+        <div class="flex h-[calc(100dvh-1.5rem)] min-h-140 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/6 backdrop-blur-xl sm:h-[calc(100dvh-2rem)] sm:rounded-[28px] xl:h-[calc(100vh-150px)]">
 
             {{-- Header --}}
             <div class="flex items-start justify-between gap-3 border-b border-white/10 px-3 py-3 sm:px-5 sm:py-4">
-                <div class="min-w-0">
-                    <a href="{{ route('client.tickets.index') }}" wire:navigate
-                        class="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-100/55 transition hover:text-white">
+                <div class="min-w-0 flex-1">
+                    <a
+                        href="{{ route('client.tickets.index') }}"
+                        wire:navigate
+                        class="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-100/55 transition hover:text-white"
+                    >
                         <span class="material-symbols-outlined text-base">arrow_back</span>
                         Back to Tickets
                     </a>
@@ -164,7 +170,7 @@ new class extends Component {
                         {{ $ticket->subject }}
                     </h1>
 
-                    <p class="mt-1 font-mono text-xs text-blue-100/45">
+                    <p class="mt-1 truncate font-mono text-xs text-blue-100/45">
                         {{ $ticket->ticket_no }}
                     </p>
                 </div>
@@ -181,13 +187,20 @@ new class extends Component {
             </div>
 
             {{-- Messages --}}
-            <div x-ref="chatBox"
-                class="chat-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
+            <div
+                x-ref="chatBox"
+                class="chat-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10"
+            >
+                @php
+                    $originalAttachments = $ticket->attachments->filter(function ($attachment) {
+                        return blank($attachment->support_ticket_reply_id ?? $attachment->reply_id ?? null);
+                    });
+                @endphp
 
-                {{-- Original Ticket Message - User Side --}}
+                {{-- Original Ticket Message --}}
                 <div class="flex items-end justify-end gap-2 sm:gap-3">
-                    <div class="max-w-[88%] text-right sm:max-w-[82%]">
-                        <div class="mb-1 flex items-center justify-end gap-2 text-xs">
+                    <div class="max-w-[82%] text-right sm:max-w-[74%] lg:max-w-[68%]">
+                        <div class="mb-1 flex flex-wrap items-center justify-end gap-2 text-xs">
                             <span class="text-blue-100/45">
                                 {{ $ticket->created_at?->format('M d, h:i A') }}
                             </span>
@@ -197,25 +210,33 @@ new class extends Component {
                             </span>
                         </div>
 
-                        <div
-                            class="inline-block rounded-2xl rounded-br-sm bg-linear-to-r from-blue-500 to-sky-400 px-4 py-3 text-left text-sm leading-relaxed text-white shadow-lg shadow-blue-500/15">
-                            {!! nl2br(e($ticket->message)) !!}
-                        </div>
+                        @if ($ticket->message)
+                            <div class="inline-block max-w-full wrap-break-word rounded-2xl rounded-br-sm bg-linear-to-r from-blue-500 to-sky-400 px-4 py-1 md:py-3 text-left text-sm leading-relaxed text-white shadow-lg shadow-blue-500/15">
+                                {!! nl2br(e($ticket->message)) !!}
+                            </div>
+                        @endif
 
-                        @if ($ticket->attachments->count())
-                            <div class="ml-auto mt-3 grid max-w-xs grid-cols-2 gap-2 sm:max-w-sm sm:grid-cols-3">
-                                @foreach ($ticket->attachments as $attachment)
+                        @if ($originalAttachments->count())
+                            <div class="ml-auto mt-3 flex max-w-85 flex-wrap justify-end gap-2 sm:max-w-95">
+                                @foreach ($originalAttachments as $attachment)
                                     @if ($attachment->isImage())
-                                        <button type="button"
+                                        <button
+                                            type="button"
                                             @click="openImagePreview('{{ $attachment->url() }}', '{{ addslashes($attachment->file_name) }}')"
-                                            class="group overflow-hidden rounded-xl border border-white/10 bg-white/8">
-                                            <img src="{{ $attachment->url() }}"
-                                                class="h-24 w-full object-cover transition group-hover:scale-105 sm:h-28"
-                                                alt="{{ $attachment->file_name }}">
+                                            class="group h-20 w-20 overflow-hidden rounded-xl border border-white/10 bg-white/8 sm:h-24 sm:w-24"
+                                        >
+                                            <img
+                                                src="{{ $attachment->url() }}"
+                                                class="h-full w-full object-cover transition group-hover:scale-105"
+                                                alt="{{ $attachment->file_name }}"
+                                            >
                                         </button>
                                     @else
-                                        <a href="{{ $attachment->url() }}" target="_blank"
-                                            class="flex h-24 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-3 text-center text-xs text-blue-100/60 sm:h-28">
+                                        <a
+                                            href="{{ $attachment->url() }}"
+                                            target="_blank"
+                                            class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/8 p-2 text-center text-[11px] text-blue-100/60 sm:h-24 sm:w-24"
+                                        >
                                             {{ $attachment->file_name }}
                                         </a>
                                     @endif
@@ -224,8 +245,7 @@ new class extends Component {
                         @endif
                     </div>
 
-                    <div
-                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-xs font-bold text-white sm:h-9 sm:w-9">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-xs font-bold text-white sm:h-9 sm:w-9">
                         {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                     </div>
                 </div>
@@ -236,26 +256,33 @@ new class extends Component {
                         $isCustomer = $reply->sender_type === 'customer';
                         $senderName = $isCustomer ? 'You' : $reply->user?->name ?? 'Support';
                         $senderInitial = strtoupper(
-                            substr($senderName === 'You' ? auth()->user()->name ?? 'U' : $senderName, 0, 1),
+                            substr($senderName === 'You' ? auth()->user()->name ?? 'U' : $senderName, 0, 1)
                         );
                     @endphp
 
-                    <div wire:key="reply-{{ $reply->id }}" @class([
-                        'flex items-end gap-2 sm:gap-3',
-                        'justify-end' => $isCustomer,
-                    ])>
-
+                    <div
+                        wire:key="reply-{{ $reply->id }}"
+                        @class([
+                            'flex items-end gap-2 sm:gap-3',
+                            'justify-end' => $isCustomer,
+                            'justify-start' => ! $isCustomer,
+                        ])
+                    >
                         @unless ($isCustomer)
-                            <div
-                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white sm:h-9 sm:w-9">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white sm:h-9 sm:w-9">
                                 {{ $senderInitial }}
                             </div>
                         @endunless
 
-                        <div @class(['max-w-[88%] sm:max-w-[82%]', 'text-right' => $isCustomer])>
+                        <div @class([
+                            'max-w-[82%] sm:max-w-[74%] lg:max-w-[68%]',
+                            'text-right' => $isCustomer,
+                            'text-left' => ! $isCustomer,
+                        ])>
                             <div @class([
-                                'mb-1 flex items-center gap-2 text-xs',
+                                'mb-1 flex flex-wrap items-center gap-2 text-[10px] md:text-xs',
                                 'justify-end' => $isCustomer,
+                                'justify-start' => ! $isCustomer,
                             ])>
                                 @if ($isCustomer)
                                     <span class="text-blue-100/45">
@@ -278,9 +305,9 @@ new class extends Component {
 
                             @if ($reply->message)
                                 <div @class([
-                                    'inline-block rounded-2xl px-4 py-3 text-left text-sm leading-relaxed',
+                                    'inline-block max-w-full break-words rounded-2xl px-4 py-1.5 md:py-3 text-left text-sm leading-relaxed',
                                     'rounded-br-sm bg-linear-to-r from-blue-500 to-sky-400 text-white shadow-lg shadow-blue-500/15' => $isCustomer,
-                                    'rounded-bl-sm border border-white/10 bg-white/8 text-blue-50' => !$isCustomer,
+                                    'rounded-bl-sm border border-white/10 bg-white/8 text-blue-50' => ! $isCustomer,
                                 ])>
                                     {!! nl2br(e($reply->message)) !!}
                                 </div>
@@ -288,21 +315,29 @@ new class extends Component {
 
                             @if ($reply->attachments->count())
                                 <div @class([
-                                    'mt-3 grid max-w-xs grid-cols-2 gap-2 sm:max-w-sm sm:grid-cols-3',
-                                    'ml-auto' => $isCustomer,
+                                    'mt-3 flex max-w-[340px] flex-wrap gap-2 sm:max-w-[380px]',
+                                    'ml-auto justify-end' => $isCustomer,
+                                    'justify-start' => ! $isCustomer,
                                 ])>
                                     @foreach ($reply->attachments as $attachment)
                                         @if ($attachment->isImage())
-                                            <button type="button"
+                                            <button
+                                                type="button"
                                                 @click="openImagePreview('{{ $attachment->url() }}', '{{ addslashes($attachment->file_name) }}')"
-                                                class="group overflow-hidden rounded-xl border border-white/10 bg-white/8">
-                                                <img src="{{ $attachment->url() }}"
-                                                    class="h-24 w-full object-cover transition group-hover:scale-105 sm:h-28"
-                                                    alt="{{ $attachment->file_name }}">
+                                                class="group h-20 w-20 overflow-hidden rounded-xl border border-white/10 bg-white/8 sm:h-24 sm:w-24"
+                                            >
+                                                <img
+                                                    src="{{ $attachment->url() }}"
+                                                    class="h-full w-full object-cover transition group-hover:scale-105"
+                                                    alt="{{ $attachment->file_name }}"
+                                                >
                                             </button>
                                         @else
-                                            <a href="{{ $attachment->url() }}" target="_blank"
-                                                class="flex h-24 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-3 text-center text-xs text-blue-100/60 sm:h-28">
+                                            <a
+                                                href="{{ $attachment->url() }}"
+                                                target="_blank"
+                                                class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/8 p-2 text-center text-[11px] text-blue-100/60 sm:h-24 sm:w-24"
+                                            >
                                                 {{ $attachment->file_name }}
                                             </a>
                                         @endif
@@ -312,8 +347,7 @@ new class extends Component {
                         </div>
 
                         @if ($isCustomer)
-                            <div
-                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-xs font-bold text-white sm:h-9 sm:w-9">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-xs font-bold text-white sm:h-9 sm:w-9">
                                 {{ $senderInitial }}
                             </div>
                         @endif
@@ -322,19 +356,27 @@ new class extends Component {
             </div>
 
             {{-- Composer --}}
-            <div class="border-t border-white/10 p-3 sm:p-4">
+            <div class="border-t border-white/10 p-2.5 sm:p-4">
                 @if ($ticket->status !== 'closed')
                     @if ($images)
-                        <div class="mb-3 flex gap-2 overflow-x-auto pb-1">
+                        <div class="mb-3 flex max-w-full gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 p-2">
                             @foreach ($images as $index => $image)
-                                <div wire:key="reply-preview-image-{{ $index }}"
-                                    class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/8">
+                                <div
+                                    wire:key="reply-preview-image-{{ $index }}"
+                                    class="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/8 sm:h-20 sm:w-20"
+                                >
+                                    <img
+                                        src="{{ $image->temporaryUrl() }}"
+                                        class="h-full w-full object-cover"
+                                        alt="Preview"
+                                    >
 
-                                    <img src="{{ $image->temporaryUrl() }}" class="h-full w-full object-cover">
-
-                                    <button type="button" wire:click="removePreviewImage({{ $index }})"
-                                        class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition hover:bg-red-600">
-                                        <span class="material-symbols-outlined text-[14px]">close</span>
+                                    <button
+                                        type="button"
+                                        wire:click="removePreviewImage({{ $index }})"
+                                        class="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition hover:bg-red-600 sm:h-6 sm:w-6"
+                                    >
+                                        <span class="material-symbols-outlined text-[13px] sm:text-[14px]">close</span>
                                     </button>
                                 </div>
                             @endforeach
@@ -342,24 +384,33 @@ new class extends Component {
                     @endif
 
                     <div class="flex items-end gap-2 sm:gap-3">
-                        <label
-                            class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/8 text-blue-100/70 transition hover:bg-white/12 sm:h-11 sm:w-11">
-                            <span class="material-symbols-outlined">image</span>
+                        <label class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/8 text-blue-100/70 transition hover:bg-white/12 sm:h-11 sm:w-11">
+                            <span class="material-symbols-outlined text-[20px]">image</span>
                             <input type="file" wire:model="images" multiple accept="image/*" class="hidden">
                         </label>
 
-                        <input wire:model="replyMessage" wire:keydown.enter.prevent="sendReply"
+                        <input
+                            wire:model="replyMessage"
+                            wire:keydown.enter.prevent="sendReply"
                             class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/8 px-3 py-2.5 text-sm text-white placeholder:text-blue-100/35 outline-none focus:border-blue-300/40 focus:ring-2 focus:ring-blue-400/10 sm:px-4 sm:py-3"
-                            placeholder="Write your reply...">
+                            placeholder="Write your reply..."
+                        >
 
-                        <button type="button" wire:click="sendReply" wire:loading.attr="disabled"
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:h-11 sm:w-11">
+                        <button
+                            type="button"
+                            wire:click="sendReply"
+                            wire:loading.attr="disabled"
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:h-11 sm:w-11 cursor-pointer"
+                        >
                             <span wire:loading.remove wire:target="sendReply,images" class="material-symbols-outlined">
                                 send
                             </span>
 
-                            <span wire:loading wire:target="sendReply,images"
-                                class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                            <span
+                                wire:loading
+                                wire:target="sendReply,images"
+                                class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                            ></span>
                         </button>
                     </div>
 
@@ -379,42 +430,42 @@ new class extends Component {
         </div>
 
         {{-- Right Sidebar --}}
-        <div class="col-span-12 space-y-4 xl:col-span-4">
-            <div class="client-card p-6">
+        <div class="min-w-0 space-y-4 xl:w-80">
+            <div class="client-card p-4 sm:p-6">
                 <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">
                     Ticket Details
                 </p>
 
-                <h2 class="mt-2 text-2xl font-bold text-white">
+                <h2 class="mt-2 text-xl font-bold text-white sm:text-2xl">
                     Summary
                 </h2>
 
-                <div class="mt-6 space-y-4 text-sm">
+                <div class="mt-5 space-y-4 text-sm sm:mt-6">
                     <div class="flex justify-between gap-4 border-b border-white/10 pb-3">
                         <span class="text-blue-100/55">Department</span>
-                        <span class="font-semibold text-white">{{ $ticket->department }}</span>
+                        <span class="text-right font-semibold text-white">{{ $ticket->department }}</span>
                     </div>
 
                     <div class="flex justify-between gap-4 border-b border-white/10 pb-3">
                         <span class="text-blue-100/55">Priority</span>
-                        <span class="font-semibold capitalize text-white">{{ $ticket->priority }}</span>
+                        <span class="text-right font-semibold capitalize text-white">{{ $ticket->priority }}</span>
                     </div>
 
                     <div class="flex justify-between gap-4 border-b border-white/10 pb-3">
                         <span class="text-blue-100/55">Replies</span>
-                        <span class="font-semibold text-white">{{ $ticket->replies->count() }}</span>
+                        <span class="text-right font-semibold text-white">{{ $ticket->replies->count() }}</span>
                     </div>
 
                     <div class="flex justify-between gap-4 border-b border-white/10 pb-3">
                         <span class="text-blue-100/55">Images</span>
-                        <span class="font-semibold text-white">
-                            {{ $ticket->attachments->count() + $ticket->replies->sum(fn($reply) => $reply->attachments->count()) }}
+                        <span class="text-right font-semibold text-white">
+                            {{ $originalAttachments->count() + $ticket->replies->sum(fn ($reply) => $reply->attachments->count()) }}
                         </span>
                     </div>
 
                     <div class="flex justify-between gap-4">
                         <span class="text-blue-100/55">Created</span>
-                        <span class="font-semibold text-white">{{ $ticket->created_at?->format('M d, Y') }}</span>
+                        <span class="text-right font-semibold text-white">{{ $ticket->created_at?->format('M d, Y') }}</span>
                     </div>
                 </div>
             </div>
@@ -422,29 +473,45 @@ new class extends Component {
     </div>
 
     {{-- Image Preview Modal --}}
-    <div x-cloak x-show="imagePreviewOpen" x-transition.opacity
-        class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/85 px-4 py-6 backdrop-blur-sm"
-        @click.self="closeImagePreview()">
-
-        <div x-show="imagePreviewOpen" x-transition.scale.origin.center
-            class="relative w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-white shadow-2xl">
-
-            <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3">
+    <div
+        x-cloak
+        x-show="imagePreviewOpen"
+        x-transition.opacity
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/85 p-3 backdrop-blur-sm sm:p-6"
+        @click.self="closeImagePreview()"
+    >
+        <div
+            x-show="imagePreviewOpen"
+            x-transition.scale.origin.center
+            class="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl sm:rounded-3xl"
+        >
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-3 py-3 sm:px-4">
                 <div class="min-w-0">
-                    <p class="truncate text-sm font-semibold text-slate-900"
-                        x-text="imagePreviewName || 'Image Preview'"></p>
-                    <p class="text-xs text-slate-500">Click outside or press ESC to close</p>
+                    <p
+                        class="truncate text-sm font-semibold text-slate-900"
+                        x-text="imagePreviewName || 'Image Preview'"
+                    ></p>
+
+                    <p class="text-xs text-slate-500">
+                        Click outside or press ESC to close
+                    </p>
                 </div>
 
-                <button type="button" @click="closeImagePreview()"
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-red-100 hover:text-red-600">
+                <button
+                    type="button"
+                    @click="closeImagePreview()"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-red-100 hover:text-red-600 sm:h-10 sm:w-10"
+                >
                     <span class="material-symbols-outlined text-xl">close</span>
                 </button>
             </div>
 
-            <div class="flex max-h-[78vh] items-center justify-center bg-slate-950 p-3">
-                <img :src="imagePreviewSrc" :alt="imagePreviewName"
-                    class="max-h-[74vh] max-w-full rounded-2xl object-contain">
+            <div class="flex max-h-[78dvh] items-center justify-center bg-slate-950 p-2 sm:p-3">
+                <img
+                    :src="imagePreviewSrc"
+                    :alt="imagePreviewName"
+                    class="max-h-[72dvh] max-w-full rounded-xl object-contain sm:rounded-2xl"
+                >
             </div>
         </div>
     </div>

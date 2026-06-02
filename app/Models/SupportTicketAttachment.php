@@ -35,4 +35,13 @@ class SupportTicketAttachment extends Model
     {
         return str_starts_with((string) $this->file_type, 'image/');
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (SupportTicketAttachment $attachment) {
+            if (! empty($attachment->file_path) && Storage::disk('public')->exists($attachment->file_path)) {
+                Storage::disk('public')->delete($attachment->file_path);
+            }
+        });
+    }
 }

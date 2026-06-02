@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ToolCategory;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -12,6 +13,14 @@ new class extends Component {
         request()->session()->regenerateToken();
 
         return $this->redirectRoute('home', navigate: true);
+    }
+
+    public function getIsToolsPremiumProperty(): bool
+    {
+        return ToolCategory::query()
+            ->where('slug', 'image-tools')
+            ->whereHas('toolSubscriptions', fn($q) => $q->where('user_id', auth()->id())->active())
+            ->exists();
     }
 };
 ?>
@@ -119,48 +128,6 @@ new class extends Component {
                 <span>Tickets</span>
             </a>
 
-            <a href="{{ route('account.tool-subscriptions') }}" wire:navigate wire:current.exact="client-dash-link-active"
-                class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-crown-icon lucide-crown">
-                        <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.54l-3.362 9.98a1 1 0 0 1-.95.68H4.332a1 1 0 0 1-.95-.68L.02 6.04a.5.5 0 0 1 .798-.54l4.276 3.664a1 1 0 0 0 1.516-.294z" />
-                        <path d="M5 21h14" />
-                    </svg>
-                </span>
-                <span>Subscriptions</span>
-            </a>
-
-            <a href="{{ route('account.compressed-images') }}" wire:navigate wire:current.exact="client-dash-link-active"
-                class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-hard-drive-icon lucide-hard-drive">
-                        <line x1="22" x2="2" y1="12" y2="12" />
-                        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-                        <line x1="6" x2="6.01" y1="16" y2="16" />
-                        <line x1="10" x2="10.01" y1="16" y2="16" />
-                    </svg>
-                </span>
-                <span>Compressed Images</span>
-            </a>
-
-            <a href="{{ route('account.bg-removed-images') }}" wire:navigate wire:current.exact="client-dash-link-active"
-                class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-eraser-icon lucide-eraser">
-                        <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
-                        <path d="M22 21H7" />
-                        <path d="m5 11 9 9" />
-                    </svg>
-                </span>
-                <span>BG Removed Images</span>
-            </a>
-
             <a href="{{ route('client.proposals.index') }}" wire:navigate wire:current.exact="client-dash-link-active"
                 class="client-dash-link">
                 <span class="client-dash-icon">
@@ -176,6 +143,55 @@ new class extends Component {
                 </span>
                 <span>Proposal</span>
             </a>
+
+            @if ($this->is_tools_premium)
+                <div x-data="{ toolsBackupOpen: false }" class="space-y-1">
+                    <button @click="toolsBackupOpen = !toolsBackupOpen" type="button"
+                        class="client-dash-link w-full">
+                        <span class="client-dash-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                                <line x1="12" y1="22.08" x2="12" y2="12" />
+                            </svg>
+                        </span>
+                        <span>Tools Backup</span>
+                        <svg :class="toolsBackupOpen ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg"
+                            class="ml-auto h-4 w-4 transition-transform duration-200" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+
+                    <div x-show="toolsBackupOpen" @click.outside="toolsBackupOpen = false" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 -translate-y-1" class="space-y-1 pl-4">
+                        <a href="{{ route('account.compressed-images') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                            class="client-dash-link">
+                            <span class="client-dash-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                                </svg>
+                            </span>
+                            <span>Compressed Images</span>
+                        </a>
+
+                        <a href="{{ route('account.bg-removed-images') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                            class="client-dash-link">
+                            <span class="client-dash-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                </svg>
+                            </span>
+                            <span>BG Removed Images</span>
+                        </a>
+                    </div>
+                </div>
+            @endif
 
             <a href="{{ route('account.change-password') }}" wire:navigate wire:current.exact="client-dash-link-active"
                 class="client-dash-link">

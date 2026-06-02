@@ -130,14 +130,14 @@ new #[Title('Background Remover')] class extends Component {
 };
 ?>
 
-<div class="min-h-screen text-white" x-data="bgRemover" data-premium="@json($this->is_premium_user)">
+<section class="min-h-screen text-white" x-data="bgRemover" data-premium="@json($this->is_premium_user)">
     <div class="mx-auto flex w-full max-w-7xl flex-col items-center px-4 pb-24 pt-10 sm:px-6 lg:px-8">
 
         {{-- Hero Header --}}
         <div class="mb-10 text-center">
             <h1 class="text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl">
                 Remove
-                <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text italic text-transparent">
+                <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text italic text-transparent pr-1.5">
                     Background
                 </span>
             </h1>
@@ -180,7 +180,7 @@ new #[Title('Background Remover')] class extends Component {
 
         {{-- Processing Overlay --}}
         <div x-show="processing" x-cloak
-            class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/75 px-4 backdrop-blur-md">
+            class="fixed inset-0 z-9999 flex items-center justify-center bg-slate-950/75 px-4 backdrop-blur-md">
             <div
                 class="w-full max-w-md rounded-3xl border border-cyan-400/20 bg-slate-900/90 p-6 text-center shadow-2xl shadow-cyan-500/20">
                 <div
@@ -309,7 +309,7 @@ new #[Title('Background Remover')] class extends Component {
                 <div class="grid w-full grid-cols-1 gap-8 lg:grid-cols-12">
                     {{-- Upload Section --}}
                     <section
-                        class="relative flex min-h-140 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-2xl sm:p-8 lg:col-span-8">
+                        class="relative flex min-h-140 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/6 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-2xl sm:p-8 lg:col-span-8">
                         <div
                             class="pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-br from-cyan-400/5 via-transparent to-blue-500/5">
                         </div>
@@ -442,7 +442,7 @@ new #[Title('Background Remover')] class extends Component {
                     {{-- Settings Sidebar --}}
                     <aside class="flex flex-col gap-6 lg:col-span-4">
                         <div
-                            class="flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-2xl sm:p-8 lg:sticky lg:top-24">
+                            class="flex h-full flex-col rounded-2xl border border-white/10 bg-white/6 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-2xl sm:p-8 lg:sticky lg:top-24">
                             <div class="mb-8 flex items-center gap-4">
                                 <div class="rounded-xl border border-cyan-300/15 bg-cyan-400/10 p-3 text-cyan-300">
                                     <span class="material-symbols-outlined">magic_exchange</span>
@@ -608,50 +608,5 @@ new #[Title('Background Remover')] class extends Component {
                 <div class="h-20 lg:hidden"></div>
             </div>
         </div>
-
-        {{-- How It Works --}}
-        <div class="mt-12 grid w-full gap-6 sm:grid-cols-3">
-            <div
-                class="rounded-2xl border border-white/10 bg-white/[0.06] p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-                <div
-                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
-                    <span class="material-symbols-outlined">upload</span>
-                </div>
-
-                <h3 class="mt-4 font-semibold text-white">1. Upload</h3>
-
-                <p class="mt-2 text-sm text-blue-100/62">
-                    Select one JPG, PNG, or WebP image.
-                </p>
-            </div>
-
-            <div
-                class="rounded-2xl border border-white/10 bg-white/[0.06] p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-                <div
-                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/15 text-blue-300">
-                    <span class="material-symbols-outlined">magic_exchange</span>
-                </div>
-
-                <h3 class="mt-4 font-semibold text-white">2. Process</h3>
-
-                <p class="mt-2 text-sm text-blue-100/62">
-                    AI removes the background in your browser.
-                </p>
-            </div>
-
-            <div
-                class="rounded-2xl border border-white/10 bg-white/[0.06] p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-                <div
-                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
-                    <span class="material-symbols-outlined">download</span>
-                </div>
-
-                <h3 class="mt-4 font-semibold text-white">3. Download</h3>
-
-                <p class="mt-2 text-sm text-blue-100/62">
-                    Download the transparent PNG result.
-                </p>
-            </div>
-        </div>
     </div>
-</div>
+</section>

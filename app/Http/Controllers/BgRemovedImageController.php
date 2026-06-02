@@ -18,7 +18,7 @@ class BgRemovedImageController extends Controller
             'original_size' => ['required', 'integer', 'min:0'],
         ]);
 
-        $category = ToolCategory::query()->where('slug', 'image')->first();
+        $category = ToolCategory::query()->where('slug', 'image-tools')->first();
 
         if (! $category || ! auth()->user()->hasActiveToolSubscription($category)) {
             abort(403);

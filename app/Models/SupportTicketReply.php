@@ -27,4 +27,15 @@ class SupportTicketReply extends Model
     {
         return $this->hasMany(SupportTicketAttachment::class);
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (SupportTicketReply $reply) {
+            $reply->loadMissing('attachments');
+
+            foreach ($reply->attachments as $attachment) {
+                $attachment->delete();
+            }
+        });
+    }
 }

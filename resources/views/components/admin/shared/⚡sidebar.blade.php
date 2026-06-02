@@ -126,21 +126,21 @@ new class extends Component {
                 </span>
             </a>
 
-            {{-- <a href="{{ route('admin.pricing-plan-bookings.index') }}" wire:navigate
-                wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                <span class="material-symbols-outlined shrink-0">event_note</span>
-                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                    IT Plan Bookings
-                </span>
-            </a> --}}
-
             <a href="{{ route('admin.bookings.index') }}" wire:navigate
                 wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
                 class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
                 <span class="material-symbols-outlined shrink-0">developer_board</span>
                 <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
                     Bookings
+                </span>
+            </a>
+
+            <a href="{{ route('admin.tool-subscriptions.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">subscriptions</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Tool Subscriptions
                 </span>
             </a>
 
@@ -216,7 +216,7 @@ new class extends Component {
             </a>
         </div>
 
-         <!-- Tools -->
+        <!-- Tools -->
         <div class="mt-4 space-y-1">
             <p x-show="!sidebarCollapsed"
                 class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -314,15 +314,6 @@ new class extends Component {
                 <span class="material-symbols-outlined shrink-0">workspace_premium</span>
                 <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
                     Tool Plans
-                </span>
-            </a>
-
-            <a href="{{ route('admin.tool-subscriptions.index') }}" wire:navigate
-                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                <span class="material-symbols-outlined shrink-0">subscriptions</span>
-                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                    Tool Subscriptions
                 </span>
             </a>
         </div>

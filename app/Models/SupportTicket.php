@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'user_id',
@@ -49,11 +50,35 @@ class SupportTicket extends Model
     {
         $nextId = (static::query()->max('id') ?? 0) + 1;
 
-        return 'TKT-'.now()->format('Y').'-'.str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
+        return 'TKT-' . now()->format('Y') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
     }
 
     public function isClosed(): bool
     {
         return $this->status === 'closed';
     }
+
+    protected static function booted(): void
+{
+    static::deleting(function (SupportTicket $ticket) {
+        $ticket->loadMissing([
+            'attachments',
+            'replies.attachments',
+        ]);
+
+        foreach ($ticket->attachments as $attachment) {
+            $attachment->delete();
+        }
+
+        foreach ($ticket->replies as $reply) {
+            $reply->delete();
+        }
+
+        $folderPath = 'support-tickets/' . $ticket->id;
+
+        if (Storage::disk('public')->exists($folderPath)) {
+            Storage::disk('public')->deleteDirectory($folderPath);
+        }
+    });
+}
 }
