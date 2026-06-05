@@ -4,6 +4,7 @@ use App\Http\Controllers\BgRemovedImageController;
 use App\Http\Controllers\CompressedImageController;
 use App\Http\Controllers\PlanOrderInvoiceController;
 use App\Http\Controllers\PricingCheckoutController;
+use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
@@ -91,6 +92,7 @@ Route::livewire('/tools', 'pages::client.tools.index')->name('client.tools.index
 // Image tools
 Route::livewire('/tools/image-compressor', 'pages::client.tools.image.image-compressor')->name('client.tools.image-compressor');
 Route::livewire('/tools/bg-remover', 'pages::client.tools.image.bg-remover')->name('client.tools.bg-remover');
+Route::livewire('/tools/image-resizer', 'pages::client.tools.image.image-resizer')->name('client.tools.image-resizer');
 
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');
@@ -151,12 +153,17 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // BG removed images backup
     Route::livewire('/account/bg-removed-images', 'pages::client.account.backup.bg-removed-images')->name('account.bg-removed-images');
 
+    // Resized images backup
+    Route::livewire('/account/resized-images', 'pages::client.account.backup.resized-images')->name('account.resized-images');
+
     // Compressed images backup
     Route::livewire('/account/compressed-images', 'pages::client.account.backup.compressed-images')->name('account.compressed-images');
 
     Route::middleware('auth')->get('/compressed-images/{image}', [CompressedImageController::class, 'show'])->name('storage.compressed-images');
 
     Route::post('/bg-removed-images', [BgRemovedImageController::class, 'store'])->name('bg-removed-images.store');
+
+    Route::get('/resized-images/{path}', [ResizedImageController::class, 'show'])->where('path', '.*')->name('storage.resized-images');
 });
 
 Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])
