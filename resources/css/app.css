@@ -1173,6 +1173,21 @@
     background: rgba(125, 211, 252, 0.42);
 }
 
+.quill-fixed-editor .ql-toolbar.ql-snow {
+    border: 0 !important;
+    border-bottom: 1px solid rgb(226 232 240) !important;
+}
+
+.quill-fixed-editor .ql-container.ql-snow {
+    height: calc(360px - 43px);
+    border: 0 !important;
+}
+
+.quill-fixed-editor .ql-editor {
+    height: 100%;
+    overflow-y: auto;
+}
+
 /* Admin service plan quill js height */
 .service-plan-quill .ql-container.ql-snow {
     height: 180px;
@@ -1187,3 +1202,5 @@
 [x-cloak] {
     display: none !important;
 }
+
+

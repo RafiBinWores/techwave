@@ -2,6 +2,7 @@
 
 use App\Models\Category;
 use App\Models\Service;
+use App\Services\ImageService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -256,7 +257,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                 Storage::disk('public')->delete($this->service->image);
             }
 
-            $imagePath = $this->image->store('services/images', 'public');
+            $imagePath = app(ImageService::class)->optimizeAndStore($this->image, 'services/images', maxWidth: 1200, quality: 85);
         }
 
         $benefits = collect($validated['benefits'])
@@ -539,7 +540,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 });
                             }
                         }"
-                            class="overflow-hidden rounded-lg border border-outline-variant bg-white">
+                            class="quill-fixed-editor h-90 overflow-hidden rounded-lg border border-outline-variant bg-white">
                             <div x-ref="editor"></div>
                         </div>
 
@@ -604,8 +605,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                     @enderror
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <!-- Included Items -->
+                <!-- Included Items -->
                     <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                         <label class="mb-4 flex items-center gap-2 font-label-md text-on-surface">
                             What's Included
@@ -647,41 +647,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
                         @enderror
                     </div>
-
-                    <!-- Service Tags -->
-                    <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-                        <label class="mb-4 block font-label-md text-on-surface">Service Tags</label>
-
-                        <div class="mb-4 flex gap-3">
-                            <input wire:model.live="tag" wire:keydown.enter.prevent="addTag"
-                                class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
-                                placeholder="e.g., Infrastructure" type="text" />
-
-                            <button type="button" wire:click="addTag"
-                                class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
-                                <span class="material-symbols-outlined text-sm">add</span>
-                                Tag
-                            </button>
-                        </div>
-
-                        <div
-                            class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
-                            @forelse ($tags as $index => $serviceTag)
-                                <div wire:key="service-tag-{{ $index }}"
-                                    class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
-                                    <span class="text-sm font-body-md">{{ $serviceTag }}</span>
-
-                                    <button type="button" wire:click="removeTag({{ $index }})"
-                                        class="material-symbols-outlined text-sm text-outline hover:text-error">
-                                        close
-                                    </button>
-                                </div>
-                            @empty
-                                <p class="text-sm text-secondary">No service tags added yet.</p>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Target Audience -->
                 <div class="grid grid-cols-1 gap-6 rounded-xl bg-white shadow p-6 md:grid-cols-2">
@@ -805,27 +770,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         </div>
                     </div>
                 </div>
-
-                <!-- Bottom Action Buttons -->
-                <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-                        <button type="button" wire:click="discard" wire:loading.attr="disabled"
-                            class="rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
-                            Discard Changes
-                        </button>
-
-                        <button type="submit" wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
-                            <span wire:loading.remove wire:target="update">Update Service</span>
-
-                            <span wire:loading wire:target="update" class="inline-flex items-center gap-2">
-                                <span
-                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                                Updating...
-                            </span>
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <!-- Right Column -->
@@ -835,7 +779,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                     <h3 class="mb-6 text-h3 font-h2">Service Media</h3>
 
                     <div class="space-y-3">
-                        <label class="block font-label-md text-on-surface">Service Image</label>
 
                         <label for="image"
                             class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
@@ -872,6 +815,40 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         @enderror
                     </div>
                 </div>
+
+                <!-- Service Tags -->
+                    <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                        <label class="mb-4 block font-label-md text-on-surface">Service Tags</label>
+
+                        <div class="mb-4 flex gap-3">
+                            <input wire:model.live="tag" wire:keydown.enter.prevent="addTag"
+                                class="flex-1 rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
+                                placeholder="e.g., Infrastructure" type="text" />
+
+                            <button type="button" wire:click="addTag"
+                                class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
+                                <span class="material-symbols-outlined text-sm">add</span>
+                                Tag
+                            </button>
+                        </div>
+
+                        <div
+                            class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                            @forelse ($tags as $index => $serviceTag)
+                                <div wire:key="service-tag-{{ $index }}"
+                                    class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
+                                    <span class="text-sm font-body-md">{{ $serviceTag }}</span>
+
+                                    <button type="button" wire:click="removeTag({{ $index }})"
+                                        class="material-symbols-outlined text-sm text-outline hover:text-error">
+                                        close
+                                    </button>
+                                </div>
+                            @empty
+                                <p class="text-sm text-secondary">No service tags added yet.</p>
+                            @endforelse
+                        </div>
+                    </div>
 
                 <!-- Service Settings -->
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1008,5 +985,26 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                 </div>
             </div>
         </div>
+
+        <!-- Bottom Action Buttons -->
+                <div class="py-5">
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+                        <button type="button" wire:click="discard" wire:loading.attr="disabled"
+                            class="rounded-lg border border-outline-variant px-5 py-3 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                            Discard Changes
+                        </button>
+
+                        <button type="submit" wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                            <span wire:loading.remove wire:target="update">Update Service</span>
+
+                            <span wire:loading wire:target="update" class="inline-flex items-center gap-2">
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                Updating...
+                            </span>
+                        </button>
+                    </div>
+                </div>
     </form>
 </div>
