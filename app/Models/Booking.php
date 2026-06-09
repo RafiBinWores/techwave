@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Model;
     'requested_price',
     'quoted_price',
     'final_price',
+    'addons',
     'currency',
     'message',
     'user_note',
@@ -38,6 +39,7 @@ class Booking extends Model
         'requested_price' => 'decimal:2',
         'quoted_price' => 'decimal:2',
         'final_price' => 'decimal:2',
+           'addons' => 'array',
         'admin_read_at' => 'datetime',
     ];
 
