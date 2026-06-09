@@ -46,6 +46,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Plans')] class extends Compo
 
         return ServicePlan::query()
             ->with('service')
+            ->withCount('addons')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', '%' . $search . '%')
@@ -191,6 +192,10 @@ new #[Layout('layouts.admin-app')] #[Title('Service Plans')] class extends Compo
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Addons
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                                 Sort
                             </th>
 
@@ -323,6 +328,21 @@ new #[Layout('layouts.admin-app')] #[Title('Service Plans')] class extends Compo
                                 </td>
 
                                 <td class="px-6 py-4">
+                                    @php
+                                        $addonCount = $plan->addons_count;
+                                    @endphp
+
+                                    @if ($addonCount > 0)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                                            <span class="material-symbols-outlined text-[14px]">extension</span>
+                                            {{ $addonCount }}
+                                        </span>
+                                    @else
+                                        <span class="text-body-sm text-secondary">—</span>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-4">
                                     <span class="font-mono text-body-sm text-secondary">
                                         {{ $plan->sort_order }}
                                     </span>
@@ -386,7 +406,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Plans')] class extends Compo
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-14 text-center">
+                                <td colspan="7" class="px-6 py-14 text-center">
                                     <div class="mx-auto flex max-w-sm flex-col items-center">
                                         <div
                                             class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
