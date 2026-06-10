@@ -105,6 +105,9 @@ Route::livewire('/about', 'pages::client.about')->name('client.about');
 // Contact
 Route::livewire('/contact', 'pages::client.contact')->name('client.contact');
 
+// Live TV
+Route::livewire('/live-tv', 'pages::client.live-tv')->name('client.live-tv');
+
 // Pricing and orders
 Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
 
@@ -308,4 +311,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Compressed Images Gallery
     Route::livewire('/compressed-images', 'pages::admin.compressed-images.index')->name('compressed-images.index');
+
+    
+    // Live TV Channels
+    Route::livewire('/live-tv-channels', 'pages::admin.live-tv-channels.index')->name('live-tv-channels.index');
+    Route::livewire('/live-tv-channels/create', 'pages::admin.live-tv-channels.create')->name('live-tv-channels.create');
+    Route::livewire('/live-tv-channels/{liveTvChannel}/edit', 'pages::admin.live-tv-channels.edit')->name('live-tv-channels.edit');
 });

@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Model;
     'privacy_policy',
     'bkash_number',
     'bkash_instructions',
+    'live_tv_enabled',
 ])]
 class SiteSetting extends Model
 {
@@ -78,5 +79,12 @@ class SiteSetting extends Model
     {
         static::saved(fn () => static::forgetCurrent());
         static::deleted(fn () => static::forgetCurrent());
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'live_tv_enabled' => 'boolean',
+        ];
     }
 }

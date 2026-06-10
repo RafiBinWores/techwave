@@ -36,6 +36,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
     public string $bkash_number = '';
     public string $bkash_instructions = '';
 
+    public bool $live_tv_enabled = false;
+
     public $logo = null;
     public $favicon = null;
 
@@ -86,6 +88,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
         $this->bkash_number = $this->setting->bkash_number ?? '';
         $this->bkash_instructions = $this->setting->bkash_instructions ?? '';
 
+        $this->live_tv_enabled = $this->setting->live_tv_enabled ?? false;
+
         $this->captureOriginalState();
     }
 
@@ -111,6 +115,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
 
             'bkash_number' => ['nullable', 'string', 'max:30'],
             'bkash_instructions' => ['nullable', 'string'],
+
+            'live_tv_enabled' => ['boolean'],
 
             'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
             'favicon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg,ico', 'max:2048'],
@@ -150,6 +156,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
             'bkash_number' => $this->bkash_number,
             'bkash_instructions' => $this->bkash_instructions,
 
+            'live_tv_enabled' => $this->live_tv_enabled,
+
             'has_logo_upload' => false,
             'has_favicon_upload' => false,
         ];
@@ -177,6 +185,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
 
             'bkash_number' => $this->bkash_number,
             'bkash_instructions' => $this->bkash_instructions,
+
+            'live_tv_enabled' => $this->live_tv_enabled,
 
             'has_logo_upload' => $this->logo !== null,
             'has_favicon_upload' => $this->favicon !== null,
@@ -234,6 +244,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
 
             'bkash_number' => $validated['bkash_number'] ?: null,
             'bkash_instructions' => $validated['bkash_instructions'] ?: null,
+
+            'live_tv_enabled' => $this->live_tv_enabled,
 
             'logo' => $logoPath,
             'favicon' => $faviconPath,
@@ -339,6 +351,19 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                                 @error('map_embed_link')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
+                            </div>
+
+                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 md:col-span-2">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="text-label-md font-label-md text-on-surface">Live TV</h4>
+                                        <p class="mt-1 text-body-sm font-body-sm text-secondary">Enable or disable the Live TV feature on the website.</p>
+                                    </div>
+                                    <label class="relative inline-flex cursor-pointer items-center">
+                                        <input type="checkbox" wire:model.live="live_tv_enabled" class="peer sr-only" />
+                                        <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -662,7 +687,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex justify-end">
                         <button type="submit" wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90">
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer">
                             <span wire:loading.remove wire:target="save">Save Settings</span>
                             <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
                                 <span

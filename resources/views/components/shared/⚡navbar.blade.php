@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\SiteSetting;
 use App\Models\SupportTicket;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -8,6 +9,7 @@ use Livewire\Component;
 
 new class extends Component {
     public int $notificationRefreshKey = 0;
+    public bool $liveTvEnabled = false;
 
     public int $unreadCount = 0;
 
@@ -16,11 +18,12 @@ new class extends Component {
     public function mount(): void
     {
         $this->loadClientNotifications();
+        $this->liveTvEnabled = SiteSetting::current()->live_tv_enabled ?? false;
     }
 
     public function getListeners(): array
     {
-        if (! Auth::check()) {
+        if (!Auth::check()) {
             return [];
         }
 
@@ -37,7 +40,7 @@ new class extends Component {
 
     private function loadClientNotifications(): void
     {
-        if (! Auth::check()) {
+        if (!Auth::check()) {
             $this->unreadCount = 0;
             $this->notifications = [];
 
@@ -46,10 +49,7 @@ new class extends Component {
 
         $userId = Auth::id();
 
-        $this->unreadCount = SupportTicket::query()
-            ->where('user_id', $userId)
-            ->whereNull('client_read_at')
-            ->count();
+        $this->unreadCount = SupportTicket::query()->where('user_id', $userId)->whereNull('client_read_at')->count();
 
         $this->notifications = SupportTicket::query()
             ->where('user_id', $userId)
@@ -57,27 +57,22 @@ new class extends Component {
             ->latest('last_reply_at')
             ->latest()
             ->limit(5)
-            ->get([
-                'id',
-                'subject',
-                'priority',
-                'status',
-                'last_reply_at',
-                'updated_at',
-            ])
-            ->map(fn ($ticket) => [
-                'id' => $ticket->id,
-                'subject' => $ticket->subject,
-                'priority' => $ticket->priority,
-                'status' => $ticket->status,
-                'time' => $ticket->last_reply_at?->diffForHumans() ?? $ticket->updated_at?->diffForHumans(),
-            ])
+            ->get(['id', 'subject', 'priority', 'status', 'last_reply_at', 'updated_at'])
+            ->map(
+                fn($ticket) => [
+                    'id' => $ticket->id,
+                    'subject' => $ticket->subject,
+                    'priority' => $ticket->priority,
+                    'status' => $ticket->status,
+                    'time' => $ticket->last_reply_at?->diffForHumans() ?? $ticket->updated_at?->diffForHumans(),
+                ],
+            )
             ->toArray();
     }
 
     public function markAllClientNotificationsRead(): void
     {
-        if (! Auth::check()) {
+        if (!Auth::check()) {
             return;
         }
 
@@ -107,19 +102,13 @@ new class extends Component {
 ?>
 
 <div>
-    <nav class="glass-panel rounded-2xl px-4 py-4 sm:px-6"
-        x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false }">
+    <nav class="glass-panel rounded-2xl px-4 py-4 sm:px-6" x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false }">
 
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-3">
                 @if ($siteLogo)
-                    <img
-                        src="{{ $siteLogo }}"
-                        alt="{{ $siteName }}"
-                        width="140"
-                        height="40"
-                        class="h-10 rounded-xl object-contain"
-                    >
+                    <img src="{{ $siteLogo }}" alt="{{ $siteName }}" width="140" height="40"
+                        class="h-10 rounded-xl object-contain">
                 @else
                     <div
                         class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-r from-blue-500 to-sky-400 text-sm font-bold text-white shadow-lg shadow-blue-500/25">
@@ -156,6 +145,21 @@ new class extends Component {
                         class="absolute inset-x-0 -bottom-0.5 h-px bg-linear-to-r from-transparent via-cyan-300 to-transparent scale-x-0 transition-transform duration-300 group-hover:scale-x-100 group-[.text-white]:scale-x-100">
                     </span>
                 </a>
+
+                @if ($liveTvEnabled)
+                    <a href="{{ route('client.live-tv') }}" wire:navigate wire:current.exact="text-white"
+                        class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
+                        <span class="relative z-10">
+                            <span class="flex items-center gap-1.5">
+                                <span class="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                Live TV
+                            </span>
+                        </span>
+                        <span
+                            class="absolute inset-x-0 -bottom-0.5 h-px bg-linear-to-r from-transparent via-red-300 to-transparent scale-x-0 transition-transform duration-300 group-hover:scale-x-100 group-[.text-white]:scale-x-100">
+                        </span>
+                    </a>
+                @endif
 
                 <a href="{{ route('client.blogs') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
