@@ -1,239 +1,262 @@
 <?php
 
+use App\Models\SiteSetting;
 use App\Models\ToolCategory;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 new class extends Component {
     public function logout()
     {
-        Auth::guard('web')->logout();
+        auth()->logout();
 
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        return $this->redirectRoute('home', navigate: true);
+        $this->redirectRoute('home', navigate: true);
     }
 
     public function getIsToolsPremiumProperty(): bool
     {
-        return ToolCategory::query()
-            ->where('slug', 'image-tools')
-            ->whereHas('toolSubscriptions', fn($q) => $q->where('user_id', auth()->id())->active())
-            ->exists();
+        return ToolCategory::query()->where('slug', 'image-tools')->whereHas('toolSubscriptions', fn($q) => $q->where('user_id', auth()->id())->active())->exists();
+    }
+
+    public function getSiteSettingProperty()
+    {
+        return SiteSetting::current();
     }
 };
 ?>
 
-<!-- sidebar -->
+<!-- Sidebar -->
 <aside
-    :class="sidebarOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100'"
-    class="fixed left-4 top-4 bottom-4 z-50 w-71.25 rounded-[28px] border border-white/10 bg-slate-950/35 p-5 backdrop-blur-2xl transition-all duration-300 lg:static lg:w-70 lg:translate-x-0 lg:rounded-none lg:border-0 lg:border-r ">
+    :class="{
+        'translate-x-0': sidebarOpen,
+        '-translate-x-full': !sidebarOpen,
+        'lg:w-20': sidebarCollapsed,
+        'lg:w-64': !sidebarCollapsed
+    }"
+    class="glass-panel fixed left-0 top-0 z-50 flex h-screen w-64 flex-col transition-all duration-300 lg:translate-x-0">
+    <!-- Logo -->
+    <div class="h-16 shrink-0 border-b border-white/10 px-4 flex items-center justify-between">
+        <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-3 overflow-hidden">
+            <div class="h-12 w-12 rounded-xl text-white flex items-center justify-center shrink-0">
 
-    <div class="flex h-full flex-col">
-        <!-- brand -->
-        <div class="flex items-center justify-between">
-            <button @click="sidebarOpen = false"
-                class="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white lg:hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                @php
+                    $logo = $this->siteSetting->logo
+                        ? asset('storage/' . $this->siteSetting->logo)
+                        : asset('assets/images/logo/logo.png');
+                @endphp
+                <img src="{{ $logo }}" alt="Logo" class="">
+            </div>
+
+            <div x-show="!sidebarCollapsed" class="min-w-0">
+                <h1 class="text-lg font-extrabold tracking-tight text-cyan-300 font-manrope truncate">
+                    Techwave
+                </h1>
+
+                <p class="text-blue-100/55 font-manrope text-xs font-medium truncate">
+                    Client Portal
+                </p>
+            </div>
+        </a>
+
+        <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white/70">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <!-- Scrollable Nav -->
+    <nav class="sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4">
+
+        <!-- Main -->
+        <div class="space-y-1">
+            <p x-show="!sidebarCollapsed"
+                class="px-4 pb-2 pt-4 font-manrope text-xs font-semibold uppercase tracking-wider text-blue-100/45">
+                Main
+            </p>
+            <p x-show="sidebarCollapsed"
+                class="px-4 pb-2 pt-4 font-manrope text-xl font-semibold uppercase tracking-wider text-blue-100/45 text-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M5.99915 10.2451C6.96564 10.2451 7.74915 11.0286 7.74915 11.9951V12.0051C7.74915 12.9716 6.96564 13.7551 5.99915 13.7551C5.03265 13.7551 4.24915 12.9716 4.24915 12.0051V11.9951C4.24915 11.0286 5.03265 10.2451 5.99915 10.2451ZM17.9991 10.2451C18.9656 10.2451 19.7491 11.0286 19.7491 11.9951V12.0051C19.7491 12.9716 18.9656 13.7551 17.9991 13.7551C17.0326 13.7551 16.2491 12.9716 16.2491 12.0051V11.9951C16.2491 11.0286 17.0326 10.2451 17.9991 10.2451ZM13.7491 11.9951C13.7491 11.0286 12.9656 10.2451 11.9991 10.2451C11.0326 10.2451 10.2491 11.0286 10.2491 11.9951V12.0051C10.2491 12.9716 11.0326 13.7551 11.9991 13.7551C12.9656 13.7551 13.7491 12.9716 13.7491 12.0051V11.9951Z"
+                        fill="currentColor" />
                 </svg>
-            </button>
+            </p>
+
+            <a href="{{ route('account.dashboard') }}" wire:navigate
+                wire:current.exact="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
+                class="client-dash-link">
+                <span class="material-symbols-outlined shrink-0">dashboard</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Dashboard
+                </span>
+            </a>
         </div>
 
-        <!-- profile card -->
-        {{-- <div class="mt-8 rounded-[24px] border border-white/10 bg-white/[0.05] p-4 backdrop-blur-xl">
-                            <div class="flex items-center gap-4">
-                                <div class="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-blue-500/15 text-lg font-bold text-cyan-200">
-                                    {{ strtoupper(substr(auth()->user()->name ?? 'C', 0, 1)) }}
-                                </div>
+        <!-- Account -->
+        <div class="mt-4 space-y-1">
+            <p x-show="!sidebarCollapsed"
+                class="px-4 pb-2 pt-2 font-manrope text-xs font-semibold uppercase tracking-wider text-blue-100/45">
+                Account
+            </p>
+            <p x-show="sidebarCollapsed"
+                class="px-4 pb-2 pt-4 font-manrope text-xl font-semibold uppercase tracking-wider text-blue-100/45 text-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M5.99915 10.2451C6.96564 10.2451 7.74915 11.0286 7.74915 11.9951V12.0051C7.74915 12.9716 6.96564 13.7551 5.99915 13.7551C5.03265 13.7551 4.24915 12.9716 4.24915 12.0051V11.9951C4.24915 11.0286 5.03265 10.2451 5.99915 10.2451ZM17.9991 10.2451C18.9656 10.2451 19.7491 11.0286 19.7491 11.9951V12.0051C19.7491 12.9716 18.9656 13.7551 17.9991 13.7551C17.0326 13.7551 16.2491 12.9716 16.2491 12.0051V11.9951C16.2491 11.0286 17.0326 10.2451 17.9991 10.2451ZM13.7491 11.9951C13.7491 11.0286 12.9656 10.2451 11.9991 10.2451C11.0326 10.2451 10.2491 11.0286 10.2491 11.9951V12.0051C10.2491 12.9716 11.0326 13.7551 11.9991 13.7551C12.9656 13.7551 13.7491 12.9716 13.7491 12.0051V11.9951Z"
+                        fill="currentColor" />
+                </svg>
+            </p>
 
-                                <div class="min-w-0">
-                                    <h3 class="truncate text-base font-semibold text-white">
-                                        {{ auth()->user()->name ?? 'Client User' }}
-                                    </h3>
-                                    <p class="truncate text-sm text-blue-100/55">
-                                        {{ auth()->user()->email ?? 'client@email.com' }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div> --}}
-
-        <!-- nav -->
-        <nav class="mt-8 flex-1 space-y-2">
-            <a href="{{ route('account.dashboard') }}" wire:navigate wire:current.exact="client-dash-link-active"
+            <a href="{{ route('account.profile') }}" wire:navigate
+                wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                 class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-layout-panel-left-icon lucide-layout-panel-left">
-                        <rect width="7" height="18" x="3" y="3" rx="1" />
-                        <rect width="7" height="7" x="14" y="3" rx="1" />
-                        <rect width="7" height="7" x="14" y="14" rx="1" />
-                    </svg>
+                <span class="material-symbols-outlined shrink-0">person</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Profile
                 </span>
-                <span>Dashboard</span>
             </a>
 
-            <a href="{{ route('account.profile') }}" wire:navigate wire:current.exact="client-dash-link-active"
+            <a href="{{ route('account.services') }}" wire:navigate
+                wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                 class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-user-icon lucide-user">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
+                <span class="material-symbols-outlined shrink-0">design_services</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Services / Plans
                 </span>
-                <span>Profile</span>
             </a>
 
-            <a href="{{ route('account.services') }}" wire:navigate wire:current.exact="client-dash-link-active"
+            <a href="{{ route('client.tickets.index') }}" wire:navigate
+                wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                 class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-server-cog-icon lucide-server-cog">
-                        <path d="m10.852 14.772-.383.923" />
-                        <path d="M13.148 14.772a3 3 0 1 0-2.296-5.544l-.383-.923" />
-                        <path d="m13.148 9.228.383-.923" />
-                        <path d="m13.53 15.696-.382-.924a3 3 0 1 1-2.296-5.544" />
-                        <path d="m14.772 10.852.923-.383" />
-                        <path d="m14.772 13.148.923.383" />
-                        <path d="M4.5 10H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-.5" />
-                        <path d="M4.5 14H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-.5" />
-                        <path d="M6 18h.01" />
-                        <path d="M6 6h.01" />
-                        <path d="m9.228 10.852-.923-.383" />
-                        <path d="m9.228 13.148-.923.383" />
-                    </svg>
+                <span class="material-symbols-outlined shrink-0">confirmation_number</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Tickets
                 </span>
-                <span>Services / Plans</span>
             </a>
 
-            <a href="{{ route('client.tickets.index') }}" wire:navigate wire:current.exact="client-dash-link-active"
+            <a href="{{ route('client.proposals.index') }}" wire:navigate
+                wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                 class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-ticket-icon lucide-ticket">
-                        <path
-                            d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-                        <path d="M13 5v2" />
-                        <path d="M13 17v2" />
-                        <path d="M13 11v2" />
-                    </svg>
+                <span class="material-symbols-outlined shrink-0">receipt_long</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Proposals
                 </span>
-                <span>Tickets</span>
             </a>
 
-            <a href="{{ route('client.proposals.index') }}" wire:navigate wire:current.exact="client-dash-link-active"
+            <a href="{{ route('account.change-password') }}" wire:navigate
+                wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                 class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-receipt-text-icon lucide-receipt-text">
-                        <path d="M13 16H8" />
-                        <path d="M14 8H8" />
-                        <path d="M16 12H8" />
-                        <path
-                            d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z" />
-                    </svg>
+                <span class="material-symbols-outlined shrink-0">lock</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Change Password
                 </span>
-                <span>Proposal</span>
             </a>
+
+            {{-- AI Tools --}}
+            {{-- <div x-data="{ open: false }" class="space-y-1">
+                <button type="button" @click="open = !open" class="client-dash-link w-full">
+                    <span class="material-symbols-outlined shrink-0">auto_awesome</span>
+                    <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                        AI Tools
+                    </span>
+                    <span x-show="!sidebarCollapsed"
+                        class="material-symbols-outlined ml-auto text-lg transition-transform duration-200"
+                        :class="open ? 'rotate-180' : ''">
+                        expand_more
+                    </span>
+                </button>
+
+                <div x-show="open && !sidebarCollapsed" x-collapse class="ml-4 space-y-1 border-l border-white/10 pl-3">
+                    <a href="{{ route('client.tools.ai-text') }}" wire:navigate
+                        wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
+                        class="client-dash-link">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">text_fields</span>
+                        <span class="font-manrope text-sm font-medium">Text Generator</span>
+                    </a>
+
+                    <a href="{{ route('client.tools.ai-image') }}" wire:navigate
+                        wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
+                        class="client-dash-link">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">image</span>
+                        <span class="font-manrope text-sm font-medium">Image Generator</span>
+                    </a>
+
+                    <a href="{{ route('client.tools.ai-video') }}" wire:navigate
+                        wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
+                        class="client-dash-link">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">videocam</span>
+                        <span class="font-manrope text-sm font-medium">Video Generator</span>
+                    </a>
+
+                    <a href="{{ route('client.tools.ai-audio') }}" wire:navigate
+                        wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
+                        class="client-dash-link">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">audiotrack</span>
+                        <span class="font-manrope text-sm font-medium">Audio Generator</span>
+                    </a>
+
+                    <div class="my-2 border-t border-white/10"></div>
+
+                    <a href="{{ route('account.ai-generations') }}" wire:navigate
+                        wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
+                        class="client-dash-link">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">history</span>
+                        <span class="font-manrope text-sm font-medium">Generation History</span>
+                    </a>
+                </div>
+            </div> --}}
 
             @if ($this->is_tools_premium)
-                <div x-data="{ toolsBackupOpen: false }" class="space-y-1">
-                    <button @click="toolsBackupOpen = !toolsBackupOpen" type="button"
-                        class="client-dash-link w-full">
-                        <span class="client-dash-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                                <line x1="12" y1="22.08" x2="12" y2="12" />
-                            </svg>
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button type="button" @click="open = !open" class="client-dash-link w-full">
+                        <span class="material-symbols-outlined shrink-0">backup</span>
+                        <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                            Tools Backup
                         </span>
-                        <span>Tools Backup</span>
-                        <svg :class="toolsBackupOpen ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg"
-                            class="ml-auto h-4 w-4 transition-transform duration-200" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
+                        <span x-show="!sidebarCollapsed"
+                            class="material-symbols-outlined ml-auto text-lg transition-transform duration-200"
+                            :class="open ? 'rotate-180' : ''">
+                            expand_more
+                        </span>
                     </button>
 
-                    <div x-show="toolsBackupOpen" @click.outside="toolsBackupOpen = false" x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0"
-                        x-transition:leave-end="opacity-0 -translate-y-1" class="space-y-1 pl-4">
-                        <a href="{{ route('account.compressed-images') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                    <div x-show="open && !sidebarCollapsed" x-collapse
+                        class="ml-4 space-y-1 border-l border-white/10 pl-3">
+                        <a href="{{ route('account.compressed-images') }}" wire:navigate
+                            wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                             class="client-dash-link">
-                            <span class="client-dash-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                                </svg>
-                            </span>
-                            <span>Compressed Images</span>
+                            <span class="material-symbols-outlined shrink-0 text-[20px]">compress</span>
+                            <span class="font-manrope text-sm font-medium">Compressed Images</span>
                         </a>
 
-                        <a href="{{ route('account.bg-removed-images') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                        <a href="{{ route('account.bg-removed-images') }}" wire:navigate
+                            wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                             class="client-dash-link">
-                            <span class="client-dash-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                                </svg>
-                            </span>
-                            <span>BG Removed Images</span>
+                            <span class="material-symbols-outlined shrink-0 text-[20px]">magic_exchange</span>
+                            <span class="font-manrope text-sm font-medium">BG Removed Images</span>
                         </a>
 
-                        <a href="{{ route('account.resized-images') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                        <a href="{{ route('account.resized-images') }}" wire:navigate
+                            wire:current="bg-white/10 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-sm"
                             class="client-dash-link">
-                            <span class="client-dash-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                                </svg>
-                            </span>
-                            <span>Resized Images</span>
+                            <span class="material-symbols-outlined shrink-0 text-[20px]">photo_size_select_large</span>
+                            <span class="font-manrope text-sm font-medium">Resized Images</span>
                         </a>
                     </div>
                 </div>
             @endif
-
-            <a href="{{ route('account.change-password') }}" wire:navigate wire:current.exact="client-dash-link-active"
-                class="client-dash-link">
-                <span class="client-dash-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-lock-icon lucide-lock">
-                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                </span>
-                <span>Change Password</span>
-            </a>
-        </nav>
-
-        <!-- logout -->
-        <div class="mt-6 border-t border-white/10 pt-4">
-            <button type="button" wire:click="logout" wire:loading.attr="disabled"
-                class="client-dash-link w-full text-left text-red-200 hover:bg-red-500/10 hover:text-white">
-                <span class="client-dash-icon bg-red-500/10 text-red-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 12H9m0 0 3-3m-3 3 3 3" />
-                    </svg>
-                </span>
-
-                <span wire:loading.remove wire:target="logout">Logout</span>
-                <span wire:loading wire:target="logout">Signing out...</span>
-            </button>
         </div>
+    </nav>
+
+    <!-- Fixed Bottom Logout -->
+    <div class="shrink-0 border-t border-white/10 bg-slate-950/40 px-3 py-4">
+        <button type="button" wire:click="logout"
+            class="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500/20 py-2.5 font-manrope text-sm font-semibold text-red-200 transition hover:bg-red-500/30 hover:text-white active:opacity-80">
+            <span class="material-symbols-outlined shrink-0">logout</span>
+            <span x-show="!sidebarCollapsed">Logout</span>
+        </button>
     </div>
 </aside>

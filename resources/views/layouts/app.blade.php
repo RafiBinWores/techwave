@@ -34,7 +34,7 @@
 
     {{-- Full Website Background Video --}}
     <div class="fixed inset-0 -z-20">
-        <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/images/logo/logo.png') }}"
+        <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/images/matrix.webp') }}"
             class="w-full h-full object-cover">
             <source src="{{ asset('assets/videos/matrix1c.mp4') }}" type="video/mp4">
         </video>

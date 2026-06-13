@@ -2,11 +2,12 @@
 
 use App\Models\UserResizedImage;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Title('My Resized Images')] class extends Component {
+new #[Layout('layouts.account-app')] #[Title('My Resized Images')] class extends Component {
     use WithPagination;
 
     public array $selectedIds = [];
@@ -107,58 +108,24 @@ new #[Title('My Resized Images')] class extends Component {
 };
 ?>
 
-<div x-data="{ sidebarOpen: false, preview: null }" class="relative min-h-screen text-white">
+<div x-data="{ preview: null }">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h2 class="text-xl font-bold md:text-h1 text-white">Resized Images</h2>
+            <p class="text-xs md:text-body-md text-blue-100/60">
+                Your resized image backups.
+            </p>
+        </div>
+    </div>
 
-    <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
-        <div class="rounded-[34px] border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
-            <div class="flex min-h-[calc(100vh-3rem)]">
-
-                {{-- Mobile Overlay --}}
-                <div
-                    x-show="sidebarOpen"
-                    x-transition.opacity
-                    class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden"
-                    @click="sidebarOpen = false"
-                    style="display:none;">
-                </div>
-
-                {{-- Sidebar --}}
-                <livewire:shared.user-sidebar />
-
-                {{-- Main --}}
-                <div class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-
-                    {{-- Top Header --}}
-                    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="flex items-center gap-3">
-                            <button
-                                @click="sidebarOpen = true"
-                                class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            </button>
-
-                            <div>
-                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">
-                                    Tools Backup
-                                </p>
-                                <h1 class="mt-1 text-2xl font-bold text-white sm:text-3xl">
-                                    Resized Images
-                                </h1>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div x-data="{ allSelected: false }">
+                    <div>
                         {{-- Bulk Action Bar --}}
                         <template x-if="$wire.selectedIds.length > 0">
-                            <div class="mb-4 flex items-center justify-between rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 backdrop-blur-xl">
+                            <div class="mb-4 flex flex-col gap-3 rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
                                 <p class="text-sm text-red-200">
                                     <span x-text="$wire.selectedIds.length"></span> image(s) selected
                                 </p>
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
                                     <button type="button" wire:click="$set('selectedIds', [])"
                                         class="rounded-lg px-3 py-1.5 text-xs font-semibold text-white/70 transition hover:bg-white/10">
                                         Clear
@@ -176,97 +143,128 @@ new #[Title('My Resized Images')] class extends Component {
                             </div>
                         </template>
 
-                        {{-- Table --}}
-                        @forelse ($this->images() as $image)
-                            <div class="flex items-center gap-4 border-b border-white/10 px-2 py-3 transition hover:bg-white/[0.03]">
-                                <label class="relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center">
-                                    <input type="checkbox" wire:model.live="selectedIds" value="{{ $image->id }}"
-                                        class="peer sr-only">
-                                    <span class="block h-5 w-5 rounded-md border border-white/20 bg-white/5 transition peer-checked:border-cyan-400 peer-checked:bg-cyan-500/20 peer-focus:ring-2 peer-focus:ring-cyan-400/30"></span>
-                                    <svg class="pointer-events-none absolute hidden peer-checked:block h-3.5 w-3.5 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                </label>
-
-                                <div class="flex min-w-0 flex-1 items-center gap-3">
-                                    @if ($image->fileExists() && $image->previewUrl())
-                                        <button type="button" @click="preview = '{{ $image->previewUrl() }}'"
-                                            class="group relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-cyan-400/10 transition hover:scale-105">
-                                            <img src="{{ $image->previewUrl() }}"
-                                                alt="{{ $image->original_name }}"
-                                                class="h-full w-full object-contain"
-                                                loading="lazy">
-                                            <span class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
-                                                <span class="material-symbols-outlined text-sm text-white">zoom_in</span>
-                                            </span>
-                                        </button>
-                                    @else
-                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300">
-                                            <span class="material-symbols-outlined text-lg">image</span>
-                                        </div>
-                                    @endif
-
-                                    <div class="min-w-0 flex-1">
-                                        <p class="truncate text-sm font-semibold text-white" title="{{ $image->original_name }}">
-                                            {{ $image->original_name }}
-                                        </p>
-                                        <div class="flex flex-wrap items-center gap-2 text-xs text-blue-100/50">
-                                            <span class="rounded bg-white/8 px-1.5 py-0.5 uppercase">{{ $image->resized_ext }}</span>
-                                            <span>{{ number_format($image->original_size / 1024, 1) }} KB</span>
-                                            <span class="text-blue-100/30">→</span>
-                                            <span class="text-cyan-300">{{ number_format($image->resized_size / 1024, 1) }} KB</span>
-                                            @if ($image->toolCategory)
-                                                <span>· {{ $image->toolCategory->name }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex shrink-0 items-center gap-2">
-                                    @if ($image->isExpired())
-                                        <span class="text-xs font-semibold text-red-300">Expired</span>
-                                    @else
-                                        <span class="text-xs text-blue-100/45">{{ $image->expires_at->format('M d, Y') }}</span>
-                                    @endif
-
-                                    @if (!$image->isExpired() && $image->fileExists())
-                                        <button type="button" wire:click="download({{ $image->id }})"
-                                            class="flex items-center gap-1 rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-white/15">
-                                            <span class="material-symbols-outlined text-sm leading-none">download</span>
-                                        </button>
-                                    @endif
-
-                                    <button type="button" wire:click="delete({{ $image->id }})"
-                                        wire:confirm="Delete this backup? This cannot be undone."
-                                        class="flex items-center gap-1 rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20">
-                                        <span class="material-symbols-outlined text-sm leading-none">delete</span>
-                                    </button>
-                                </div>
+                        {{-- Table with horizontal scroll --}}
+                        <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead>
+                                        <tr class="border-b border-white/10 text-xs font-semibold uppercase tracking-wider text-blue-100/45">
+                                            <th class="px-4 py-3.5"></th>
+                                            <th class="px-4 py-3.5">Preview</th>
+                                            <th class="px-4 py-3.5">File</th>
+                                            <th class="px-4 py-3.5">Size</th>
+                                            <th class="px-4 py-3.5">Expires</th>
+                                            <th class="px-4 py-3.5">Status</th>
+                                            <th class="px-4 py-3.5">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-white/10">
+                                        @forelse ($this->images() as $image)
+                                            <tr class="transition hover:bg-white/[0.03]">
+                                                <td class="px-4 py-3">
+                                                    <label class="relative flex h-5 w-5 cursor-pointer items-center justify-center">
+                                                        <input type="checkbox" wire:model.live="selectedIds" value="{{ $image->id }}"
+                                                            class="peer sr-only">
+                                                        <span class="block h-5 w-5 rounded-md border border-white/20 bg-white/5 transition peer-checked:border-cyan-400 peer-checked:bg-cyan-500/20 peer-focus:ring-2 peer-focus:ring-cyan-400/30"></span>
+                                                        <svg class="pointer-events-none absolute hidden peer-checked:block h-3.5 w-3.5 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                        </svg>
+                                                    </label>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    @if ($image->fileExists() && $image->previewUrl())
+                                                        <button type="button" @click="preview = '{{ $image->previewUrl() }}'"
+                                                            class="group relative block h-10 w-10 overflow-hidden rounded-lg bg-cyan-400/10 transition hover:scale-110">
+                                                            <img src="{{ $image->previewUrl() }}"
+                                                                alt="{{ $image->original_name }}"
+                                                                class="h-full w-full object-contain"
+                                                                loading="lazy">
+                                                            <span class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
+                                                                <span class="material-symbols-outlined text-sm text-white">zoom_in</span>
+                                                            </span>
+                                                        </button>
+                                                    @else
+                                                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300">
+                                                            <span class="material-symbols-outlined text-lg">image</span>
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                <td class="max-w-[200px] truncate px-4 py-3">
+                                                    <p class="truncate font-semibold text-white" title="{{ $image->original_name }}">
+                                                        {{ $image->original_name }}
+                                                    </p>
+                                                    <span class="mt-0.5 inline-block rounded bg-white/8 px-1.5 py-0.5 text-[11px] font-medium uppercase text-blue-100/50">
+                                                        {{ $image->resized_ext }}
+                                                    </span>
+                                                </td>
+                                                <td class="whitespace-nowrap px-4 py-3">
+                                                    <p class="text-cyan-100/70">{{ number_format($image->original_size / 1024, 1) }} KB</p>
+                                                    <p class="text-xs text-blue-100/40">→ {{ number_format($image->resized_size / 1024, 1) }} KB</p>
+                                                </td>
+                                                <td class="whitespace-nowrap px-4 py-3 text-sm text-blue-100/60">
+                                                    {{ $image->expires_at->format('M d, Y') }}
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    @if ($image->isExpired())
+                                                        <span class="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-300">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>
+                                                            Expired
+                                                        </span>
+                                                    @elseif ($image->fileExists())
+                                                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                                                            Active
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
+                                                            <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                                                            Missing
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="whitespace-nowrap px-4 py-3">
+                                                    <div class="flex items-center gap-1">
+                                                        @if (!$image->isExpired() && $image->fileExists())
+                                                            <button type="button" wire:click="download({{ $image->id }})"
+                                                                class="rounded-lg p-2 text-blue-100/50 transition hover:bg-white/10 hover:text-cyan-300"
+                                                                title="Download">
+                                                                <span class="material-symbols-outlined text-lg">download</span>
+                                                            </button>
+                                                        @endif
+                                                        <button type="button" wire:click="delete({{ $image->id }})"
+                                                            wire:confirm="Delete this backup? This cannot be undone."
+                                                            class="rounded-lg p-2 text-blue-100/50 transition hover:bg-red-500/15 hover:text-red-300"
+                                                            title="Delete">
+                                                            <span class="material-symbols-outlined text-lg">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="px-4 py-12 text-center">
+                                                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/8">
+                                                        <span class="material-symbols-outlined text-3xl text-blue-100/40">backup</span>
+                                                    </div>
+                                                    <h3 class="mt-4 text-lg font-semibold text-white">No backed-up images yet</h3>
+                                                    <p class="mt-2 text-sm text-blue-100/50">Resize images as a premium user to get 30-day backup.</p>
+                                                    <a href="{{ route('client.tools.image-resizer') }}" wire:navigate
+                                                        class="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5">
+                                                        <span class="material-symbols-outlined text-base">photo_size_select_large</span>
+                                                        Resize Images
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
                             </div>
-                        @empty
-                            <div class="rounded-2xl border border-white/15 bg-white/[0.07] p-12 text-center backdrop-blur-2xl">
-                                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/8">
-                                    <span class="material-symbols-outlined text-3xl text-blue-100/40">backup</span>
-                                </div>
-                                <h3 class="mt-4 text-lg font-semibold text-white">No backed-up images yet</h3>
-                                <p class="mt-2 text-sm text-blue-100/50">Resize images as a premium user to get 30-day backup.</p>
-                                <a href="{{ route('client.tools.image-resizer') }}" wire:navigate
-                                    class="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5">
-                                    <span class="material-symbols-outlined text-base">photo_size_select_large</span>
-                                    Resize Images
-                                </a>
-                            </div>
-                        @endforelse
+                        </div>
 
                         <div class="mt-4">
                             {{ $this->images()->links() }}
                         </div>
                     </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
 
     {{-- Lightbox --}}
     <template x-teleport="body">

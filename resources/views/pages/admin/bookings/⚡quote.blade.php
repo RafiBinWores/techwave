@@ -85,6 +85,22 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
             return;
         }
 
+        if ($this->booking->sender_bkash && $this->booking->transaction_id) {
+            $this->booking->load('order');
+
+            if (!$this->booking->order) {
+                $this->dispatch('toast', message: 'No order found for this booking. Convert to order first.', type: 'error');
+
+                return;
+            }
+
+            Mail::to($email)->send(new OrderInvoiceMail($this->booking->order));
+
+            $this->dispatch('toast', message: 'Invoice email sent successfully.', type: 'success');
+
+            return;
+        }
+
         Mail::to($email)->send(new BookingQuoteMail($this->booking));
 
         $this->dispatch('toast', message: 'Quotation email sent successfully.', type: 'success');
@@ -302,7 +318,13 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
 
     public function finalAmount(): float
     {
-        return (float) ($this->booking->final_price ?? ($this->booking->quoted_price ?? ($this->booking->requested_price ?? ($this->booking->plan_price ?? 0))));
+        $amount = $this->booking->final_price ?? ($this->booking->quoted_price ?? ($this->booking->requested_price ?? ($this->booking->plan_price ?? 0)));
+
+        if ($amount == $this->booking->plan_price && $this->booking->addons) {
+            $amount += collect($this->booking->addons)->sum(fn ($a) => (float) ($a['price'] ?? 0));
+        }
+
+        return (float) $amount;
     }
 
     public function clientEmail(): ?string
@@ -527,6 +549,26 @@ Techwave Team
                                         <p class="mt-1 text-sm text-secondary">
                                             {{ $this->bookingSubtitle() ?: 'Custom service quotation' }}
                                         </p>
+
+                                        @if ($booking->addons && count($booking->addons) > 0)
+                                            <div class="mt-3 space-y-1 border-t border-dashed border-slate-200 pt-2">
+                                                @foreach ($booking->addons as $addon)
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <span class="text-indigo-700">
+                                                            + {{ $addon['name'] ?? 'Addon' }}
+                                                        </span>
+
+                                                        <span class="font-medium text-indigo-600">
+                                                            @if (isset($addon['price']) && $addon['price'] !== null && $addon['price'] !== '')
+                                                                ৳ {{ number_format((float) $addon['price'], 2) }}
+                                                            @else
+                                                                N/A
+                                                            @endif
+                                                        </span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </td>
 
                                     <td class="px-5 py-4 text-sm font-semibold text-slate-700">
@@ -534,7 +576,7 @@ Techwave Team
                                     </td>
 
                                     <td class="px-5 py-4 text-right font-bold text-slate-900">
-                                        ৳ {{ number_format($this->finalAmount(), 2) }}
+                                        ৳ {{ number_format((float) ($booking->plan_price ?? 0), 2) }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -611,6 +653,23 @@ Techwave Team
                             {{ $booking->plan_price ? '৳ ' . number_format((float) $booking->plan_price, 2) : 'N/A' }}
                         </p>
                     </div>
+
+                    @if ($booking->addons)
+                        <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-5">
+                            <p class="text-xs font-bold uppercase tracking-wider text-indigo-500">Selected Addons</p>
+
+                            <div class="mt-3 space-y-2">
+                                @foreach ($booking->addons as $addon)
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-indigo-900">{{ $addon['name'] ?? 'Addon' }}</span>
+                                        <span class="font-semibold text-indigo-700">
+                                            {{ isset($addon['price']) ? '৳ ' . number_format((float) $addon['price'], 2) : 'N/A' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="rounded-xl border border-amber-100 bg-amber-50 p-5">
                         <p class="text-xs font-bold uppercase tracking-wider text-amber-500">Customer Requested Price

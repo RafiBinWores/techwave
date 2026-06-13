@@ -497,6 +497,20 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
                                             Quoted: ৳{{ number_format((float) $booking->quoted_price, 2) }}
                                         </span>
                                     @endif
+
+                                    @if ($booking->addons && count($booking->addons) > 0)
+                                        <span class="block text-[11px] font-semibold text-indigo-600 mt-1 mb-0.5">
+                                            Addons ({{ count($booking->addons) }}):
+                                        </span>
+                                        @foreach ($booking->addons as $addon)
+                                            <span class="block text-[11px] text-indigo-500 ml-1">
+                                                {{ $addon['name'] ?? 'Addon' }}
+                                                @if (isset($addon['price']) && $addon['price'] !== null && $addon['price'] !== '')
+                                                    – ৳{{ number_format((float) $addon['price'], 2) }}
+                                                @endif
+                                            </span>
+                                        @endforeach
+                                    @endif
                                 </td>
 
                                 <td class="px-6 py-4">
