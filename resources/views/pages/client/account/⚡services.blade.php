@@ -5,12 +5,11 @@ use App\Models\Order;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Component {
+new #[Title('My Services')] class extends Component {
     use WithPagination;
 
     public string $search = '';
@@ -257,26 +256,77 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
 };
 ?>
 
-<div>
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h2 class="text-xl font-bold md:text-h1 text-white">My Services</h2>
-            <p class="text-xs md:text-body-md text-blue-100/60">
-                Manage your service orders and IT plans.
-            </p>
-        </div>
+<div x-data="{
+    sidebarOpen: false,
+    showToast: {{ session('success') ? 'true' : 'false' }}
+}" class="relative min-h-screen text-white">
+    @if (session('success'))
+        <div x-show="showToast" x-init="setTimeout(() => showToast = false, 4500)" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-3 scale-95"
+            class="fixed right-5 top-5 z-100 max-w-md rounded-3xl border border-emerald-300/20 bg-emerald-500/15 p-4 text-emerald-50 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+            <div class="flex items-start gap-3">
+                <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/15 text-emerald-200">
+                    <span class="material-symbols-outlined">check_circle</span>
+                </div>
 
-        <div
-            class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 backdrop-blur-xl">
-            <span class="material-symbols-outlined text-cyan-200">workspace_premium</span>
-            <div>
-                <p class="text-xs text-blue-100/45">Services & IT Plans</p>
-                <p class="text-sm font-semibold text-white">
-                    {{ $totalServices + $totalPlans }}
-                </p>
+                <div class="min-w-0">
+                    <p class="font-bold text-white">Success</p>
+                    <p class="mt-1 text-sm leading-6 text-emerald-50/80">
+                        {{ session('success') }}
+                    </p>
+                </div>
+
+                <button type="button" @click="showToast = false"
+                    class="ml-2 rounded-xl p-1 text-emerald-100/70 transition hover:bg-white/10 hover:text-white">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
             </div>
         </div>
-    </div>
+    @endif
+
+    <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
+        <div
+            class="rounded-[34px] border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+            <div class="flex min-h-[calc(100vh-3rem)]">
+
+                <div x-show="sidebarOpen" x-transition.opacity
+                    class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden" @click="sidebarOpen = false"
+                    style="display:none;">
+                </div>
+
+                <livewire:shared.user-sidebar />
+
+                <div class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+
+                    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex items-center gap-3">
+                            <button @click="sidebarOpen = true"
+                                class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
+                                <span class="material-symbols-outlined">menu</span>
+                            </button>
+
+                            <div>
+                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Client Dashboard</p>
+                                <h1 class="mt-1 text-2xl font-bold text-white sm:text-3xl">My Services</h1>
+                            </div>
+                        </div>
+
+                        <div
+                            class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 backdrop-blur-xl">
+                            <span class="material-symbols-outlined text-cyan-200">workspace_premium</span>
+                            <div>
+                                <p class="text-xs text-blue-100/45">Services & IT Plans</p>
+                                <p class="text-sm font-semibold text-white">
+                                    {{ $totalServices + $totalPlans }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="mb-6 grid gap-5 md:grid-cols-3">
                         <div
@@ -436,7 +486,6 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
                                             $plan = $order->pricingPlan;
                                             $planTitle = $this->orderTitle($order);
                                             $planDescription = $this->orderDescription($order);
-                                            $addons = $order->booking?->addons ?? [];
                                         @endphp
 
                                         <div
@@ -470,20 +519,6 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
                                                             <p class="mt-2 text-sm leading-6 text-blue-100/55">
                                                                 Plan details are available in your account.
                                                             </p>
-                                                        @endif
-
-                                                        @if (count($addons))
-                                                            <div class="mt-3 space-y-1">
-                                                                @foreach ($addons as $addon)
-                                                                    <div class="flex items-center gap-2 text-sm text-blue-100/55">
-                                                                        <span class="text-cyan-300/60">+</span>
-                                                                        <span>{{ $addon['name'] }}</span>
-                                                                        @if (!empty($addon['price']))
-                                                                            <span class="text-blue-100/35">(৳{{ number_format((float) $addon['price'], 2) }})</span>
-                                                                        @endif
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -548,7 +583,6 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
                                             $plan = $booking->pricingPlan;
                                             $planTitle = $this->bookingTitle($booking);
                                             $planDescription = $this->bookingDescription($booking);
-                                            $addons = $booking->addons ?? [];
                                         @endphp
 
                                         <div
@@ -581,20 +615,6 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
                                                             <p class="mt-2 text-sm leading-6 text-blue-100/55">
                                                                 Booking details are available in your account.
                                                             </p>
-                                                        @endif
-
-                                                        @if (count($addons))
-                                                            <div class="mt-3 space-y-1">
-                                                                @foreach ($addons as $addon)
-                                                                    <div class="flex items-center gap-2 text-sm text-blue-100/55">
-                                                                        <span class="text-cyan-300/60">+</span>
-                                                                        <span>{{ $addon['name'] }}</span>
-                                                                        @if (!empty($addon['price']))
-                                                                            <span class="text-blue-100/35">(৳{{ number_format((float) $addon['price'], 2) }})</span>
-                                                                        @endif
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -704,7 +724,8 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
                                 <div class="grid gap-5 lg:grid-cols-2">
                                     @foreach ($serviceOrders as $order)
                                         @php
-                                            $addons = $order->booking?->addons ?? [];
+                                            $serviceName = $this->orderTitle($order);
+                                            $serviceDescription = $this->orderDescription($order);
                                         @endphp
 
                                         <div
@@ -718,25 +739,18 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
 
                                                     <div>
                                                         <h3 class="text-lg font-bold text-white">
-                                                            {{ $order->service?->card_title ?? 'Service' }}
+                                                            {{ $serviceName }}
                                                         </h3>
 
-                                                        <p class="mt-1 text-sm text-blue-100/55">
-                                                            Plan: <span class="font-semibold text-white">{{ $order->servicePlan?->name ?? 'N/A' }}</span>
-                                                        </p>
-
-                                                        @if (count($addons))
-                                                            <div class="mt-3 space-y-1">
-                                                                @foreach ($addons as $addon)
-                                                                    <div class="flex items-center gap-2 text-sm text-blue-100/55">
-                                                                        <span class="text-cyan-300/60">+</span>
-                                                                        <span>{{ $addon['name'] }}</span>
-                                                                        @if (!empty($addon['price']))
-                                                                            <span class="text-blue-100/35">(৳{{ number_format((float) $addon['price'], 2) }})</span>
-                                                                        @endif
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
+                                                        @if ($serviceDescription)
+                                                            <p
+                                                                class="mt-2 line-clamp-2 text-sm leading-6 text-blue-100/55">
+                                                                {{ $serviceDescription }}
+                                                            </p>
+                                                        @else
+                                                            <p class="mt-2 text-sm leading-6 text-blue-100/55">
+                                                                Service details are available in your account.
+                                                            </p>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -818,4 +832,8 @@ new #[Layout('layouts.account-app')] #[Title('My Services')] class extends Compo
                         </div>
                     @endif
 
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

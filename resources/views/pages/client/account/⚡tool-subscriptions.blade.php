@@ -1,12 +1,11 @@
 <?php
 
 use App\Models\ToolSubscription;
-use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Layout('layouts.account-app')] #[Title('My Subscriptions')] class extends Component {
+new #[Title('My Subscriptions')] class extends Component {
     use WithPagination;
 
     public function subscriptions()
@@ -20,15 +19,15 @@ new #[Layout('layouts.account-app')] #[Title('My Subscriptions')] class extends 
 };
 ?>
 
-<div>
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h2 class="text-xl font-bold md:text-h1 text-white">My Subscriptions</h2>
-            <p class="text-xs md:text-body-md text-blue-100/60">
-                Manage your active and past tool subscriptions.
-            </p>
+<div class="min-h-screen text-white">
+    <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                My
+                <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Subscriptions</span>
+            </h1>
+            <p class="mt-2 text-blue-100/60">Manage your active and past tool subscriptions.</p>
         </div>
-    </div>
 
         <div class="space-y-4">
             @forelse ($this->subscriptions() as $sub)
@@ -49,7 +48,7 @@ new #[Layout('layouts.account-app')] #[Title('My Subscriptions')] class extends 
                                     ])>
                                         {{ $sub->status }}
                                     </span>
-</div>
+                                </div>
                                 <p class="text-sm text-blue-100/50">{{ $sub->plan?->name ?? 'No plan' }} · {{ ucfirst($sub->billing_cycle) }}</p>
                             </div>
                         </div>
@@ -95,7 +94,8 @@ new #[Layout('layouts.account-app')] #[Title('My Subscriptions')] class extends 
             @endforelse
 
             <div class="mt-4">
-            {{ $this->subscriptions()->links() }}
+                {{ $this->subscriptions()->links() }}
+            </div>
         </div>
     </div>
 </div>

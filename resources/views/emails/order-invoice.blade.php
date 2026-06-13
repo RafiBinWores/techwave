@@ -12,7 +12,9 @@
 
     $itemName = $isPricingPlan
         ? $order->pricingPlan?->title ?? ($order->plan_name ?? 'Pricing Plan')
-        : $order->service?->card_title ?? ($order->servicePlan?->name ?? ($order->plan_name ?? 'Service'));
+        : $order->service?->card_title ?? ($order->plan_name ?? 'Service');
+
+    $itemPlanName = !$isPricingPlan ? $order->servicePlan?->name : null;
 
     $description = $isPricingPlan
         ? $order->pricingPlan?->description ?? 'Business IT plan subscription.'
@@ -30,6 +32,14 @@
 
     $subtotal =
         (float) ($order->amount ?? ($order->final_price ?? ($order->quoted_price ?? ($order->plan_price ?? 0))));
+
+    $addonsData = $order->booking?->addons ?? [];
+    $addonsTotal = collect($addonsData)->sum(fn ($a) => (float) ($a['price'] ?? 0));
+
+    $baseUnitPrice = $addonsTotal > 0
+        ? max($subtotal - $addonsTotal, 0)
+        : $subtotal;
+
     $discount = 0;
     $total = max($subtotal - $discount, 0);
 
@@ -227,11 +237,6 @@
                                             Item
                                         </th>
 
-                                        <th align="left"
-                                            style="padding:11px 12px; font-size:10px; color:#ffffff; text-transform:uppercase; letter-spacing:0.8px;">
-                                            Description
-                                        </th>
-
                                         <th align="center"
                                             style="padding:11px 12px; font-size:10px; color:#ffffff; text-transform:uppercase; letter-spacing:0.8px;">
                                             Billing
@@ -253,12 +258,27 @@
                                     <tr style="background:#ffffff;">
                                         <td
                                             style="padding:13px 12px; border-top:1px solid #e2e8f0; font-size:11px; font-weight:800; color:#0f172a;">
-                                            {{ $itemName }}
-                                        </td>
+                                            <div>{{ $itemName }}</div>
 
-                                        <td
-                                            style="padding:13px 12px; border-top:1px solid #e2e8f0; font-size:10px; line-height:16px; color:#64748b;">
-                                            {{ $description }}
+                                            @if ($itemPlanName)
+                                                <div style="margin-top:2px; font-size:10px; font-weight:400; color:#64748b;">
+                                                    Plan: {{ $itemPlanName }}
+                                                </div>
+                                            @endif
+
+                                            @if ($order->booking?->addons)
+                                                <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #d1d5db;">
+                                                    @foreach ($order->booking->addons as $addon)
+                                                        <div style="font-size:10px; color:#6366f1; padding:2px 0; font-weight:400;">
+                                                            <span>+ {{ $addon['name'] ?? 'Addon' }}</span>
+                                                            <span style="float:right; font-weight:700;">
+                                                                {{ isset($addon['price']) && $addon['price'] !== null ? $formatMoney((float) $addon['price']) : 'N/A' }}
+                                                            </span>
+                                                            <div style="clear:both;"></div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </td>
 
                                         <td align="center"
@@ -268,7 +288,7 @@
 
                                         <td align="right"
                                             style="padding:13px 12px; border-top:1px solid #e2e8f0; font-size:11px; color:#475569;">
-                                            {{ $formatMoney($subtotal) }}
+                                            {{ $formatMoney($baseUnitPrice) }}
                                         </td>
 
                                         <td align="right"
@@ -304,13 +324,25 @@
                             <table width="290" cellpadding="0" cellspacing="0" style="max-width:100%;">
                                 <tr>
                                     <td style="padding:5px 0; font-size:12px; color:#64748b;">
-                                        Subtotal
+                                        Unit Price
                                     </td>
 
                                     <td align="right" style="padding:5px 0; font-size:12px; color:#334155;">
-                                        {{ $formatMoney($subtotal) }}
+                                        {{ $formatMoney($baseUnitPrice) }}
                                     </td>
                                 </tr>
+
+                                @if (count($addonsData))
+                                    <tr>
+                                        <td style="padding:5px 0; font-size:12px; color:#64748b;">
+                                            Addons
+                                        </td>
+
+                                        <td align="right" style="padding:5px 0; font-size:12px; color:#6366f1;">
+                                            {{ $addonsTotal > 0 ? $formatMoney($addonsTotal) : 'N/A' }}
+                                        </td>
+                                    </tr>
+                                @endif
 
                                 @if ($discount > 0)
                                     <tr>

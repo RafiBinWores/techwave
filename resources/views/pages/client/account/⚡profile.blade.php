@@ -4,12 +4,11 @@ use App\Models\Company;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-new #[Layout('layouts.account-app')] #[Title('My Profile')] class extends Component {
+new #[Title('My Profile')] class extends Component {
     use WithFileUploads;
 
     public $avatarFile;
@@ -140,35 +139,58 @@ new #[Layout('layouts.account-app')] #[Title('My Profile')] class extends Compon
 };
 ?>
 
-<div>
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h2 class="text-xl font-bold md:text-h1 text-white">My Profile</h2>
-            <p class="text-xs md:text-body-md text-blue-100/60">
-                Manage your account information and settings.
-            </p>
-        </div>
-
+<div x-data="{ sidebarOpen: false }" class="relative min-h-screen text-white">
+    <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
         <div
-            class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 backdrop-blur-xl">
-            <span class="material-symbols-outlined text-emerald-300">verified_user</span>
-            <div>
-                <p class="text-xs text-blue-100/45">Account Status</p>
-                <p
-                    class="text-sm font-semibold {{ $is_active ? 'text-emerald-300' : 'text-rose-300' }}">
-                    {{ $is_active ? 'Active' : 'Inactive' }}
-                </p>
-            </div>
-        </div>
-    </div>
+            class="rounded-[34px] border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+            <div class="flex min-h-[calc(100vh-3rem)]">
 
-    <div class="grid gap-6 xl:grid-cols-[1fr_360px]">
+                {{-- Mobile Overlay --}}
+                <div x-show="sidebarOpen" x-transition.opacity
+                    class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden" @click="sidebarOpen = false"
+                    style="display:none;">
+                </div>
 
-        {{-- Left Content --}}
-        <div class="space-y-6">
+                {{-- Sidebar --}}
+                <livewire:shared.user-sidebar />
 
-            {{-- Personal Profile Form --}}
-            <form wire:submit.prevent="updatePersonalProfile"
+                {{-- Main --}}
+                <div class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+
+                    {{-- Header --}}
+                    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex items-center gap-3">
+                            <button @click="sidebarOpen = true"
+                                class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
+                                <span class="material-symbols-outlined">menu</span>
+                            </button>
+
+                            <div>
+                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Account Settings</p>
+                                <h1 class="mt-1 text-2xl font-bold text-white sm:text-3xl">My Profile</h1>
+                            </div>
+                        </div>
+
+                        <div
+                            class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 backdrop-blur-xl">
+                            <span class="material-symbols-outlined text-emerald-300">verified_user</span>
+                            <div>
+                                <p class="text-xs text-blue-100/45">Account Status</p>
+                                <p
+                                    class="text-sm font-semibold {{ $is_active ? 'text-emerald-300' : 'text-rose-300' }}">
+                                    {{ $is_active ? 'Active' : 'Inactive' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-6 xl:grid-cols-[1fr_360px]">
+
+                        {{-- Left Content --}}
+                        <div class="space-y-6">
+
+                            {{-- Personal Profile Form --}}
+                            <form wire:submit.prevent="updatePersonalProfile"
                                 class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                                 <div class="mb-6 flex items-center justify-between gap-4">
                                     <div>
@@ -534,5 +556,8 @@ new #[Layout('layouts.account-app')] #[Title('My Profile')] class extends Compon
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
     </div>
 </div>
