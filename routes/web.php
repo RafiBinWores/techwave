@@ -98,6 +98,9 @@ Route::livewire('/tools/image-resizer', 'pages::client.tools.image.image-resizer
 // Business Tools
 Route::livewire('/tools/invoice-generator', 'pages::client.tools.invoice.invoice-generator')->name('client.tools.invoice-generator');
 
+// QR Code tools
+Route::livewire('/tools/qr-code-generator', 'pages::client.tools.qr-code.qr-code-generator')->name('client.tools.qr-code-generator');
+
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');
 Route::livewire('/blogs/{slug}', 'pages::client.blogs.details')->name('client.blogs.details');
