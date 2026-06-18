@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'email',
     'phone',
     'shipping_address',
-    'billing_address'
+    'billing_address',
 ])]
 class Customer extends Model
 {

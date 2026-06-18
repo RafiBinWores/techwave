@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
     'css_styles',
     'is_paid',
     'is_active',
-    'sort_order'
+    'sort_order',
 ])]
 class InvoiceTheme extends Model
 {
@@ -39,7 +39,7 @@ class InvoiceTheme extends Model
     {
         $category = ToolCategory::where('slug', 'business-tools')->first();
 
-    return ! $this->is_paid || ($category && $user?->hasActiveToolSubscription($category) ?? false);
+        return ! $this->is_paid || ($category && $user?->hasActiveToolSubscription($category) ?? false);
     }
 
     public function usesCustomTemplate(): bool

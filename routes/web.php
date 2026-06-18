@@ -320,7 +320,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/invoice-themes/create', 'pages::admin.invoice-themes.create')->name('invoice-themes.create');
     Route::livewire('/invoice-themes/{invoiceTheme}/edit', 'pages::admin.invoice-themes.edit')->name('invoice-themes.edit');
 
-
     // Live TV Channels
     Route::livewire('/live-tv-channels', 'pages::admin.live-tv-channels.index')->name('live-tv-channels.index');
     Route::livewire('/live-tv-channels/create', 'pages::admin.live-tv-channels.create')->name('live-tv-channels.create');

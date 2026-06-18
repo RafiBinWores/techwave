@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'tax_rate',
     'discount_price',
     'purchase_price',
-    'stock_count'
+    'stock_count',
 ])]
 class SavedInvoiceProduct extends Model
 {

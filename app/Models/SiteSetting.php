@@ -59,7 +59,7 @@ class SiteSetting extends Model
             return $this->logo;
         }
 
-        return asset('storage/' . $this->logo);
+        return asset('storage/'.$this->logo);
     }
 
     public function getFaviconUrlAttribute(): string
@@ -69,7 +69,7 @@ class SiteSetting extends Model
                 return $this->favicon;
             }
 
-            return asset('storage/' . $this->favicon);
+            return asset('storage/'.$this->favicon);
         }
 
         return asset('assets/images/logo/logo.png');

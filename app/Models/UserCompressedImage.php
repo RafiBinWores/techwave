@@ -38,7 +38,7 @@ class UserCompressedImage extends Model
     {
         $name = pathinfo($this->original_name, PATHINFO_FILENAME);
 
-        return $name . '_compressed.' . $this->compressed_ext;
+        return $name.'_compressed.'.$this->compressed_ext;
     }
 
     public function fileExists(): bool

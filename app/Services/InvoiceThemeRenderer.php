@@ -140,7 +140,7 @@ CSS;
 
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $previous = libxml_use_internal_errors(true);
-        $dom->loadHTML('<?xml encoding="UTF-8">' . $document, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $dom->loadHTML('<?xml encoding="UTF-8">'.$document, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
@@ -234,11 +234,11 @@ CSS;
             ['name' => 'Hosting', 'type' => 'goods', 'unit' => 'pcs', 'quantity' => 1, 'unit_price' => 5000, 'tax' => 0, 'line_total' => 5000, 'item_tax' => 0],
         ];
 
-        $sampleLogo = 'data:image/svg+xml;base64,' . base64_encode(
+        $sampleLogo = 'data:image/svg+xml;base64,'.base64_encode(
             '<svg xmlns="http://www.w3.org/2000/svg" width="280" height="100" viewBox="0 0 280 100">'
-                . '<rect width="280" height="100" rx="14" fill="' . $brandColor . '"/>'
-                . '<text x="140" y="61" text-anchor="middle" font-family="Arial" font-size="32" font-weight="700" fill="white">YOUR LOGO</text>'
-                . '</svg>',
+                .'<rect width="280" height="100" rx="14" fill="'.$brandColor.'"/>'
+                .'<text x="140" y="61" text-anchor="middle" font-family="Arial" font-size="32" font-weight="700" fill="white">YOUR LOGO</text>'
+                .'</svg>',
         );
 
         return $this->renderDocument($html, $css, $brandColor, $invoice, $items, 30000, 1250, 30950, $sampleLogo);
@@ -259,13 +259,13 @@ CSS;
         $values = [
             'brand_color' => $brandColor,
             'logo' => $logoDataUri
-                ? '<img src="' . e($logoDataUri) . '" alt="Logo" style="max-width:140px;max-height:70px;object-fit:contain">'
+                ? '<img src="'.e($logoDataUri).'" alt="Logo" style="max-width:140px;max-height:70px;object-fit:contain">'
                 : '',
             'invoice_number' => $invoice['invoice_number'] ?? '',
             'issue_date' => $this->formatDate($invoice['issue_date'] ?? null),
             'due_date' => $this->formatDate($invoice['due_date'] ?? null),
             'due_date_line' => filled($invoice['due_date'] ?? null)
-                ? 'Due: ' . $this->formatDate($invoice['due_date'] ?? null)
+                ? 'Due: '.$this->formatDate($invoice['due_date'] ?? null)
                 : '',
             'seller_name' => $invoice['seller_name'] ?? '',
             'seller_email' => $invoice['seller_email'] ?? '',
@@ -299,12 +299,12 @@ CSS;
         $renderedCss = $this->replaceTokens($css, $values);
 
         return '<!DOCTYPE html><html><head><meta charset="UTF-8">'
-            . '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:">'
-            . '<style>'
-            . $renderedCss
-            . '</style></head><body>'
-            . $renderedHtml
-            . '</body></html>';
+            .'<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:">'
+            .'<style>'
+            .$renderedCss
+            .'</style></head><body>'
+            .$renderedHtml
+            .'</body></html>';
     }
 
     private function replaceTokens(string $content, array $values, array $rawTokens = []): string
@@ -332,22 +332,22 @@ CSS;
             return '';
         }
 
-        $rows = '<p><span>Method</span><strong>' . e(ucfirst($method)) . '</strong></p>';
+        $rows = '<p><span>Method</span><strong>'.e(ucfirst($method)).'</strong></p>';
 
         if ($method !== 'cash') {
             $sender = $invoice['sender_number'] ?? '';
             $trxId = $invoice['transaction_id'] ?? '';
 
             if ($sender) {
-                $rows .= '<p><span>Sender</span><strong>' . e($sender) . '</strong></p>';
+                $rows .= '<p><span>Sender</span><strong>'.e($sender).'</strong></p>';
             }
 
             if ($trxId) {
-                $rows .= '<p><span>TrxID</span><strong>' . e($trxId) . '</strong></p>';
+                $rows .= '<p><span>TrxID</span><strong>'.e($trxId).'</strong></p>';
             }
         }
 
-        return '<section class="payment-info"><p class="eyebrow">PAYMENT</p>' . $rows . '</section>';
+        return '<section class="payment-info"><p class="eyebrow">PAYMENT</p>'.$rows.'</section>';
     }
 
     private function renderItemRows(iterable $items, string $currency): string
@@ -359,14 +359,14 @@ CSS;
             $qty = (float) $item['quantity'];
             $qtyFormatted = $qty == (int) $qty ? (string) (int) $qty : rtrim(rtrim(number_format($qty, 2), '0'), '.');
             $rows .= '<tr>'
-                . '<td><strong>' . e((string) $item['name']) . '</strong>'
-                . (! empty($item['description']) ? '<br><span style="font-size:11px;color:#666">' . e($item['description']) . '</span>' : '')
-                . '</td>'
-                . '<td>' . $qtyFormatted . '</td>'
-                . '<td>' . e($currency) . ' ' . number_format((float) $item['unit_price'], 2) . '</td>'
-                . '<td>' . number_format((float) ($item['tax'] ?? 0), 1) . '%</td>'
-                . '<td><strong>' . e($currency) . ' ' . number_format($lineTotal, 2) . '</strong></td>'
-                . '</tr>';
+                .'<td><strong>'.e((string) $item['name']).'</strong>'
+                .(! empty($item['description']) ? '<br><span style="font-size:11px;color:#666">'.e($item['description']).'</span>' : '')
+                .'</td>'
+                .'<td>'.$qtyFormatted.'</td>'
+                .'<td>'.e($currency).' '.number_format((float) $item['unit_price'], 2).'</td>'
+                .'<td>'.number_format((float) ($item['tax'] ?? 0), 1).'%</td>'
+                .'<td><strong>'.e($currency).' '.number_format($lineTotal, 2).'</strong></td>'
+                .'</tr>';
         }
 
         return $rows;

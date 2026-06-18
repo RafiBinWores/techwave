@@ -30,7 +30,7 @@ class ToolCategory extends Model
         return $this->hasMany(ToolPlan::class, 'tool_category_id')->where('is_active', true)->orderBy('sort_order');
     }
 
-        public function toolSubscriptions()
+    public function toolSubscriptions()
     {
         return $this->hasMany(ToolSubscription::class, 'tool_category_id');
     }
