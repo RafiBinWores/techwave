@@ -21,6 +21,7 @@ new #[Title('Invoice Generator')] class extends Component {
     public string $issue_date = '';
     public string $due_date = '';
     public string $currency = 'BDT';
+    public string $seller_name = '';
     public string $seller_email = '';
     public string $seller_phone = '';
     public string $seller_address = '';
@@ -76,6 +77,7 @@ new #[Title('Invoice Generator')] class extends Component {
         $this->due_date = '';
 
         $company = auth()->user()?->company;
+        $this->seller_name = $company?->company_name ?? '';
         $this->seller_email = $company?->email ?? (auth()->user()?->email ?? '');
         $this->seller_phone = $company?->phone ?? '';
         $this->seller_address = $company?->address ?? '';
@@ -84,6 +86,11 @@ new #[Title('Invoice Generator')] class extends Component {
 
         $this->loadInvoiceLogo();
         $this->addItem();
+    }
+
+    public function updatedSellerCompanyName(string $value): void
+    {
+        $this->seller_name = $value;
     }
 
     public function getThemesProperty()
@@ -426,6 +433,7 @@ new #[Title('Invoice Generator')] class extends Component {
             'seller_email' => ['nullable', 'email', 'max:150'],
             'seller_phone' => ['required', 'string', 'max:80'],
             'seller_address' => ['required', 'string', 'max:1000'],
+            'seller_name' => ['required', 'string', 'max:150'],
             'seller_company_name' => ['required', 'string', 'max:150'],
             'seller_website' => ['nullable', 'string', 'max:250'],
             'customer_name' => ['required', 'string', 'max:150'],
@@ -453,6 +461,7 @@ new #[Title('Invoice Generator')] class extends Component {
             'selectedThemeId' => ['required', 'exists:invoice_themes,id'],
             'items' => ['required', 'array', 'min:1', 'max:100'],
             'items.*.name' => ['required', 'string', 'max:150'],
+            'items.*.description' => ['nullable', 'string', 'max:1000'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01', 'max:999999'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0', 'max:9999999999'],
             'items.*.tax' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -701,7 +710,7 @@ new #[Title('Invoice Generator')] class extends Component {
 
             <form wire:submit="download" class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <div class="space-y-6">
-                    <section class="rounded-2xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl">
+                    <section class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl sm:p-6">
                         <h2 class="mb-5 text-xl font-bold">Invoice number</h2>
                         <div>
                             <input wire:model="invoice_number" placeholder="e.g. INV-20260616-ABC1"
@@ -712,7 +721,7 @@ new #[Title('Invoice Generator')] class extends Component {
                         </div>
                     </section>
 
-                    <section class="rounded-2xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl">
+                    <section class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl sm:p-6">
                         <h2 class="mb-5 text-xl font-bold">Dates</h2>
                         <div class="grid gap-4 md:grid-cols-2">
                             <div><label class="text-sm text-blue-100/70">Issue date</label><input
@@ -733,8 +742,8 @@ new #[Title('Invoice Generator')] class extends Component {
                         </div>
                     </section>
 
-                    <section class="rounded-2xl border border-white/10 bg-white/6 p-6 backdrop-blur-xl">
-                        <div class="mb-5">
+                    <section class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl sm:p-6">
+                        <div class="mb-4 sm:mb-5">
                             <p class="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Company Info</p>
                         </div>
 
@@ -902,17 +911,17 @@ new #[Title('Invoice Generator')] class extends Component {
                             </div>
                         </div>
 
-                        <div class="overflow-visible rounded-xl border border-white/10">
-                            <table class="w-full text-left text-sm">
+                        <div class="-mx-6 overflow-x-auto rounded-xl border border-white/10 sm:mx-0">
+                            <table class="w-full min-w-140 text-left text-sm">
                                 <thead>
                                     <tr
                                         class="bg-white/10 text-xs font-bold uppercase tracking-wider text-blue-100/70">
-                                        <th class="px-3 py-3 min-w-35">Item</th>
+                                        <th class="px-3 py-3">Item</th>
                                         <th class="px-3 py-3 text-center w-20">QTY</th>
                                         <th class="px-3 py-3 text-right w-28">Price</th>
                                         <th class="px-3 py-3 text-right w-20">Tax</th>
                                         <th class="px-3 py-3 text-right w-28">Amount</th>
-                                        <th class="w-10"></th>
+                                        <th class="w-14"></th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-white/10">
