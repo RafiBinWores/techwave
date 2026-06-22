@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
+            $table->string('type', 40)->default('goods');
             $table->string('unit', 40)->default('item');
             $table->decimal('unit_price', 12, 2);
             $table->decimal('discount_price', 12, 2)->nullable();

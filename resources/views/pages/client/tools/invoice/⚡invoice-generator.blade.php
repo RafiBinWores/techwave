@@ -9,6 +9,7 @@ use App\Services\InvoiceThemeRenderer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -16,6 +17,8 @@ use Livewire\WithFileUploads;
 
 new #[Title('Invoice Generator')] class extends Component {
     use WithFileUploads;
+
+    private const DRAFT_SESSION_KEY = 'invoice-generator.theme-change-draft';
 
     public string $invoice_number = '';
     public string $issue_date = '';
@@ -70,22 +73,21 @@ new #[Title('Invoice Generator')] class extends Component {
     public int $product_modal_stock_count = 0;
     public float $product_modal_purchase_price = 0;
 
-    public function mount(): void
+    public function mount(?InvoiceTheme $invoiceTheme = null): void
     {
-        $this->invoice_number = 'INV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
-        $this->issue_date = now()->toDateString();
-        $this->due_date = '';
+        if (request()->routeIs('client.tools.invoice-generator.create')) {
+            abort_unless($invoiceTheme?->is_active, 404);
+            abort_unless($invoiceTheme->isAccessibleBy(auth()->user()), 403);
 
-        $company = auth()->user()?->company;
-        $this->seller_name = $company?->company_name ?? '';
-        $this->seller_email = $company?->email ?? (auth()->user()?->email ?? '');
-        $this->seller_phone = $company?->phone ?? '';
-        $this->seller_address = $company?->address ?? '';
-        $this->seller_company_name = $company?->company_name ?? '';
-        $this->seller_website = $company?->website ?? '';
+            $this->selectedThemeId = $invoiceTheme->id;
+            $this->themeChosen = true;
+        }
 
-        $this->loadInvoiceLogo();
-        $this->addItem();
+        if ($this->themeChosen && $this->restoreThemeChangeDraft()) {
+            return;
+        }
+
+        $this->initializeInvoice();
     }
 
     public function updatedSellerCompanyName(string $value): void
@@ -100,14 +102,14 @@ new #[Title('Invoice Generator')] class extends Component {
 
     public function getIsPremiumProperty(): bool
     {
-        $category = ToolCategory::where('slug', 'business-tools')->first();
+        $category = ToolCategory::where('slug', 'business')->first();
 
         return auth()->user()?->hasActiveToolSubscription($category) ?? false;
     }
 
     public function getFirstPlanProperty(): ?ToolPlan
     {
-        $category = ToolCategory::where('slug', 'business-tools')->first();
+        $category = ToolCategory::where('slug', 'business')->first();
 
         return $category?->activePlans()->first();
     }
@@ -131,15 +133,19 @@ new #[Title('Invoice Generator')] class extends Component {
             return;
         }
 
-        $this->selectedThemeId = $theme->id;
-        $this->themeChosen = true;
-        $this->resetValidation('selectedThemeId');
+        $this->redirectRoute('client.tools.invoice-generator.create', [
+            'invoiceTheme' => $theme,
+        ], navigate: true);
     }
 
     public function changeTheme(): void
     {
-        $this->themeChosen = false;
-        $this->resetValidation('selectedThemeId');
+        session()->put(self::DRAFT_SESSION_KEY, [
+            'saved_at' => now()->timestamp,
+            'data' => $this->invoiceDraft(),
+        ]);
+
+        $this->redirectRoute('client.tools.invoice-generator', navigate: true);
     }
 
     public function saveInvoiceLogo(): void
@@ -316,11 +322,34 @@ new #[Title('Invoice Generator')] class extends Component {
         $this->customer_shipping_address = $customer->shipping_address;
     }
 
+    public function chooseCustomer(int $id): void
+    {
+        $this->selected_customer_id = $id;
+        $this->selectCustomer($id);
+        $this->resetValidation(['selected_customer_id', 'customer_name']);
+    }
+
+    public function clearSelectedCustomer(): void
+    {
+        $this->selected_customer_id = null;
+        $this->customer_name = '';
+        $this->customer_email = '';
+        $this->customer_phone = '';
+        $this->customer_address = '';
+        $this->customer_shipping_name = '';
+        $this->customer_shipping_email = '';
+        $this->customer_shipping_phone = '';
+        $this->customer_shipping_address = '';
+        $this->resetValidation(['selected_customer_id', 'customer_name']);
+    }
+
     public function updatedSelectedCustomerId(?int $id): void
     {
         if ($id) {
             $this->selectCustomer($id);
+            $this->resetValidation(['selected_customer_id', 'customer_name']);
         } else {
+            $this->resetValidation(['selected_customer_id', 'customer_name']);
             $this->customer_name = '';
             $this->customer_email = '';
             $this->customer_phone = '';
@@ -360,7 +389,7 @@ new #[Title('Invoice Generator')] class extends Component {
         $this->reset('customer_modal_name', 'customer_modal_email', 'customer_modal_phone', 'customer_modal_shipping_address', 'customer_modal_billing_address');
 
         $this->dispatch('close-customer-modal');
-        $this->dispatch('customer-selected', name: $customer->name);
+        $this->dispatch('customer-selected', id: $customer->id, name: $customer->name, email: $customer->email ?? '');
     }
 
     public function selectProduct(int $id, ?int $index = null): void
@@ -436,6 +465,9 @@ new #[Title('Invoice Generator')] class extends Component {
             'seller_name' => ['required', 'string', 'max:150'],
             'seller_company_name' => ['required', 'string', 'max:150'],
             'seller_website' => ['nullable', 'string', 'max:250'],
+            'selected_customer_id' => $this->is_premium
+                ? ['required', Rule::exists('customers', 'id')->where('user_id', auth()->id())]
+                : ['nullable'],
             'customer_name' => ['required', 'string', 'max:150'],
             'customer_email' => ['nullable', 'email', 'max:150'],
             'customer_phone' => ['nullable', 'string', 'max:80'],
@@ -470,6 +502,9 @@ new #[Title('Invoice Generator')] class extends Component {
             'payment_method' => ['nullable', 'string', 'max:30'],
             'sender_number' => ['nullable', 'string', 'max:50'],
             'transaction_id' => ['nullable', 'string', 'max:100'],
+        ], [
+            'selected_customer_id.required' => 'Please select a customer.',
+            'selected_customer_id.exists' => 'The selected customer is unavailable.',
         ]);
 
         $theme = InvoiceTheme::query()->active()->findOrFail($validated['selectedThemeId']);
@@ -531,6 +566,81 @@ new #[Title('Invoice Generator')] class extends Component {
     private function ensurePremium(): void
     {
         abort_unless(auth()->check() && $this->is_premium, 403, 'An active Business Tools subscription is required.');
+    }
+
+    private function initializeInvoice(): void
+    {
+        $this->invoice_number = 'INV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
+        $this->issue_date = now()->toDateString();
+        $this->due_date = '';
+
+        $company = auth()->user()?->company;
+        $this->seller_name = $company?->company_name ?? '';
+        $this->seller_email = $company?->email ?? (auth()->user()?->email ?? '');
+        $this->seller_phone = $company?->phone ?? '';
+        $this->seller_address = $company?->address ?? '';
+        $this->seller_company_name = $company?->company_name ?? '';
+        $this->seller_website = $company?->website ?? '';
+
+        $this->loadInvoiceLogo();
+        $this->addItem();
+    }
+
+    private function restoreThemeChangeDraft(): bool
+    {
+        $draft = session()->pull(self::DRAFT_SESSION_KEY);
+
+        if (!is_array($draft) || !isset($draft['saved_at'], $draft['data'])) {
+            return false;
+        }
+
+        if (now()->timestamp - (int) $draft['saved_at'] > 1800 || !is_array($draft['data'])) {
+            return false;
+        }
+
+        foreach ($draft['data'] as $property => $value) {
+            if (property_exists($this, $property)) {
+                $this->{$property} = $value;
+            }
+        }
+
+        $this->loadInvoiceLogo();
+
+        return true;
+    }
+
+    private function invoiceDraft(): array
+    {
+        return [
+            'invoice_number' => $this->invoice_number,
+            'issue_date' => $this->issue_date,
+            'due_date' => $this->due_date,
+            'currency' => $this->currency,
+            'seller_name' => $this->seller_name,
+            'seller_email' => $this->seller_email,
+            'seller_phone' => $this->seller_phone,
+            'seller_address' => $this->seller_address,
+            'seller_company_name' => $this->seller_company_name,
+            'seller_website' => $this->seller_website,
+            'customer_name' => $this->customer_name,
+            'customer_email' => $this->customer_email,
+            'customer_phone' => $this->customer_phone,
+            'customer_address' => $this->customer_address,
+            'customer_shipping_name' => $this->customer_shipping_name,
+            'customer_shipping_email' => $this->customer_shipping_email,
+            'customer_shipping_phone' => $this->customer_shipping_phone,
+            'customer_shipping_address' => $this->customer_shipping_address,
+            'selected_customer_id' => $this->selected_customer_id,
+            'notes' => $this->notes,
+            'terms' => $this->terms,
+            'discount_type' => $this->discount_type,
+            'discount_value' => $this->discount_value,
+            'shipping_charge' => $this->shipping_charge,
+            'items' => $this->items,
+            'payment_method' => $this->payment_method,
+            'sender_number' => $this->sender_number,
+            'transaction_id' => $this->transaction_id,
+        ];
     }
 
     private function loadInvoiceLogo(): void
@@ -609,15 +719,17 @@ new #[Title('Invoice Generator')] class extends Component {
                         available</span>
                 </div>
 
-                <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                <div class="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
                     @forelse ($this->themes as $theme)
                         @php($locked = $theme->is_paid && !$this->is_premium)
-                        <article @class([
-                            'group relative overflow-hidden rounded-3xl border bg-white/6 shadow-[0_24px_70px_rgba(0,0,0,0.22)] backdrop-blur-xl transition',
+                        <article x-data="{ actionsVisible: false }"
+                            x-on:click="if (window.innerWidth < 1024) actionsVisible = true"
+                            x-on:click.outside="actionsVisible = false" @class([
+                            'group relative h-72 overflow-hidden rounded-2xl border bg-slate-100 shadow-[0_24px_70px_rgba(0,0,0,0.22)] transition sm:rounded-3xl lg:h-[450px]',
                             'border-white/10 hover:-translate-y-1 hover:border-cyan-300/35' => !$locked,
                             'border-white/10 opacity-65' => $locked,
                         ])>
-                            <div class="relative h-72 overflow-hidden bg-slate-100">
+                            <div class="absolute inset-0 overflow-hidden bg-slate-100">
                                 @if ($theme->is_paid)
                                     <span
                                         class="absolute right-3 top-3 z-10 inline-flex items-center justify-center rounded-full border border-white/15 bg-black/40 px-2 py-1.5 text-amber-300 shadow-lg backdrop-blur-2xl">
@@ -627,7 +739,7 @@ new #[Title('Invoice Generator')] class extends Component {
                                 @if ($theme->preview_image)
                                     <img src="{{ asset('storage/' . $theme->preview_image) }}"
                                         alt="{{ $theme->name }} template preview"
-                                        class="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.025]">
+                                        class="h-full w-full object-contain object-center transition duration-500 group-hover:scale-[1.025]">
                                 @else
                                     <div class="flex h-full items-center justify-center">
                                         <span
@@ -636,24 +748,28 @@ new #[Title('Invoice Generator')] class extends Component {
                                 @endif
                             </div>
 
-                            <div class="p-5">
+                            <div
+                                x-bind:class="actionsVisible ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'"
+                                class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-slate-950 via-slate-950/55 to-transparent p-3 transition duration-300 sm:p-5 lg:translate-y-3 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:group-focus-within:translate-y-0 lg:group-focus-within:opacity-100">
                                 <div>
-                                    <h3 class="truncate text-xl font-bold">{{ $theme->name }}</h3>
-                                    <p class="mt-1 line-clamp-2 text-sm leading-6 text-blue-100/55">
+                                    <h3 class="truncate text-sm font-bold sm:text-xl">{{ $theme->name }}</h3>
+                                    <p class="mt-1 hidden line-clamp-2 text-sm leading-6 text-blue-100/70 sm:block">
                                         {{ $theme->description ?: 'Professional invoice template' }}</p>
                                 </div>
 
                                 @if ($locked)
                                     <a href="{{ $this->firstPlan ? route('client.tool-subscriptions.checkout', $this->firstPlan) : route('account.tool-subscriptions') }}"
-                                        wire:navigate
-                                        class="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 px-5 py-3 text-base font-bold tracking-wider text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5">
-                                        <span class="material-symbols-outlined text-base">workspace_premium</span>
-                                        Subscribe to Unlock
+                                        wire:navigate x-on:click.stop
+                                        class="mt-3 flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 px-2 py-2.5 text-xs font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 sm:mt-5 sm:gap-2 sm:px-5 sm:py-3 sm:text-base sm:tracking-wider">
+                                        <span class="material-symbols-outlined text-sm sm:text-base">workspace_premium</span>
+                                        <span class="sm:hidden">Unlock</span>
+                                        <span class="hidden sm:inline">Subscribe to Unlock</span>
                                     </a>
                                 @else
-                                    <button type="button" wire:click="chooseTheme({{ $theme->id }})"
-                                        class="mt-5 w-full cursor-pointer rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 px-5 py-3 text-base font-bold tracking-wider text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5">
-                                        Select Template
+                                    <button type="button" wire:click="chooseTheme({{ $theme->id }})" x-on:click.stop
+                                        class="mt-3 w-full cursor-pointer rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 px-2 py-2.5 text-xs font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 sm:mt-5 sm:px-5 sm:py-3 sm:text-base sm:tracking-wider">
+                                        <span class="sm:hidden">Select</span>
+                                        <span class="hidden sm:inline">Select Template</span>
                                     </button>
                                 @endif
                             </div>
@@ -796,52 +912,94 @@ new #[Title('Invoice Generator')] class extends Component {
                             <div class="mb-5">
                                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Customer</p>
                             </div>
-                            <div class="mb-6" x-data="{
-                                open: false,
-                                search: '',
-                                customers: {{ Js::from($this->customers->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'email' => $c->email])->values()->toArray()) }},
-                                get filtered() {
-                                    if (!this.search) return this.customers;
-                                    const q = this.search.toLowerCase();
-                                    return this.customers.filter(c => c.name.toLowerCase().includes(q));
-                                },
-                                select(id, name) {
-                                    $wire.set('selected_customer_id', id);
-                                    this.search = name;
-                                    this.open = false;
-                                },
-                                clear() {
-                                    $wire.set('selected_customer_id', null);
-                                    this.search = '';
-                                    this.open = false;
-                                }
-                            }" x-on:click.away="open = false"
-                                x-on:customer-selected.window="search = $event.detail.name">
-                                <div class="relative">
-                                    <div class="flex items-center rounded-xl border border-white/10 bg-black/20">
-                                        <input x-model="search" x-on:focus="open = true" x-on:input="open = true"
-                                            placeholder="Search customers..." autocomplete="off"
-                                            class="flex-1 bg-transparent px-4 py-3 outline-none">
-                                        <button type="button" x-on:click="clear()" x-show="search"
-                                            class="mr-2 flex size-6 items-center justify-center rounded-full text-blue-100/50 transition hover:bg-white/10 hover:text-blue-100/80">
-                                            <span class="material-symbols-outlined text-sm">close</span>
+                            <div class="mb-6">
+                                <div wire:ignore x-data="{
+                                    open: false,
+                                    search: {{ Js::from($this->customers->firstWhere('id', $selected_customer_id)?->name ?? '') }},
+                                    selectedId: {{ Js::from($selected_customer_id) }},
+                                    customers: {{ Js::from($this->customers->map(fn($customer) => [
+                                        'id' => $customer->id,
+                                        'name' => $customer->name,
+                                        'email' => $customer->email ?? '',
+                                    ])->values()->toArray()) }},
+                                    get filteredCustomers() {
+                                        const query = this.search.trim().toLowerCase();
+
+                                        if (!query || this.selectedId) {
+                                            return this.customers;
+                                        }
+
+                                        return this.customers.filter(customer =>
+                                            customer.name.toLowerCase().includes(query) ||
+                                            customer.email.toLowerCase().includes(query)
+                                        );
+                                    },
+                                    beginSearch() {
+                                        if (this.selectedId) {
+                                            this.search = '';
+                                            this.selectedId = null;
+                                        }
+
+                                        this.open = true;
+                                    },
+                                    async selectCustomer(customer) {
+                                        await $wire.chooseCustomer(customer.id);
+                                        this.selectedId = customer.id;
+                                        this.search = customer.name;
+                                        this.open = false;
+                                    },
+                                    async clearCustomer() {
+                                        this.selectedId = null;
+                                        this.search = '';
+                                        this.open = true;
+                                        await $wire.clearSelectedCustomer();
+                                    }
+                                }" x-on:click.outside="open = false"
+                                    x-on:customer-selected.window="
+                                        if (!customers.some(customer => customer.id === $event.detail.id)) {
+                                            customers.unshift($event.detail);
+                                        }
+                                        selectedId = $event.detail.id;
+                                        search = $event.detail.name;
+                                        open = false;
+                                    "
+                                    class="relative">
+                                    <div
+                                        class="flex items-center rounded-xl border border-white/10 bg-slate-900 transition focus-within:border-cyan-300/50">
+                                        <input x-model="search" x-on:focus="beginSearch()"
+                                            x-on:input="selectedId = null; open = true"
+                                            placeholder="Search customers by name or email..." autocomplete="off"
+                                            class="min-w-0 flex-1 bg-transparent px-4 py-3 text-white outline-none">
+                                        <button type="button" x-show="search" x-on:click.stop="clearCustomer()"
+                                            class="mr-2 flex size-7 items-center justify-center rounded-full text-blue-100/50 transition hover:bg-white/10 hover:text-white">
+                                            <span class="material-symbols-outlined text-base">close</span>
                                         </button>
                                     </div>
-                                    <div x-show="open && (filtered.length || search)" x-cloak
-                                        class="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-auto rounded-xl border border-white/10 bg-slate-900 shadow-xl">
-                                        <template x-for="customer in filtered" :key="customer.id">
-                                            <button type="button" x-on:click="select(customer.id, customer.name)"
+
+                                    <div x-show="open" x-cloak
+                                        class="absolute left-0 right-0 top-full z-[100] mt-1 max-h-60 overflow-auto rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
+                                        <template x-for="customer in filteredCustomers" :key="customer.id">
+                                            <button type="button" x-on:click="selectCustomer(customer)"
                                                 class="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-white/10">
                                                 <span class="material-symbols-outlined text-blue-100/40">person</span>
-                                                <div class="min-w-0 flex-1">
-                                                    <p class="truncate font-medium" x-text="customer.name"></p>
-                                                    <p class="truncate text-xs text-blue-100/50"
-                                                        x-text="customer.email"></p>
-                                                </div>
+                                                <span class="min-w-0 flex-1">
+                                                    <span class="block truncate font-medium"
+                                                        x-text="customer.name"></span>
+                                                    <span class="block truncate text-xs text-blue-100/50"
+                                                        x-text="customer.email"></span>
+                                                </span>
                                             </button>
                                         </template>
+
+                                        <p x-show="filteredCustomers.length === 0"
+                                            class="px-4 py-4 text-center text-sm text-blue-100/50">
+                                            No customers found
+                                        </p>
                                     </div>
                                 </div>
+                                @error('selected_customer_id')
+                                    <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                                @enderror
                                 <div class="mt-2">
                                     <button type="button" x-on:click="$dispatch('open-customer-modal')"
                                         class="inline-flex items-center gap-1 text-sm font-semibold text-cyan-200 transition hover:text-cyan-100">
@@ -931,12 +1089,18 @@ new #[Title('Invoice Generator')] class extends Component {
                                                 @if ($this->is_premium)
                                                     <div class="relative" x-data="{
                                                         open: false,
+                                                        menuStyle: '',
                                                         query: @entangle('items.' . $index . '.name').live,
                                                         products: {{ Js::from($this->saved_products->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'description' => $p->description ?? '', 'unit_price' => (float) $p->unit_price, 'tax' => (float) ($p->tax_rate ?? 0)])->values()->toArray()) }},
                                                         get filtered() {
                                                             if (!this.query) return this.products;
                                                             const q = this.query.toLowerCase();
                                                             return this.products.filter(p => p.name.toLowerCase().includes(q));
+                                                        },
+                                                        showMenu() {
+                                                            const rect = this.$refs.productInput.getBoundingClientRect();
+                                                            this.menuStyle = `position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px; width: ${rect.width}px;`;
+                                                            this.open = true;
                                                         },
                                                         select(product) {
                                                             $wire.set('items.{{ $index }}.name', product.name);
@@ -948,23 +1112,29 @@ new #[Title('Invoice Generator')] class extends Component {
                                                     }"
                                                         x-on:click.away="open = false"
                                                         x-on:customer-selected.window="search = $event.detail.name">
-                                                        <input placeholder="Item name" x-model="query"
-                                                            x-on:focus="open = true" x-on:input="open = true"
+                                                        <input x-ref="productInput" placeholder="Item name"
+                                                            x-model="query" x-on:focus="showMenu()"
+                                                            x-on:input="showMenu()"
                                                             autocomplete="off"
                                                             class="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm">
-                                                        <div x-show="open && filtered.length > 0" x-cloak
-                                                            class="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-900 shadow-xl">
-                                                            <template x-for="product in filtered"
-                                                                :key="product.id">
-                                                                <button type="button" x-on:click="select(product)"
-                                                                    class="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-white/10">
-                                                                    <span x-text="product.name"
-                                                                        class="font-medium truncate"></span>
-                                                                    <span x-text="product.unit_price.toFixed(2)"
-                                                                        class="shrink-0 ml-2 text-blue-100/50"></span>
-                                                                </button>
-                                                            </template>
-                                                        </div>
+                                                        <template x-teleport="body">
+                                                            <div x-show="open && filtered.length > 0" x-cloak
+                                                                x-bind:style="menuStyle" x-on:click.stop
+                                                                class="z-[10000] max-h-48 overflow-auto rounded-lg border border-white/10 bg-slate-900 text-white shadow-2xl">
+                                                                <template x-for="product in filtered"
+                                                                    :key="product.id">
+                                                                    <button type="button"
+                                                                        x-on:click="select(product)"
+                                                                        class="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-white/10">
+                                                                        <span x-text="product.name"
+                                                                            class="truncate font-medium"></span>
+                                                                        <span
+                                                                            x-text="product.unit_price.toFixed(2)"
+                                                                            class="ml-2 shrink-0 text-blue-100/50"></span>
+                                                                    </button>
+                                                                </template>
+                                                            </div>
+                                                        </template>
                                                     </div>
                                                 @else
                                                     <input wire:model="items.{{ $index }}.name"

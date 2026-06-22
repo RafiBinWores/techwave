@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
     'slug',
     'description',
     'preview_image',
+    'pdf_background_image',
     'layout',
     'brand_color',
     'html_template',

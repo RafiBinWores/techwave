@@ -22,6 +22,7 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
     public string $html_template = '';
     public string $css_styles = '';
     public $preview;
+    public $pdf_background;
 
     public function mount(): void
     {
@@ -46,6 +47,7 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
             'css_styles' => ['nullable', 'string', 'max:50000', 'not_regex:/<\/?style\b/i', 'not_regex:/@import/i', 'not_regex:/url\s*\(/i', 'not_regex:/javascript\s*:/i', 'not_regex:/expression\s*\(/i', 'not_regex:/behavior\s*:/i'],
 
             'preview' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'pdf_background' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
 
@@ -61,10 +63,19 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
         $this->resetErrorBag(['html_template', 'css_styles']);
     }
 
+    public function useRedAccentTemplate(): void
+    {
+        $this->html_template = InvoiceThemeRenderer::redAccentHtml();
+        $this->css_styles = InvoiceThemeRenderer::redAccentCss();
+        $this->brand_color = '#f43b3c';
+        $this->resetErrorBag(['html_template', 'css_styles']);
+    }
+
     public function save(): void
     {
         $validated = $this->validate();
         $previewPath = $this->preview->store('invoice-themes/previews', 'public');
+        $backgroundPath = $this->pdf_background?->store('invoice-themes/backgrounds', 'public');
 
         InvoiceTheme::create([
             'name' => $validated['name'],
@@ -78,6 +89,7 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
             'html_template' => $validated['html_template'],
             'css_styles' => $validated['css_styles'],
             'preview_image' => $previewPath,
+            'pdf_background_image' => $backgroundPath,
         ]);
 
         session()->flash('toast', ['type' => 'success', 'message' => 'Invoice theme created.']);
@@ -132,6 +144,40 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
                         </label>
                         <div wire:loading wire:target="preview" class="text-sm text-primary">Uploading image...</div>
                         @error('preview')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                            PDF background image
+                        </label>
+                        <p class="text-xs leading-5 text-secondary">
+                            Optional full-page A4 artwork. Use a 2480 × 3508 px PNG or JPG without text fields.
+                        </p>
+                        <label
+                            class="flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
+                            @if ($pdf_background)
+                                <img src="{{ $pdf_background->temporaryUrl() }}"
+                                    class="aspect-[210/297] w-full object-cover" alt="PDF background preview">
+                            @else
+                                <div class="flex aspect-[210/297] w-full flex-col items-center justify-center p-5 text-center">
+                                    <span class="material-symbols-outlined mb-2 text-5xl text-outline">
+                                        picture_as_pdf
+                                    </span>
+                                    <p class="text-sm font-body-sm text-outline">Choose A4 background</p>
+                                    <p class="mt-1 text-xs font-bold uppercase tracking-widest text-outline-variant">
+                                        PNG, JPG or WebP, max 10 MB
+                                    </p>
+                                </div>
+                            @endif
+                            <input type="file" wire:model="pdf_background" accept=".jpg,.jpeg,.png,.webp"
+                                class="hidden">
+                        </label>
+                        <div wire:loading wire:target="pdf_background" class="text-sm text-primary">
+                            Uploading background...
+                        </div>
+                        @error('pdf_background')
                             <p class="text-sm text-red-500">{{ $message }}</p>
                         @enderror
                     </div>
@@ -244,6 +290,9 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
                 <div class="flex items-center justify-between gap-3">
                     <h2 class="font-bold text-slate-900">Template placeholders</h2>
                     <div class="flex gap-2">
+                        <button type="button" wire:click="useRedAccentTemplate"
+                            wire:confirm="Replace both the HTML and CSS with the DomPDF-safe red accent template?"
+                            class="text-xs font-semibold text-red-600">Use red accent design</button>
                         <button type="button" wire:click="resetTemplateCode"
                             wire:confirm="Replace both the HTML and CSS with the starter template?"
                             class="text-xs font-semibold text-primary">Reset starter code</button>
@@ -251,7 +300,8 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
                 </div>
                 <p class="mt-1 text-xs leading-5 text-slate-600">
                     Use placeholders in your HTML or CSS. Click a tag to copy it.
-                    <code class="font-mono">@{{ item_rows }}</code> generates product rows.
+                    <code class="font-mono">@{{ item_rows }}</code> generates five-column product rows.
+                    <code class="font-mono">@{{ item_rows_compact }}</code> generates four-column rows without tax.
                     Use smart blocks like <code class="font-mono">@{{ seller_contact_block }}</code>,
                     <code class="font-mono">@{{ invoice_date_block }}</code>,
                     <code class="font-mono">@{{ shipping_row }}</code>, and
@@ -267,6 +317,7 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
                                 'issue_date',
                                 'due_date',
                                 'due_date_line',
+                                'due_meta_card',
                                 'invoice_date_block',
                                 'currency',
                             ],
@@ -302,15 +353,17 @@ new #[Layout('layouts.admin-app')] #[Title('Add Invoice Theme')] class extends C
                                 'tax_total',
                                 'shipping_charge',
                                 'shipping_row',
+                                'shipping_table_row',
                                 'discount_type',
                                 'discount_value',
                                 'discount_label',
                                 'discount',
                                 'discount_row',
+                                'discount_table_row',
                                 'total',
                             ],
 
-                            'Items' => ['item_rows'],
+                            'Items' => ['item_rows', 'item_rows_compact'],
 
                             'Notes & Terms' => ['notes', 'terms', 'notes_section', 'terms_section'],
 

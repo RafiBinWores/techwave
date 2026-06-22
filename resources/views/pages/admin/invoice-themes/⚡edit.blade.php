@@ -28,6 +28,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
     public string $css_styles = '';
 
     public $preview;
+    public $pdf_background;
 
     public function mount(InvoiceTheme $invoiceTheme): void
     {
@@ -69,6 +70,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
             'css_styles' => ['nullable', 'string', 'max:50000', 'not_regex:/<\/?style\b/i', 'not_regex:/@import/i', 'not_regex:/url\s*\(/i', 'not_regex:/javascript\s*:/i', 'not_regex:/expression\s*\(/i', 'not_regex:/behavior\s*:/i'],
 
             'preview' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'pdf_background' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
 
@@ -80,11 +82,20 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
         $this->resetErrorBag(['html_template', 'css_styles']);
     }
 
+    public function useRedAccentTemplate(): void
+    {
+        $this->html_template = InvoiceThemeRenderer::redAccentHtml();
+        $this->css_styles = InvoiceThemeRenderer::redAccentCss();
+        $this->brand_color = '#f43b3c';
+        $this->resetErrorBag(['html_template', 'css_styles']);
+    }
+
     public function discardChanges(): void
     {
         $this->invoiceTheme->refresh();
 
         $this->preview = null;
+        $this->pdf_background = null;
 
         $this->fillFromTheme();
         $this->resetValidation();
@@ -95,6 +106,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
         $validated = $this->validate();
 
         $previewPath = $this->invoiceTheme->preview_image;
+        $backgroundPath = $this->invoiceTheme->pdf_background_image;
 
         if ($this->preview) {
             if ($previewPath && Storage::disk('public')->exists($previewPath)) {
@@ -102,6 +114,14 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
             }
 
             $previewPath = $this->preview->store('invoice-themes/previews', 'public');
+        }
+
+        if ($this->pdf_background) {
+            if ($backgroundPath && Storage::disk('public')->exists($backgroundPath)) {
+                Storage::disk('public')->delete($backgroundPath);
+            }
+
+            $backgroundPath = $this->pdf_background->store('invoice-themes/backgrounds', 'public');
         }
 
         $this->invoiceTheme->update([
@@ -116,6 +136,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
             'html_template' => $validated['html_template'],
             'css_styles' => $validated['css_styles'],
             'preview_image' => $previewPath,
+            'pdf_background_image' => $backgroundPath,
         ]);
 
         session()->flash('toast', [
@@ -140,6 +161,21 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
 
         $this->html_template = $this->invoiceTheme->html_template ?: InvoiceThemeRenderer::starterHtml();
         $this->css_styles = $this->invoiceTheme->css_styles ?: InvoiceThemeRenderer::starterCss();
+    }
+
+    public function removePdfBackground(): void
+    {
+        $backgroundPath = $this->invoiceTheme->pdf_background_image;
+
+        if ($backgroundPath && Storage::disk('public')->exists($backgroundPath)) {
+            Storage::disk('public')->delete($backgroundPath);
+        }
+
+        $this->invoiceTheme->update(['pdf_background_image' => null]);
+        $this->pdf_background = null;
+        $this->invoiceTheme->refresh();
+
+        $this->dispatch('toast', message: 'PDF background removed.', type: 'success');
     }
 };
 ?>
@@ -207,6 +243,51 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                         </div>
 
                         @error('preview')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <label class="text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                PDF background image
+                            </label>
+                            @if ($invoiceTheme->pdf_background_image)
+                                <button type="button" wire:click="removePdfBackground"
+                                    wire:confirm="Remove this PDF background image?"
+                                    class="text-xs font-semibold text-red-600">
+                                    Remove
+                                </button>
+                            @endif
+                        </div>
+                        <p class="text-xs leading-5 text-secondary">
+                            Optional full-page A4 artwork. Use a 2480 × 3508 px PNG or JPG without text fields.
+                        </p>
+                        <label
+                            class="flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
+                            @if ($pdf_background)
+                                <img src="{{ $pdf_background->temporaryUrl() }}"
+                                    class="aspect-[210/297] w-full object-cover" alt="New PDF background">
+                            @elseif ($invoiceTheme->pdf_background_image)
+                                <img src="{{ Storage::url($invoiceTheme->pdf_background_image) }}"
+                                    class="aspect-[210/297] w-full object-cover"
+                                    alt="{{ $invoiceTheme->name }} PDF background">
+                            @else
+                                <div class="flex aspect-[210/297] w-full flex-col items-center justify-center p-5 text-center">
+                                    <span class="material-symbols-outlined mb-2 text-5xl text-outline">
+                                        picture_as_pdf
+                                    </span>
+                                    <p class="text-sm font-body-sm text-outline">Choose A4 background</p>
+                                    <p class="mt-1 text-xs text-secondary">PNG, JPG or WebP, max 10 MB</p>
+                                </div>
+                            @endif
+                            <input type="file" wire:model="pdf_background" accept=".jpg,.jpeg,.png,.webp"
+                                class="hidden">
+                        </label>
+                        <div wire:loading wire:target="pdf_background" class="text-sm text-primary">
+                            Uploading background...
+                        </div>
+                        @error('pdf_background')
                             <p class="text-sm text-red-500">{{ $message }}</p>
                         @enderror
                     </div>
@@ -342,6 +423,11 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                     <h2 class="font-bold text-slate-900">Template placeholders</h2>
 
                     <div class="flex gap-2">
+                        <button type="button" wire:click="useRedAccentTemplate"
+                            wire:confirm="Replace both the HTML and CSS with the DomPDF-safe red accent template?"
+                            class="text-xs font-semibold text-red-600">
+                            Use red accent design
+                        </button>
                         <button type="button" wire:click="resetTemplateCode"
                             wire:confirm="Replace both the HTML and CSS with the starter template?"
                             class="text-xs font-semibold text-primary">
@@ -352,7 +438,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
 
                 <p class="mt-1 text-xs leading-5 text-slate-600">
                     Use placeholders in your HTML or CSS. Click a tag to copy it.
-                    <code class="font-mono">@{{ item_rows }}</code> generates product rows.
+                    <code class="font-mono">@{{ item_rows }}</code> generates five-column product rows.
+                    <code class="font-mono">@{{ item_rows_compact }}</code> generates four-column rows without tax.
                     Use smart blocks like
                     <code class="font-mono">@{{ seller_contact_block }}</code>,
                     <code class="font-mono">@{{ customer_contact_block }}</code>,
@@ -373,6 +460,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                                 'issue_date',
                                 'due_date',
                                 'due_date_line',
+                                'due_meta_card',
                                 'invoice_date_block',
                                 'currency',
                             ],
@@ -408,15 +496,17 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                                 'tax_total',
                                 'shipping_charge',
                                 'shipping_row',
+                                'shipping_table_row',
                                 'discount_type',
                                 'discount_value',
                                 'discount_label',
                                 'discount',
                                 'discount_row',
+                                'discount_table_row',
                                 'total',
                             ],
 
-                            'Items' => ['item_rows'],
+                            'Items' => ['item_rows', 'item_rows_compact'],
 
                             'Notes & Terms' => ['notes', 'terms', 'notes_section', 'terms_section'],
 
