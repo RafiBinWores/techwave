@@ -202,7 +202,7 @@ new class extends Component {
                 @endif
             </a>
 
-            <div class="hidden items-center gap-8 text-sm font-medium text-blue-50/85 lg:flex">
+            <div class="hidden items-center gap-8 text-base font-medium text-blue-50/85 lg:flex">
                 <a href="{{ route('home') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                     <span class="relative z-10">Home</span>
@@ -293,7 +293,7 @@ new class extends Component {
                                             <div>
                                                 <a href="{{ route('client.services.details', $service['slug']) }}" wire:navigate
                                                     @click="servicesMega = false"
-                                                    class="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] text-blue-100/75 transition hover:bg-white/8 hover:text-white">
+                                                    class="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-blue-100/75 transition hover:bg-white/8 hover:text-white">
                                                     <span class="h-1 w-1 shrink-0 rounded-full bg-white/20 group-hover:bg-cyan-400"></span>
                                                     {{ $service['name'] }}
                                                 </a>
@@ -302,7 +302,7 @@ new class extends Component {
                                                     @foreach ($service['options'] as $option)
                                                     <a href="{{ route('client.services.options', $service['slug']) }}" wire:navigate
                                                         @click="servicesMega = false"
-                                                        class="group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] text-blue-100/55 transition hover:bg-white/5 hover:text-blue-100/80">
+                                                        class="group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-blue-100/55 transition hover:bg-white/5 hover:text-blue-100/80">
                                                         <span class="h-0.5 w-0.5 shrink-0 rounded-full bg-white/15 group-hover:bg-cyan-400/60"></span>
                                                         {{ $option['name'] }}
                                                     </a>
@@ -719,7 +719,7 @@ new class extends Component {
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="translate-x-full"
-            class="fixed right-0 top-0 z-[9999] flex h-full w-[320px] max-w-[85vw] flex-col border-l border-white/16 glass-panel shadow-2xl shadow-black/40">
+            class="fixed right-0 top-0 z-[9999] flex h-full w-[320px] max-w-[85vw] flex-col border-l border-white/16 glass-panel shadow-2xl shadow-black/40" style="backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);">
 
             {{-- Drawer Header --}}
             <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -741,7 +741,7 @@ new class extends Component {
 
             {{-- Drawer Body --}}
             <div class="flex-1 overflow-y-auto px-4 py-4">
-                <div class="flex flex-col gap-1.5 text-sm text-blue-50/85">
+                <div class="flex flex-col gap-1.5 text-base text-blue-50/85">
                     <a href="{{ route('home') }}" wire:navigate @click="mobileMenu = false"
                         class="rounded-xl px-4 py-3 transition hover:bg-white/8">Home</a>
 
@@ -757,13 +757,13 @@ new class extends Component {
                         <div x-show="mobileServicesOpen" x-collapse style="display: none;">
                             <div class="border-t border-white/8 px-4 pb-3 pt-2">
                                 @foreach ($serviceCategories as $category)
-                                <p class="mb-1 mt-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-cyan-400/70">
+                                <p class="mb-1 mt-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400/70">
                                     <span class="material-symbols-outlined text-[14px]">{{ $category['icon'] }}</span>
                                     {{ $category['name'] }}
                                 </p>
                                 @foreach ($category['services'] as $service)
                                 <a href="{{ route('client.services.details', $service['slug']) }}" wire:navigate @click="mobileMenu = false"
-                                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-blue-100/60 transition hover:text-white">
+                                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blue-100/60 transition hover:text-white">
                                     <span class="h-1 w-1 shrink-0 rounded-full bg-white/20"></span>
                                     {{ $service['name'] }}
                                 </a>
@@ -771,7 +771,7 @@ new class extends Component {
                                 <div class="ml-5 flex flex-col gap-0.5">
                                     @foreach ($service['options'] as $option)
                                     <a href="{{ route('client.services.options', $service['slug']) }}" wire:navigate @click="mobileMenu = false"
-                                        class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] text-blue-100/40 transition hover:text-white">
+                                        class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-blue-100/40 transition hover:text-white">
                                         <span class="h-0.5 w-0.5 shrink-0 rounded-full bg-white/15"></span>
                                         {{ $option['name'] }}
                                     </a>
@@ -781,7 +781,7 @@ new class extends Component {
                                 @endforeach
                                 @endforeach
                                 <a href="{{ route('client.services') }}" wire:navigate @click="mobileMenu = false"
-                                    class="mt-2 block text-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-cyan-300 transition hover:bg-white/10">
+                                    class="mt-2 block text-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-white/10">
                                     View All Services
                                 </a>
                             </div>
@@ -800,13 +800,13 @@ new class extends Component {
                         <div x-show="mobileToolsOpen" x-collapse style="display: none;">
                             <div class="border-t border-white/8 px-4 pb-3 pt-2">
                                 @forelse ($toolCategories as $category)
-                                <p class="mb-1 mt-2 first:mt-0 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-purple-400/70">
+                                <p class="mb-1 mt-2 first:mt-0 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-400/70">
                                     <span class="material-symbols-outlined text-[14px]">{{ $category['icon'] }}</span>
                                     {{ $category['name'] }}
                                 </p>
                                 @foreach ($category['tools'] as $tool)
                                 <a href="{{ route($tool['route']) }}" wire:navigate @click="mobileMenu = false"
-                                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-blue-100/60 transition hover:text-white">
+                                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blue-100/60 transition hover:text-white">
                                     <span class="h-1 w-1 shrink-0 rounded-full bg-white/20"></span>
                                     {{ $tool['name'] }}
                                 </a>
@@ -815,7 +815,7 @@ new class extends Component {
                                 <p class="text-xs text-blue-100/40">No tools available yet.</p>
                                 @endforelse
                                 <a href="{{ route('client.tools.index') }}" wire:navigate @click="mobileMenu = false"
-                                    class="mt-2 block text-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-cyan-300 transition hover:bg-white/10">
+                                    class="mt-2 block text-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-white/10">
                                     View All Tools
                                 </a>
                             </div>
