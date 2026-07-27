@@ -133,16 +133,16 @@ new #[Title('Service Options | Techwave')] class extends Component {
                             @foreach ($service->serviceOptions as $option)
                                 <a href="{{ route('client.services.details', ['slug' => $service->slug, 'option' => $option->slug]) }}"
                                     wire:navigate
-                                    class="group relative min-h-[430px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
+                                    class="group relative min-h-107.5 overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
 
                                     <img src="{{ $this->optionImage($option) }}"
                                         alt="{{ $option->card_title }}"
                                         class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
 
-                                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
+                                    <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/75 to-blue-950/20"></div>
                                     <div class="absolute inset-0 bg-linear-to-br from-cyan-500/20 via-transparent to-blue-700/20"></div>
 
-                                    <div class="relative z-10 flex h-full min-h-[430px] flex-col justify-between p-6">
+                                    <div class="relative z-10 flex h-full min-h-107.5 flex-col justify-between p-6">
                                         <div class="flex items-start justify-between gap-4">
                                             <span class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur-md">
                                                 {{ $service->category?->name ?? 'Service' }}

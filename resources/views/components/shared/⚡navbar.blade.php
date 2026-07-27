@@ -61,6 +61,7 @@ new class extends Component {
         $this->featuredServices = Service::query()
             ->where('is_active', true)
             ->where('is_featured', true)
+            ->with(['serviceOptions' => fn($q) => $q->where('is_active', true)])
             ->limit(2)
             ->get()
             ->map(fn($s) => [
@@ -69,6 +70,7 @@ new class extends Component {
                 'slug' => $s->slug,
                 'icon' => $s->icon ?? 'design_services',
                 'image' => $s->image,
+                'has_options' => $s->serviceOptions->isNotEmpty(),
             ])
             ->toArray();
 
@@ -89,6 +91,7 @@ new class extends Component {
                         'description' => $s->short_description,
                         'slug' => $s->slug,
                         'icon' => $s->icon ?? 'design_services',
+                        'has_options' => $s->serviceOptions->isNotEmpty(),
                         'options' => $s->serviceOptions->map(fn($o) => [
                             'name' => $o->card_title,
                             'slug' => $o->slug,
@@ -202,7 +205,7 @@ new class extends Component {
                 @endif
             </a>
 
-            <div class="hidden items-center gap-8 text-base font-medium text-blue-50/85 lg:flex">
+            <div class="hidden items-center gap-8 text-sm font-medium text-blue-50/85 lg:flex">
                 <a href="{{ route('home') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                     <span class="relative z-10">Home</span>
@@ -242,7 +245,7 @@ new class extends Component {
 
                                 <div class="flex flex-col gap-3">
                                     @forelse ($featuredServices as $featured)
-                                    <a href="{{ route('client.services.details', $featured['slug']) }}" wire:navigate
+                                    <a href="{{ $featured['has_options'] ? route('client.services.options', $featured['slug']) : route('client.services.details', $featured['slug']) }}" wire:navigate
                                         @click="servicesMega = false"
                                         class="group flex items-start gap-3.5 rounded-xl border border-white/5 bg-white/5 p-3.5 transition duration-200 hover:border-cyan-400/20 hover:bg-white/8">
                                         <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/10">
@@ -291,7 +294,7 @@ new class extends Component {
                                         <div class="flex flex-col gap-0.5">
                                             @foreach ($category['services'] as $service)
                                             <div>
-                                                <a href="{{ route('client.services.details', $service['slug']) }}" wire:navigate
+                                                <a href="{{ $service['has_options'] ? route('client.services.options', $service['slug']) : route('client.services.details', $service['slug']) }}" wire:navigate
                                                     @click="servicesMega = false"
                                                     class="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-blue-100/75 transition hover:bg-white/8 hover:text-white">
                                                     <span class="h-1 w-1 shrink-0 rounded-full bg-white/20 group-hover:bg-cyan-400"></span>
@@ -300,7 +303,7 @@ new class extends Component {
                                                 @if (!empty($service['options']))
                                                 <div class="ml-5 flex flex-col gap-0.5">
                                                     @foreach ($service['options'] as $option)
-                                                    <a href="{{ route('client.services.options', $service['slug']) }}" wire:navigate
+                                                    <a href="{{ route('client.services.details', ['slug' => $service['slug'], 'option' => $option['slug']]) }}" wire:navigate
                                                         @click="servicesMega = false"
                                                         class="group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-blue-100/55 transition hover:bg-white/5 hover:text-blue-100/80">
                                                         <span class="h-0.5 w-0.5 shrink-0 rounded-full bg-white/15 group-hover:bg-cyan-400/60"></span>
@@ -762,7 +765,7 @@ new class extends Component {
                                     {{ $category['name'] }}
                                 </p>
                                 @foreach ($category['services'] as $service)
-                                <a href="{{ route('client.services.details', $service['slug']) }}" wire:navigate @click="mobileMenu = false"
+                                <a href="{{ $service['has_options'] ? route('client.services.options', $service['slug']) : route('client.services.details', $service['slug']) }}" wire:navigate @click="mobileMenu = false"
                                     class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blue-100/60 transition hover:text-white">
                                     <span class="h-1 w-1 shrink-0 rounded-full bg-white/20"></span>
                                     {{ $service['name'] }}
@@ -770,7 +773,7 @@ new class extends Component {
                                 @if (!empty($service['options']))
                                 <div class="ml-5 flex flex-col gap-0.5">
                                     @foreach ($service['options'] as $option)
-                                    <a href="{{ route('client.services.options', $service['slug']) }}" wire:navigate @click="mobileMenu = false"
+                                    <a href="{{ route('client.services.details', ['slug' => $service['slug'], 'option' => $option['slug']]) }}" wire:navigate @click="mobileMenu = false"
                                         class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-blue-100/40 transition hover:text-white">
                                         <span class="h-0.5 w-0.5 shrink-0 rounded-full bg-white/15"></span>
                                         {{ $option['name'] }}
