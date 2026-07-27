@@ -74,6 +74,7 @@ new class extends Component {
 
         $services = Service::query()
             ->where('is_active', true)
+            ->with(['serviceOptions' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
             ->orderBy('card_title')
             ->get(['id', 'card_title', 'short_description', 'slug', 'icon', 'category_id']);
 
@@ -88,6 +89,10 @@ new class extends Component {
                         'description' => $s->short_description,
                         'slug' => $s->slug,
                         'icon' => $s->icon ?? 'design_services',
+                        'options' => $s->serviceOptions->map(fn($o) => [
+                            'name' => $o->card_title,
+                            'slug' => $o->slug,
+                        ])->take(4)->values()->toArray(),
                     ])->take(5)->values()->toArray(),
                 ];
             })
@@ -175,7 +180,7 @@ new class extends Component {
 };
 ?>
 
-<div x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false, servicesMega: false, toolsMega: false, mobileServicesOpen: false, mobileToolsOpen: false, scrolled: false }"
+<div class="relative" x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false, servicesMega: false, toolsMega: false, mobileServicesOpen: false, mobileToolsOpen: false, scrolled: false }"
     x-init="window.addEventListener('scroll', () => { scrolled = window.scrollY > 20 })">
     <nav :class="scrolled ? 'bg-white/10 backdrop-blur-md border border-white/12' : 'border border-white/8 bg-white/5 backdrop-blur-sm'"
         class="rounded-2xl px-4 py-4 sm:px-6 transition-all duration-300">
@@ -207,8 +212,7 @@ new class extends Component {
                 </a>
 
                 {{-- Services Mega Menu --}}
-                <div class="relative"
-                    @mouseenter="servicesMega = true; toolsMega = false"
+                <div @mouseenter="servicesMega = true; toolsMega = false"
                     @mouseleave="servicesMega = false">
                     <button type="button" @click="servicesMega = !servicesMega"
                         class="group cursor-pointer relative flex items-center gap-1 px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
@@ -229,7 +233,7 @@ new class extends Component {
                         x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                         @click.outside="servicesMega = false"
                         style="display: none;"
-                        class="absolute left-1/2 top-full z-[9999] mt-8 w-[820px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
+                        class="absolute left-1/2 top-full z-[9999] mt-2 w-[820px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
 
                         <div class="grid grid-cols-12 gap-0">
                             {{-- Left: Featured --}}
@@ -286,12 +290,26 @@ new class extends Component {
 
                                         <div class="flex flex-col gap-0.5">
                                             @foreach ($category['services'] as $service)
-                                            <a href="{{ route('client.services.details', $service['slug']) }}" wire:navigate
-                                                @click="servicesMega = false"
-                                                class="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] text-blue-100/65 transition hover:bg-white/8 hover:text-white">
-                                                <span class="h-1 w-1 shrink-0 rounded-full bg-white/20 group-hover:bg-cyan-400"></span>
-                                                {{ $service['name'] }}
-                                            </a>
+                                            <div>
+                                                <a href="{{ route('client.services.details', $service['slug']) }}" wire:navigate
+                                                    @click="servicesMega = false"
+                                                    class="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] text-blue-100/75 transition hover:bg-white/8 hover:text-white">
+                                                    <span class="h-1 w-1 shrink-0 rounded-full bg-white/20 group-hover:bg-cyan-400"></span>
+                                                    {{ $service['name'] }}
+                                                </a>
+                                                @if (!empty($service['options']))
+                                                <div class="ml-5 flex flex-col gap-0.5">
+                                                    @foreach ($service['options'] as $option)
+                                                    <a href="{{ route('client.services.options', $service['slug']) }}" wire:navigate
+                                                        @click="servicesMega = false"
+                                                        class="group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] text-blue-100/55 transition hover:bg-white/5 hover:text-blue-100/80">
+                                                        <span class="h-0.5 w-0.5 shrink-0 rounded-full bg-white/15 group-hover:bg-cyan-400/60"></span>
+                                                        {{ $option['name'] }}
+                                                    </a>
+                                                    @endforeach
+                                                </div>
+                                                @endif
+                                            </div>
                                             @endforeach
                                         </div>
                                     </div>
@@ -307,8 +325,7 @@ new class extends Component {
                 </div>
 
                 {{-- Tools Mega Menu --}}
-                <div class="relative"
-                    @mouseenter="toolsMega = true; servicesMega = false"
+                <div @mouseenter="toolsMega = true; servicesMega = false"
                     @mouseleave="toolsMega = false">
                     <button type="button" @click="toolsMega = !toolsMega"
                         class="group cursor-pointer relative flex items-center gap-1 px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
@@ -329,7 +346,7 @@ new class extends Component {
                         x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                         @click.outside="toolsMega = false"
                         style="display: none;"
-                        class="absolute left-1/2 top-full z-[9999] mt-8 w-[780px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
+                        class="absolute left-1/2 top-full z-[9999] mt-2 w-[780px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
 
                         <div class="p-6">
                             <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40">All Tools</p>
