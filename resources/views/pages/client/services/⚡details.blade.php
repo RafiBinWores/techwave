@@ -307,11 +307,11 @@ new #[Title('Service Details | Techwave')] class extends Component {
     @endpush
 
     <!-- Hero -->
-    <section class="relative overflow-hidden py-18 sm:py-22 lg:py-26">
-        <div class="absolute inset-0 pointer-events-none">
+    <section class="relative overflow-hidden py-18 sm:py-20">
+        {{-- <div class="absolute inset-0 pointer-events-none">
             <div class="absolute left-[8%] top-10 h-44 w-44 rounded-full bg-cyan-400/10 blur-3xl"></div>
             <div class="absolute right-[10%] top-16 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl"></div>
-        </div>
+        </div> --}}
 
         <div class="relative mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
             <div class="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
@@ -321,14 +321,6 @@ new #[Title('Service Details | Techwave')] class extends Component {
                         <span class="h-2 w-2 rounded-full bg-cyan-300 animate-pulse"></span>
                         {{ $service->category?->name ?? 'Service Details' }}
                     </div>
-
-                    @if ($serviceOption)
-                        <a href="{{ route('client.services.options', ['slug' => $service->slug]) }}" wire:navigate
-                            class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-cyan-300/80 transition hover:text-cyan-200">
-                            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-                            Back to {{ $service->card_title }} options
-                        </a>
-                    @endif
 
                     @php
                         $title = $entity->detail_title ?: $entity->card_title;
