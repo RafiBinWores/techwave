@@ -30,7 +30,13 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
 
         $count = FeaturedServiceGrid::countForStyle($style);
 
-        return Service::query()->with(['category', 'serviceOptions' => fn($q) => $q->where('is_active', true)])->where('is_active', true)->where('is_featured', true)->latest()->limit($count)->get();
+        return Service::query()
+            ->with(['category', 'serviceOptions' => fn($q) => $q->where('is_active', true)])
+            ->where('is_active', true)
+            ->where('is_featured', true)
+            ->latest()
+            ->limit($count)
+            ->get();
     }
 
     public function homeSettingImage(?string $image, string $fallback): string
@@ -240,13 +246,18 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                                 <div class="absolute bottom-16 right-10 h-28 w-28 rounded-full bg-blue-500/20 blur-3xl">
                                 </div>
 
-                                <!-- Blip Dots -->
-                                <div class="absolute left-[18%] top-[15%] h-2 w-2 rounded-full bg-cyan-300 animate-ping"></div>
-                                <div class="absolute right-[20%] top-[25%] h-2.5 w-2.5 rounded-full bg-blue-400 animate-ping [animation-delay:0.3s]"></div>
-                                <div class="absolute left-[15%] bottom-[30%] h-2 w-2 rounded-full bg-violet-400 animate-ping [animation-delay:0.6s]"></div>
-                                <div class="absolute right-[15%] bottom-[20%] h-2.5 w-2.5 rounded-full bg-sky-300 animate-ping [animation-delay:0.9s]"></div>
-                                <div class="absolute left-[40%] top-[8%] h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping [animation-delay:1.2s]"></div>
-                                <div class="absolute right-[35%] bottom-[10%] h-1.5 w-1.5 rounded-full bg-pink-400 animate-ping [animation-delay:0.5s]"></div>
+                                {{-- Animated blip dots --}}
+                                <div
+                                    class="pointer-events-none absolute left-[20%] top-[20%] z-30 h-3 w-3 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(103,232,249,0.85)] animate-ping">
+                                </div>
+
+                                <div
+                                    class="pointer-events-none absolute right-[18%] top-[32%] z-30 h-3 w-3 rounded-full bg-blue-400 shadow-[0_0_18px_rgba(96,165,250,0.85)] animate-ping [animation-delay:0.7s]">
+                                </div>
+
+                                <div
+                                    class="pointer-events-none absolute bottom-[22%] left-[30%] z-30 h-3 w-3 rounded-full bg-sky-300 shadow-[0_0_18px_rgba(125,211,252,0.85)] animate-ping [animation-delay:1s]">
+                                </div>
                             </div>
                         </div>
                     </div>
