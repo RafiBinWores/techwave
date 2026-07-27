@@ -767,6 +767,17 @@ new class extends Component {
                                     <span class="h-1 w-1 shrink-0 rounded-full bg-white/20"></span>
                                     {{ $service['name'] }}
                                 </a>
+                                @if (!empty($service['options']))
+                                <div class="ml-5 flex flex-col gap-0.5">
+                                    @foreach ($service['options'] as $option)
+                                    <a href="{{ route('client.services.options', $service['slug']) }}" wire:navigate @click="mobileMenu = false"
+                                        class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] text-blue-100/40 transition hover:text-white">
+                                        <span class="h-0.5 w-0.5 shrink-0 rounded-full bg-white/15"></span>
+                                        {{ $option['name'] }}
+                                    </a>
+                                    @endforeach
+                                </div>
+                                @endif
                                 @endforeach
                                 @endforeach
                                 <a href="{{ route('client.services') }}" wire:navigate @click="mobileMenu = false"
