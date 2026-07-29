@@ -354,4 +354,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Home Page Settings
     Route::livewire('/home-settings', 'pages::admin.pages.home-settings')->name('pages.home-settings');
+
+    // About Page Settings
+    Route::livewire('/about-settings', 'pages::admin.pages.about-settings')->name('pages.about-settings');
 });
