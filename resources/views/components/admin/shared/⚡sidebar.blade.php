@@ -4,15 +4,6 @@ use App\Models\SiteSetting;
 use Livewire\Component;
 
 new class extends Component {
-    public function logout(): void
-    {
-        auth()->logout();
-
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-
-        $this->redirectRoute('admin.login', navigate: true);
-    }
 
     public function getSiteSettingProperty()
     {
@@ -628,13 +619,4 @@ new class extends Component {
                 </a>
         </div>
     </nav>
-
-    <!-- Fixed Bottom Logout -->
-    <div class="shrink-0 border-t border-slate-200 bg-slate-50 px-3 py-4">
-        <button type="button" wire:click="logout"
-            class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container py-2.5 font-manrope text-sm font-semibold text-white transition-all hover:opacity-90 active:opacity-80">
-            <span class="material-symbols-outlined shrink-0">logout</span>
-            <span x-show="!sidebarCollapsed">Logout</span>
-        </button>
-    </div>
 </aside>

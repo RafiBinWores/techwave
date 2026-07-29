@@ -192,6 +192,16 @@ new class extends Component {
             default => 'bg-slate-50 text-slate-700',
         };
     }
+
+    public function logout(): void
+    {
+        auth()->logout();
+
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+
+        $this->redirectRoute('admin.login', navigate: true);
+    }
 };
 ?>
 
@@ -389,25 +399,60 @@ new class extends Component {
 
         <div class="hidden sm:block h-8 w-px bg-slate-200 mx-1"></div>
 
-        <!-- User -->
-        <div class="flex items-center gap-2 cursor-pointer">
-            @if (auth()->user()->avatar)
-                <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
-                    class="h-10 w-10 object-cover rounded-full" />
-            @else
-                <div
-                    class="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-primary to-sky-600 text-sm font-bold text-white">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                </div>
-            @endif
+        <!-- User Dropdown -->
+        <div x-data="{ userMenu: false }" class="relative">
+            <button type="button" @click="userMenu = !userMenu"
+                class="flex items-center gap-2 cursor-pointer rounded-lg p-1.5 transition hover:bg-slate-100">
+                @if (auth()->user()->avatar)
+                    <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
+                        class="h-8 w-8 object-cover rounded-full" />
+                @else
+                    <div
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-primary to-sky-600 text-xs font-bold text-white">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    </div>
+                @endif
 
-            <div class="hidden md:block text-left">
-                <p class="text-slate-900 font-semibold text-sm leading-tight capitalize">
-                    {{ auth()->user()->name }}
-                </p>
-                <p class="text-slate-500 text-xs capitalize">
-                    {{ auth()->user()->role }}
-                </p>
+                <div class="text-left">
+                    <p class="text-slate-900 font-semibold text-sm leading-tight capitalize">
+                        {{ auth()->user()->name }}
+                    </p>
+                    <p class="hidden md:block text-slate-500 text-xs capitalize">
+                        {{ auth()->user()->role }}
+                    </p>
+                </div>
+
+                <span x-show="!sidebarCollapsed"
+                    class="material-symbols-outlined text-lg text-slate-400 transition-transform duration-200"
+                    :class="userMenu ? 'rotate-180' : ''">
+                    expand_more
+                </span>
+            </button>
+
+            <div x-cloak x-show="userMenu" @click.outside="userMenu = false"
+                class="absolute right-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
+                <div class="border-b border-slate-100 px-4 py-3">
+                    <p class="text-sm font-semibold text-slate-900 capitalize">{{ auth()->user()->name }}</p>
+                    <p class="text-xs text-slate-500 capitalize">{{ auth()->user()->role }}</p>
+                </div>
+                <div class="py-1">
+                    <a href="{{ route('admin.profile') }}" wire:navigate @click="userMenu = false"
+                        class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                        <span class="material-symbols-outlined text-[18px]">person</span>
+                        Profile
+                    </a>
+                    <a href="{{ route('admin.change-password') }}" wire:navigate @click="userMenu = false"
+                        class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                        <span class="material-symbols-outlined text-[18px]">lock</span>
+                        Change Password
+                    </a>
+                    <div class="mx-3 my-1 border-t border-slate-100"></div>
+                    <button type="button" wire:click="logout"
+                        class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50">
+                        <span class="material-symbols-outlined text-[18px]">logout</span>
+                        Logout
+                    </button>
+                </div>
             </div>
         </div>
     </div>
