@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\ImageService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
@@ -57,7 +58,7 @@ new #[Layout('layouts.admin-app')] #[Title('My Profile')] class extends Componen
                 Storage::disk('public')->delete($user->avatar);
             }
 
-            $this->avatar = $this->avatarUpload->store('users/avatars', 'public');
+            $this->avatar = app(ImageService::class)->optimizeAndStore($this->avatarUpload, 'users/avatars', maxWidth: 400, quality: 80);
         }
 
         $user->name = $this->name;
