@@ -283,9 +283,9 @@ new class extends Component {
                             <div class="col-span-9 p-6">
                                 <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40">Categories</p>
 
-                                <div class="columns-3 gap-6">
+                                <div class="grid grid-cols-3 items-start gap-6">
                                     @forelse ($serviceCategories as $category)
-                                    <div class="mb-5 break-inside-avoid">
+                                    <div>
                                         <div class="mb-2.5 flex items-center gap-2">
                                             <span class="material-symbols-outlined text-[18px] text-cyan-400">{{ $category['icon'] }}</span>
                                             <p class="text-xs font-bold text-white">{{ $category['name'] }}</p>
@@ -317,7 +317,7 @@ new class extends Component {
                                         </div>
                                     </div>
                                     @empty
-                                    <div class="break-inside-avoid text-center text-sm text-blue-100/40">
+                                    <div class="col-span-3 text-center text-sm text-blue-100/40">
                                         No services available yet.
                                     </div>
                                     @endforelse
