@@ -186,7 +186,7 @@ new class extends Component {
 <div class="relative" x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false, servicesMega: false, toolsMega: false, mobileServicesOpen: false, mobileToolsOpen: false, scrolled: false }"
     x-init="window.addEventListener('scroll', () => { scrolled = window.scrollY > 20 })">
     <nav :class="scrolled ? 'bg-white/10 backdrop-blur-md border border-white/12' : 'border border-white/8 bg-white/5 backdrop-blur-sm'"
-        class="rounded-2xl px-4 py-4 sm:px-6 transition-all duration-300">
+        class="relative rounded-2xl px-4 py-4 sm:px-6 transition-all duration-300">
 
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-3">
@@ -236,11 +236,11 @@ new class extends Component {
                         x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                         @click.outside="servicesMega = false"
                         style="display: none;"
-                        class="absolute left-1/2 top-full z-[9999] mt-2 w-[820px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
+                        class="absolute inset-x-0 top-full z-[9999] mt-2 max-h-[500px] overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
 
-                        <div class="grid grid-cols-12 gap-0">
+                        <div class="grid max-h-[500px] grid-cols-12 gap-0 overflow-y-auto">
                             {{-- Left: Featured --}}
-                            <div class="col-span-5 border-r border-white/8 p-6">
+                            <div class="col-span-3 border-r border-white/8 p-6">
                                 <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-cyan-400/80">Featured</p>
 
                                 <div class="flex flex-col gap-3">
@@ -280,10 +280,10 @@ new class extends Component {
                             </div>
 
                             {{-- Right: Categories --}}
-                            <div class="col-span-7 p-6">
+                            <div class="col-span-9 p-6">
                                 <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40">Categories</p>
 
-                                <div class="grid grid-cols-2 gap-x-6 gap-y-5">
+                                <div class="grid grid-cols-3 gap-x-6 gap-y-5">
                                     @forelse ($serviceCategories as $category)
                                     <div>
                                         <div class="mb-2.5 flex items-center gap-2">
@@ -349,9 +349,9 @@ new class extends Component {
                         x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                         @click.outside="toolsMega = false"
                         style="display: none;"
-                        class="absolute left-1/2 top-full z-[9999] mt-2 w-[780px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
+                        class="absolute inset-x-0 top-full z-[9999] mt-2 max-h-[500px] overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
 
-                        <div class="p-6">
+                        <div class="max-h-[500px] overflow-y-auto p-6">
                             <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40">All Tools</p>
 
                             <div class="grid grid-cols-3 gap-x-6 gap-y-5">
