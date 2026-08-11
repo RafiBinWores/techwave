@@ -358,6 +358,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // About Page Settings
     Route::livewire('/about-settings', 'pages::admin.pages.about-settings')->name('pages.about-settings');
 
+    // Services Page Settings
+    Route::livewire('/services-settings', 'pages::admin.pages.services-settings')->name('pages.services-settings');
+
     // Profile & Password
     Route::livewire('/profile', 'pages::admin.profile')->name('profile');
     Route::livewire('/change-password', 'pages::admin.change-password')->name('change-password');
