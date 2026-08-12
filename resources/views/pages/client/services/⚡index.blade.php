@@ -199,7 +199,62 @@ new #[Title('Services | Techwave')] class extends Component {
             <div class="{{ ServicePageLayout::gridClass($this->layoutStyle) }}">
 
                 @forelse ($this->services as $index => $service)
-                @if (ServicePageLayout::isList($this->layoutStyle))
+                @if (ServicePageLayout::isCards($this->layoutStyle))
+                <a href="{{ $service->serviceOptions->count()
+                            ? route('client.services.options', ['slug' => $service->slug])
+                            : route('client.services.details', ['slug' => $service->slug]) }}" wire:navigate
+                    class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
+
+                    @if ($this->serviceMediaStyle($service))
+                        <div class="absolute inset-0" style="{{ $this->serviceMediaStyle($service) }}">
+                        </div>
+                    @else
+                        <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
+                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    @endif
+
+                    <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/70 to-slate-950/20">
+                    </div>
+
+                    <div class="relative z-10 flex flex-1 flex-col justify-between gap-4 p-6">
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-950/30 text-cyan-200 backdrop-blur-md">
+                                    @if ($service->icon)
+                                    <span class="material-symbols-outlined">{{ $service->icon }}</span>
+                                    @else
+                                    <span class="material-symbols-outlined">apps</span>
+                                    @endif
+                                </div>
+
+                                <span
+                                    class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/30 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur-md">
+                                    {{ $service->category?->name ?? 'Service' }}
+                                </span>
+                            </div>
+
+                            <h3 class="mt-4 text-xl font-bold text-white">
+                                {{ $service->card_title }}
+                            </h3>
+
+                            @if ($service->show_short_description)
+                            <p class="mt-2 text-sm leading-6 text-blue-100/75">
+                                {{ Str::limit($service->short_description, 120) }}
+                            </p>
+                            @endif
+                        </div>
+
+                        <div class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-100">
+                            {{ $service->serviceOptions->count() ? 'Explore Options' : 'Explore Service' }}
+                            <span
+                                class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+                                arrow_forward
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                @elseif (ServicePageLayout::isList($this->layoutStyle))
                 <a href="{{ $service->serviceOptions->count()
                             ? route('client.services.options', ['slug' => $service->slug])
                             : route('client.services.details', ['slug' => $service->slug]) }}" wire:navigate

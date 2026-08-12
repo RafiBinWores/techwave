@@ -238,6 +238,16 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                                             </div>
                                                         @endfor
                                                     </div>
+                                                @elseif ($styleKey === 'cards_2')
+                                                    <div class="grid h-full grid-cols-2 gap-1.5">
+                                                        @for ($i = 0; $i < 2; $i++)
+                                                            <div class="relative overflow-hidden rounded-md border border-white/10 bg-linear-to-br from-violet-500/50 to-blue-500/20">
+                                                                <div class="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-slate-950/90 to-transparent"></div>
+                                                                <div class="absolute bottom-1 left-1.5 h-1 w-3/4 rounded-full bg-white/60"></div>
+                                                                <div class="absolute bottom-2.5 left-1.5 h-1 w-1/2 rounded-full bg-white/30"></div>
+                                                            </div>
+                                                        @endfor
+                                                    </div>
                                                 @else
                                                     <div class="grid h-full grid-cols-3 gap-1.5">
                                                         @for ($i = 0; $i < 3; $i++)
@@ -283,7 +293,7 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" wire:model.live="hero.enabled" class="peer sr-only">
                                     <div
-                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                     </div>
                                 </label>
                             </div>
@@ -329,7 +339,7 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" wire:model.live="process.enabled" class="peer sr-only">
                                     <div
-                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                     </div>
                                 </label>
                             </div>
@@ -433,7 +443,7 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" wire:model.live="why_choose_us.enabled" class="peer sr-only">
                                     <div
-                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                     </div>
                                 </label>
                             </div>
@@ -528,7 +538,7 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" wire:model.live="cta.enabled" class="peer sr-only">
                                     <div
-                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                     </div>
                                 </label>
                             </div>
