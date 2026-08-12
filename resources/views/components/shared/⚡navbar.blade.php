@@ -60,9 +60,9 @@ new class extends Component {
     {
         $this->featuredServices = Service::query()
             ->where('is_active', true)
-            ->where('is_featured', true)
+            ->where('show_in_navbar', true)
             ->with(['serviceOptions' => fn($q) => $q->where('is_active', true)])
-            ->limit(2)
+            ->limit(3)
             ->get()
             ->map(fn($s) => [
                 'name' => $s->card_title,
@@ -236,9 +236,9 @@ new class extends Component {
                         x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                         @click.outside="servicesMega = false"
                         style="display: none;"
-                        class="absolute inset-x-0 top-full z-[9999] mt-2 max-h-[500px] overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
+                        class="absolute inset-x-0 top-full z-9999 mt-2 max-h-125 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
 
-                        <div class="grid max-h-[500px] grid-cols-12 gap-0 overflow-y-auto">
+                        <div class="grid max-h-125 grid-cols-12 gap-0 overflow-y-auto">
                             {{-- Left: Featured --}}
                             <div class="col-span-3 border-r border-white/8 p-6">
                                 <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-cyan-400/80">Featured</p>
@@ -349,9 +349,9 @@ new class extends Component {
                         x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                         @click.outside="toolsMega = false"
                         style="display: none;"
-                        class="absolute inset-x-0 top-full z-[9999] mt-2 max-h-[500px] overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
+                        class="absolute inset-x-0 top-full z-9999 mt-2 max-h-125 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40">
 
-                        <div class="max-h-[500px] overflow-y-auto p-6">
+                        <div class="max-h-125 overflow-y-auto p-6">
                             <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40">All Tools</p>
 
                             <div class="grid grid-cols-3 gap-x-6 gap-y-5">
@@ -711,7 +711,7 @@ new class extends Component {
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
             @click="mobileMenu = false"
-            class="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm">
+            class="fixed inset-0 z-9998 bg-black/60 backdrop-blur-sm">
         </div>
 
         {{-- Drawer Panel --}}
@@ -722,7 +722,7 @@ new class extends Component {
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="translate-x-full"
-            class="fixed right-0 top-0 z-[9999] flex h-full w-[320px] max-w-[85vw] flex-col border-l border-white/16 glass-panel shadow-2xl shadow-black/40" style="backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);">
+            class="fixed right-0 top-0 z-9999 flex h-full w-[320px] max-w-[85vw] flex-col border-l border-white/16 glass-panel shadow-2xl shadow-black/40" style="backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);">
 
             {{-- Drawer Header --}}
             <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">

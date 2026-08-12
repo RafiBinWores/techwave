@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['category_id', 'subcategory_id', 'card_title', 'detail_title', 'slug', 'icon', 'image', 'media_type', 'media_color', 'media_gradient_from', 'media_gradient_to', 'media_gradient_angle', 'short_description', 'show_short_description', 'show_benefits', 'overview', 'benefits', 'included_items', 'tags', 'audience_title', 'audience_detail', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords'])]
+#[Fillable(['category_id', 'subcategory_id', 'card_title', 'detail_title', 'slug', 'icon', 'image', 'media_type', 'media_color', 'media_gradient_from', 'media_gradient_to', 'media_gradient_angle', 'short_description', 'show_short_description', 'show_benefits', 'overview', 'benefits', 'included_items', 'tags', 'audience_title', 'audience_detail', 'is_active', 'is_featured', 'show_in_navbar', 'meta_title', 'meta_description', 'meta_keywords'])]
 class Service extends Model
 {
     protected $casts = [
@@ -15,6 +15,7 @@ class Service extends Model
         'tags' => 'array',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'show_in_navbar' => 'boolean',
         'show_short_description' => 'boolean',
         'show_benefits' => 'boolean',
         'media_gradient_angle' => 'integer',
