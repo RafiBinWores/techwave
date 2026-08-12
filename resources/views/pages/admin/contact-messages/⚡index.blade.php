@@ -366,7 +366,7 @@ new #[Layout('layouts.admin-app')] #[Title('Contact Messages')] class extends Co
                                         <div x-cloak x-show="preview" x-transition.opacity
                                             class="fixed inset-0 z-9999 flex items-center justify-center bg-slate-950/50 p-4">
                                             <div @click.outside="preview = false"
-                                                class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+                                                class="flex max-h-[calc(100vh-50px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
                                                 <div
                                                     class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
@@ -391,8 +391,8 @@ new #[Layout('layouts.admin-app')] #[Title('Contact Messages')] class extends Co
                                                     </button>
                                                 </div>
 
-                                                <div class="space-y-5 px-6 py-5">
-                                                    <div class="grid gap-4 sm:grid-cols-2">
+                                                <div class="flex min-h-0 flex-1 flex-col gap-5 px-6 py-5">
+                                                    <div class="grid shrink-0 gap-4 sm:grid-cols-2">
                                                         <div class="rounded-xl bg-slate-50 p-4">
                                                             <p class="text-xs uppercase tracking-wider text-slate-400">
                                                                 Name
@@ -431,7 +431,7 @@ new #[Layout('layouts.admin-app')] #[Title('Contact Messages')] class extends Co
                                                     </div>
 
                                                     <div
-                                                        class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                                                        class="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
                                                         <p class="text-xs font-bold uppercase tracking-wider text-slate-400">
                                                             Message
                                                         </p>
