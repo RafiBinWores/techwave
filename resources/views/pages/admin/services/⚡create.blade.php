@@ -30,6 +30,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
     public bool $is_active = true;
     public bool $is_featured = false;
+    public bool $show_in_navbar = false;
     public bool $show_short_description = true;
     public bool $show_benefits = true;
 
@@ -75,6 +76,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
+            'show_in_navbar' => ['boolean'],
             'show_short_description' => ['boolean'],
             'show_benefits' => ['boolean'],
 
@@ -311,6 +313,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
             'is_active' => $validated['is_active'],
             'is_featured' => $validated['is_featured'],
+            'show_in_navbar' => $validated['show_in_navbar'],
             'show_short_description' => $validated['show_short_description'],
             'show_benefits' => $validated['show_benefits'],
         ]);
@@ -336,6 +339,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
 
         $this->is_active = true;
         $this->is_featured = false;
+        $this->show_in_navbar = false;
         $this->show_short_description = true;
         $this->show_benefits = true;
 
@@ -1004,7 +1008,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                             <input type="checkbox" wire:model.live="is_active" class="peer sr-only" />
 
                             <div
-                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100">
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100">
                             </div>
                         </label>
                     </div>
@@ -1035,7 +1039,38 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                             <input type="checkbox" wire:model.live="is_featured" class="peer sr-only" />
 
                             <div
-                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-100">
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-100">
+                            </div>
+                        </label>
+                    </div>
+
+                    <div
+                        class="mt-3 flex items-center justify-between rounded-lg border border-sky-100 bg-sky-50/50 p-3">
+                        <div class="flex items-center gap-3">
+                            <div @class([
+                                'flex h-8 w-8 items-center justify-center rounded-full',
+                                'bg-sky-100 text-sky-600' => $show_in_navbar,
+                                'bg-slate-100 text-slate-400' => !$show_in_navbar,
+                            ])>
+                                <span class="material-symbols-outlined text-[18px]">travel_explore</span>
+                            </div>
+
+                            <div>
+                                <span class="block text-label-md font-label-md text-on-surface">
+                                    Show in Navbar Featured
+                                </span>
+
+                                <span class="text-xs text-secondary">
+                                    Display this service in the navbar Featured section.
+                                </span>
+                            </div>
+                        </div>
+
+                        <label class="relative inline-flex cursor-pointer items-center">
+                            <input type="checkbox" wire:model.live="show_in_navbar" class="peer sr-only" />
+
+                            <div
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-sky-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-100">
                             </div>
                         </label>
                     </div>
@@ -1062,7 +1097,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                             <input type="checkbox" wire:model.live="show_short_description" class="peer sr-only" />
 
                             <div
-                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-cyan-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100">
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-cyan-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100">
                             </div>
                         </label>
                     </div>
@@ -1090,7 +1125,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service')] class extends Comp
                             <input type="checkbox" wire:model.live="show_benefits" class="peer sr-only" />
 
                             <div
-                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-violet-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-100">
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-violet-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-100">
                             </div>
                         </label>
                     </div>
