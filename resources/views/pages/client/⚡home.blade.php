@@ -123,6 +123,41 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
         return route('client.services.details', $service->slug);
     }
 
+    public function serviceBullets(Service $service): array
+    {
+        if (!empty($service->included_items)) {
+            return collect($service->included_items)
+                ->take(3)
+                ->map(function ($item) {
+                    if (is_array($item)) {
+                        return $item['title'] ?? ($item['name'] ?? ($item['text'] ?? null));
+                    }
+
+                    return $item;
+                })
+                ->filter()
+                ->values()
+                ->toArray();
+        }
+
+        if (!empty($service->benefits)) {
+            return collect($service->benefits)
+                ->take(3)
+                ->map(function ($item) {
+                    if (is_array($item)) {
+                        return $item['title'] ?? ($item['name'] ?? null);
+                    }
+
+                    return $item;
+                })
+                ->filter()
+                ->values()
+                ->toArray();
+        }
+
+        return ['Professional setup', 'Reliable support', 'Business-ready solution'];
+    }
+
     public function getFeaturedBlogsProperty()
     {
         return Blog::query()->with('category')->where('is_active', true)->where('is_featured', true)->latest('published_at')->limit(3)->get();
@@ -360,6 +395,8 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                                 ? asset('storage/' . $service->image)
                                 : 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1400&q=80';
 
+                            $serviceMediaStyle = $service->media_background_style;
+
                             $descriptionLimit = $isLargeServiceCard ? 130 : ($isCompactServiceLayout ? 72 : 95);
                             $isStatsBoardShortCard = $isStatsBoardLayout && in_array($loop->index, [1, 6], true);
                         @endphp
@@ -374,13 +411,17 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                                         : ($isDashboardServiceLayout
                                             ? 'min-h-[300px] rounded-[22px] bg-[#080b18]/95 shadow-[0_12px_42px_rgba(0,0,0,0.42)] hover:-translate-y-1 hover:border-violet-300/25 hover:shadow-[0_24px_80px_rgba(76,29,149,0.22)]'
                                             : 'min-h-[310px] rounded-[28px] bg-slate-950/55 shadow-[0_20px_60px_rgba(2,8,23,0.35)] ring-1 ring-cyan-300/10 hover:-translate-y-1 hover:border-cyan-300/30 hover:ring-cyan-300/25 hover:shadow-[0_30px_90px_rgba(8,47,73,0.50)]')) }}">
-                            <img src="{{ $serviceImage }}" alt="{{ $service->card_title }}" loading="lazy"
-                                class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105
-                                    {{ $isCompactServiceLayout
-                                        ? 'opacity-20 group-hover:opacity-35'
-                                        : ($isDashboardServiceLayout
-                                            ? 'opacity-75 group-hover:opacity-90'
-                                            : '') }}">
+                            @if ($serviceMediaStyle)
+                                <div class="absolute inset-0" style="{{ $serviceMediaStyle }}"></div>
+                            @else
+                                <img src="{{ $serviceImage }}" alt="{{ $service->card_title }}" loading="lazy"
+                                    class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105
+                                        {{ $isCompactServiceLayout
+                                            ? 'opacity-20 group-hover:opacity-35'
+                                            : ($isDashboardServiceLayout
+                                                ? 'opacity-75 group-hover:opacity-90'
+                                                : '') }}">
+                            @endif
 
                             <div
                                 class="absolute inset-0
@@ -422,9 +463,19 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                                             {{ $service->card_title }}
                                         </h3>
 
+                                        @if ($service->show_short_description)
                                         <p class="mt-3 text-sm leading-6 text-blue-100/65">
                                             {{ Str::limit($service->short_description ?? '', $descriptionLimit) }}
                                         </p>
+                                        @endif
+
+                                        @if ($service->show_benefits)
+                                        <ul class="mt-4 space-y-2.5 text-sm text-blue-50/85">
+                                            @foreach ($this->serviceBullets($service) as $bullet)
+                                            <li class="service-bullet">{{ $bullet }}</li>
+                                            @endforeach
+                                        </ul>
+                                        @endif
 
                                         <span
                                             class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200">
@@ -466,10 +517,18 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                                                 {{ $service->card_title }}
                                             </h3>
 
-                                            @if (!$isStatsBoardShortCard && filled($service->short_description))
+                                            @if (!$isStatsBoardShortCard && $service->show_short_description && filled($service->short_description))
                                                 <p class="mt-3 line-clamp-2 text-sm leading-6 text-blue-100/62">
                                                     {{ Str::limit($service->short_description, $descriptionLimit) }}
                                                 </p>
+                                            @endif
+
+                                            @if (!$isStatsBoardShortCard && $service->show_benefits)
+                                                <ul class="mt-4 space-y-2.5 text-sm text-blue-50/85">
+                                                    @foreach ($this->serviceBullets($service) as $bullet)
+                                                    <li class="service-bullet">{{ $bullet }}</li>
+                                                    @endforeach
+                                                </ul>
                                             @endif
 
                                             @if (!$isStatsBoardShortCard)
@@ -490,11 +549,19 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                                                 {{ $service->card_title }}
                                             </h3>
 
-                                            @if (filled($service->short_description))
+                                            @if ($service->show_short_description && filled($service->short_description))
                                                 <p
                                                     class="mt-3 text-sm leading-6 text-blue-100/62 {{ $isLargeServiceCard ? 'sm:max-w-xl sm:text-base sm:leading-7' : '' }}">
                                                     {{ Str::limit($service->short_description, $descriptionLimit) }}
                                                 </p>
+                                            @endif
+
+                                            @if ($service->show_benefits)
+                                                <ul class="mt-4 space-y-2.5 text-sm text-blue-50/85">
+                                                    @foreach ($this->serviceBullets($service) as $bullet)
+                                                    <li class="service-bullet">{{ $bullet }}</li>
+                                                    @endforeach
+                                                </ul>
                                             @endif
 
                                             <div
@@ -531,10 +598,20 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                                             {{ $service->card_title }}
                                         </h3>
 
+                                        @if ($service->show_short_description)
                                         <p
                                             class="mt-3 text-sm leading-6 text-white/72 {{ $isLargeServiceCard ? 'sm:text-base sm:leading-7' : '' }}">
                                             {{ Str::limit($service->short_description ?? '', $descriptionLimit) }}
                                         </p>
+                                        @endif
+
+                                        @if ($service->show_benefits)
+                                        <ul class="mt-4 space-y-2.5 text-sm text-blue-50/85">
+                                            @foreach ($this->serviceBullets($service) as $bullet)
+                                            <li class="service-bullet">{{ $bullet }}</li>
+                                            @endforeach
+                                        </ul>
+                                        @endif
 
                                         <div
                                             class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white transition group-hover:text-cyan-200">

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['category_id', 'subcategory_id', 'card_title', 'detail_title', 'slug', 'icon', 'image', 'short_description', 'overview', 'benefits', 'included_items', 'tags', 'audience_title', 'audience_detail', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords'])]
+#[Fillable(['category_id', 'subcategory_id', 'card_title', 'detail_title', 'slug', 'icon', 'image', 'media_type', 'media_color', 'media_gradient_from', 'media_gradient_to', 'media_gradient_angle', 'short_description', 'show_short_description', 'show_benefits', 'overview', 'benefits', 'included_items', 'tags', 'audience_title', 'audience_detail', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords'])]
 class Service extends Model
 {
     protected $casts = [
@@ -15,6 +15,9 @@ class Service extends Model
         'tags' => 'array',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'show_short_description' => 'boolean',
+        'show_benefits' => 'boolean',
+        'media_gradient_angle' => 'integer',
     ];
 
     protected static function booted(): void
@@ -37,12 +40,12 @@ class Service extends Model
         return $this->belongsTo(Category::class);
     }
 
-        public function subcategory()
+    public function subcategory()
     {
         return $this->belongsTo(Subcategory::class);
     }
 
-        public function serviceOptions()
+    public function serviceOptions()
     {
         return $this->hasMany(ServiceOption::class)->orderBy('sort_order');
     }
@@ -60,8 +63,33 @@ class Service extends Model
             ->orderBy('id');
     }
 
-    public function assignedUsers()
+    public function getMediaBackgroundStyleAttribute(): ?string
     {
-        return $this->hasMany(UserService::class);
+        if ($this->media_type === 'color' && $this->media_color) {
+            return "background-color: {$this->media_color};";
+        }
+
+        if ($this->media_type === 'gradient' && $this->media_gradient_from && $this->media_gradient_to) {
+            $angle = $this->media_gradient_angle ?? 135;
+
+            return "background-image: linear-gradient({$angle}deg, {$this->media_gradient_from}, {$this->media_gradient_to});";
+        }
+
+        return null;
+    }
+
+    public function getMediaBackgroundAttribute(): ?string
+    {
+        if ($this->media_type === 'color' && $this->media_color) {
+            return $this->media_color;
+        }
+
+        if ($this->media_type === 'gradient' && $this->media_gradient_from && $this->media_gradient_to) {
+            $angle = $this->media_gradient_angle ?? 135;
+
+            return "linear-gradient({$angle}deg, {$this->media_gradient_from}, {$this->media_gradient_to})";
+        }
+
+        return null;
     }
 }

@@ -33,8 +33,16 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
     public bool $is_active = true;
     public bool $is_featured = false;
+    public bool $show_short_description = true;
+    public bool $show_benefits = true;
 
     public $image = null;
+
+    public string $media_type = 'image';
+    public string $media_color = '#0F52BA';
+    public string $media_gradient_from = '#0F52BA';
+    public string $media_gradient_to = '#38BDF8';
+    public int $media_gradient_angle = 135;
 
     public array $benefits = [
         [
@@ -71,6 +79,14 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
         $this->is_active = (bool) $service->is_active;
         $this->is_featured = (bool) $service->is_featured;
+        $this->show_short_description = (bool) $service->show_short_description;
+        $this->show_benefits = (bool) $service->show_benefits;
+
+        $this->media_type = $service->media_type ?? 'image';
+        $this->media_color = $service->media_color ?? '#0F52BA';
+        $this->media_gradient_from = $service->media_gradient_from ?? '#0F52BA';
+        $this->media_gradient_to = $service->media_gradient_to ?? '#38BDF8';
+        $this->media_gradient_angle = (int) ($service->media_gradient_angle ?? 135);
 
         $this->benefits = $service->benefits ?: [
             [
@@ -104,8 +120,16 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
+            'show_short_description' => ['boolean'],
+            'show_benefits' => ['boolean'],
 
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+
+            'media_type' => ['required', 'string', 'in:image,color,gradient'],
+            'media_color' => ['nullable', 'string', 'max:20'],
+            'media_gradient_from' => ['nullable', 'string', 'max:20'],
+            'media_gradient_to' => ['nullable', 'string', 'max:20'],
+            'media_gradient_angle' => ['nullable', 'integer', 'min:0', 'max:360'],
 
             'benefits' => ['nullable', 'array'],
             'benefits.*.title' => ['nullable', 'string', 'max:160'],
@@ -157,6 +181,40 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
             'title' => '',
             'description' => '',
         ];
+    }
+
+    public function applyGradient(string $from, string $to): void
+    {
+        $this->media_type = 'gradient';
+        $this->image = null;
+        $this->media_color = '';
+        $this->media_gradient_from = $from;
+        $this->media_gradient_to = $to;
+        $this->media_gradient_angle = 135;
+    }
+
+    public function setMediaType(string $type): void
+    {
+        $this->media_type = $type;
+
+        if ($type === 'image') {
+            $this->media_color = '';
+            $this->media_gradient_from = '';
+            $this->media_gradient_to = '';
+        }
+
+        if ($type === 'color') {
+            $this->image = null;
+            $this->media_gradient_from = '';
+            $this->media_gradient_to = '';
+        }
+
+        if ($type === 'gradient') {
+            $this->image = null;
+            $this->media_color = '';
+        }
+
+        $this->resetValidation(['media_type', 'media_color', 'media_gradient_from', 'media_gradient_to']);
     }
 
     public function removeBenefit(int $index): void
@@ -280,6 +338,12 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
             'icon' => $validated['icon'] ?: null,
             'image' => $imagePath,
 
+            'media_type' => $validated['media_type'],
+            'media_color' => $validated['media_type'] === 'color' ? $validated['media_color'] : null,
+            'media_gradient_from' => $validated['media_type'] === 'gradient' ? $validated['media_gradient_from'] : null,
+            'media_gradient_to' => $validated['media_type'] === 'gradient' ? $validated['media_gradient_to'] : null,
+            'media_gradient_angle' => $validated['media_type'] === 'gradient' ? (int) $validated['media_gradient_angle'] : null,
+
             'short_description' => $validated['short_description'],
             'overview' => $validated['overview'],
 
@@ -296,6 +360,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
             'is_active' => $validated['is_active'],
             'is_featured' => $validated['is_featured'],
+            'show_short_description' => $validated['show_short_description'],
+            'show_benefits' => $validated['show_benefits'],
         ]);
 
         session()->flash('toast', [
@@ -326,8 +392,16 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
         $this->is_active = (bool) $this->service->is_active;
         $this->is_featured = (bool) $this->service->is_featured;
+        $this->show_short_description = (bool) $this->service->show_short_description;
+        $this->show_benefits = (bool) $this->service->show_benefits;
 
         $this->image = null;
+
+        $this->media_type = $this->service->media_type ?? 'image';
+        $this->media_color = $this->service->media_color ?? '#0F52BA';
+        $this->media_gradient_from = $this->service->media_gradient_from ?? '#0F52BA';
+        $this->media_gradient_to = $this->service->media_gradient_to ?? '#38BDF8';
+        $this->media_gradient_angle = (int) ($this->service->media_gradient_angle ?? 135);
 
         $this->benefits = $this->service->benefits ?: [
             [
@@ -477,7 +551,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         <div wire:ignore x-data="{
                             quill: null,
                             value: @entangle('overview'),
-                            isUpdatingFromQuill: false,
                         
                             cleanEditorValue() {
                                 const text = this.quill.getText().trim();
@@ -513,29 +586,14 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 }
                         
                                 this.quill.on('text-change', () => {
-                                    this.isUpdatingFromQuill = true;
                                     this.value = this.cleanEditorValue();
-                        
-                                    setTimeout(() => {
-                                        this.isUpdatingFromQuill = false;
-                                    }, 100);
                                 });
                         
                                 this.$watch('value', (newValue) => {
-                                    if (this.isUpdatingFromQuill) {
-                                        return;
-                                    }
-                        
                                     const cleanValue = newValue === '<p><br></p>' ? '' : newValue;
                         
                                     if (this.quill.root.innerHTML !== cleanValue) {
-                                        const range = this.quill.getSelection();
-                        
                                         this.quill.clipboard.dangerouslyPasteHTML(cleanValue || '');
-                        
-                                        if (range) {
-                                            this.quill.setSelection(range.index, range.length);
-                                        }
                                     }
                                 });
                             }
@@ -558,7 +616,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         </h3>
 
                         <button type="button" wire:click="addBenefit"
-                            class="flex items-center gap-1 text-sm font-semibold text-[#0F52BA] hover:underline">
+                            class="flex cursor-pointer items-center gap-1 text-sm font-semibold text-[#0F52BA] hover:underline">
                             <span class="material-symbols-outlined text-lg">add_circle</span>
                             Add Benefit
                         </button>
@@ -591,7 +649,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
 
                                     <div class="flex justify-end md:col-span-1">
                                         <button type="button" wire:click="removeBenefit({{ $index }})"
-                                            class="text-outline transition hover:text-error">
+                                            class="cursor-pointer text-outline transition hover:text-error">
                                             <span class="material-symbols-outlined">close</span>
                                         </button>
                                     </div>
@@ -617,7 +675,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 placeholder="e.g., 24/7 Monitoring" type="text" />
 
                             <button type="button" wire:click="addIncludedItem"
-                                class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
+                                class="flex cursor-pointer items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
                                 <span class="material-symbols-outlined text-sm">add</span>
                                 Item
                             </button>
@@ -630,7 +688,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     <span class="text-sm font-body-md">{{ $item }}</span>
 
                                     <button type="button" wire:click="removeIncludedItem({{ $index }})"
-                                        class="material-symbols-outlined text-sm text-outline hover:text-error">
+                                        class="material-symbols-outlined cursor-pointer text-sm text-outline hover:text-error">
                                         close
                                     </button>
                                 </div>
@@ -778,41 +836,191 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="mb-6 text-h3 font-h2">Service Media</h3>
 
+                    <div class="mb-4 grid grid-cols-3 gap-2 rounded-lg bg-slate-100 p-1">
+                        <button type="button" wire:click="setMediaType('image')"
+                            @class([
+                                'flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-sm font-semibold transition-colors cursor-pointer',
+                                'bg-white text-primary shadow-sm' => $media_type === 'image',
+                                'text-secondary hover:text-on-surface' => $media_type !== 'image',
+                            ])>
+                            <span class="material-symbols-outlined text-lg">image</span>
+                            Image
+                        </button>
+
+                        <button type="button" wire:click="setMediaType('color')"
+                            @class([
+                                'flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-sm font-semibold transition-colors cursor-pointer',
+                                'bg-white text-primary shadow-sm' => $media_type === 'color',
+                                'text-secondary hover:text-on-surface' => $media_type !== 'color',
+                            ])>
+                            <span class="material-symbols-outlined text-lg">format_color_fill</span>
+                            Color
+                        </button>
+
+                        <button type="button" wire:click="setMediaType('gradient')"
+                            @class([
+                                'flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-sm font-semibold transition-colors cursor-pointer',
+                                'bg-white text-primary shadow-sm' => $media_type === 'gradient',
+                                'text-secondary hover:text-on-surface' => $media_type !== 'gradient',
+                            ])>
+                            <span class="material-symbols-outlined text-lg">gradient</span>
+                            Gradient
+                        </button>
+                    </div>
+
+                    @error('media_type')
+                        <p class="mb-2 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+
                     <div class="space-y-3">
+                        @if ($media_type === 'image')
+                            <label for="image"
+                                class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
+                                @if ($image)
+                                    <img src="{{ $image->temporaryUrl() }}" alt="Service preview"
+                                        class="h-full w-full object-cover" />
+                                @elseif ($service->image)
+                                    <img src="{{ Storage::url($service->image) }}" alt="{{ $service->card_title }}"
+                                        class="h-full w-full object-cover" />
+                                @else
+                                    <span class="material-symbols-outlined mb-2 text-5xl text-outline">
+                                        add_photo_alternate
+                                    </span>
 
-                        <label for="image"
-                            class="flex h-64 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
-                            @if ($image)
-                                <img src="{{ $image->temporaryUrl() }}" alt="Service preview"
-                                    class="h-full w-full object-cover" />
-                            @elseif ($service->image)
-                                <img src="{{ Storage::url($service->image) }}" alt="{{ $service->card_title }}"
-                                    class="h-full w-full object-cover" />
-                            @else
-                                <span class="material-symbols-outlined mb-2 text-5xl text-outline">
-                                    add_photo_alternate
-                                </span>
+                                    <p class="text-sm font-body-sm text-outline">
+                                        Click to upload main service image
+                                    </p>
 
-                                <p class="text-sm font-body-sm text-outline">
-                                    Click to upload main service image
-                                </p>
+                                    <p class="mt-1 text-xs font-bold uppercase tracking-widest text-outline-variant">
+                                        PNG, JPG, WEBP up to 10MB
+                                    </p>
+                                @endif
+                            </label>
 
-                                <p class="mt-1 text-xs font-bold uppercase tracking-widest text-outline-variant">
-                                    PNG, JPG, WEBP up to 10MB
-                                </p>
-                            @endif
-                        </label>
+                            <input id="image" type="file" wire:model="image"
+                                accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden" />
 
-                        <input id="image" type="file" wire:model="image"
-                            accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden" />
+                            <div wire:loading wire:target="image" class="text-sm text-primary">
+                                Uploading image...
+                            </div>
 
-                        <div wire:loading wire:target="image" class="text-sm text-primary">
-                            Uploading image...
-                        </div>
+                            @error('image')
+                                <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        @endif
 
-                        @error('image')
-                            <p class="text-sm text-red-500">{{ $message }}</p>
-                        @enderror
+                        @if ($media_type === 'color')
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface p-3">
+                                    <input type="color" wire:model.live="media_color"
+                                        class="h-10 w-14 cursor-pointer rounded border border-outline-variant bg-white p-1" />
+
+                                    <input type="text" wire:model.live="media_color"
+                                        class="flex-1 rounded border border-outline-variant bg-white px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10"
+                                        placeholder="#0F52BA" />
+                                </div>
+
+                                <div
+                                    class="flex h-48 items-center justify-center rounded-lg border border-slate-100 transition-colors"
+                                    style="background-color: {{ $media_color }};">
+                                    <span class="material-symbols-outlined text-5xl text-white/80">image</span>
+                                </div>
+
+                                @error('media_color')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endif
+
+                        @if ($media_type === 'gradient')
+                            <div class="space-y-3">
+                                <div class="space-y-1.5">
+                                    <label class="text-xs font-label-sm text-on-surface-variant">Preset Gradients</label>
+
+                                    <div class="grid grid-cols-4 gap-2">
+                                        @foreach ([
+                                            ['#0F52BA', '#38BDF8'],
+                                            ['#2563EB', '#7C3AED'],
+                                            ['#0EA5E9', '#10B981'],
+                                            ['#F59E0B', '#EF4444'],
+                                            ['#EC4899', '#8B5CF6'],
+                                            ['#14B8A6', '#0EA5E9'],
+                                            ['#6366F1', '#D946EF'],
+                                            ['#F97316', '#FACC15'],
+                                        ] as $preset)
+                                            <button type="button"
+                                                wire:click="applyGradient('{{ $preset[0] }}', '{{ $preset[1] }}')"
+                                                title="{{ $preset[0] }} → {{ $preset[1] }}"
+                                                class="h-12 w-full cursor-pointer rounded-lg border border-outline-variant transition-transform hover:scale-105 hover:shadow-sm"
+                                                style="background-image: linear-gradient(135deg, {{ $preset[0] }}, {{ $preset[1] }});"></button>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="space-y-1.5">
+                                        <label class="text-xs font-label-sm text-on-surface-variant">From Color</label>
+
+                                        <div
+                                            class="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface p-2">
+                                            <input type="color" wire:model.live="media_gradient_from"
+                                                class="h-9 w-11 cursor-pointer rounded border border-outline-variant bg-white p-1" />
+                                            <input type="text" wire:model.live="media_gradient_from"
+                                                class="w-full min-w-0 flex-1 rounded border border-outline-variant bg-white px-2 py-1.5 font-mono text-sm outline-none focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-1.5">
+                                        <label class="text-xs font-label-sm text-on-surface-variant">To Color</label>
+
+                                        <div
+                                            class="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface p-2">
+                                            <input type="color" wire:model.live="media_gradient_to"
+                                                class="h-9 w-11 cursor-pointer rounded border border-outline-variant bg-white p-1" />
+                                            <input type="text" wire:model.live="media_gradient_to"
+                                                class="w-full min-w-0 flex-1 rounded border border-outline-variant bg-white px-2 py-1.5 font-mono text-sm outline-none focus:ring-2 focus:ring-[#0F52BA] focus:ring-opacity-10" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <label class="text-xs font-label-sm text-on-surface-variant">
+                                        Direction ({{ $media_gradient_angle }}deg)
+                                    </label>
+
+                                    <input type="range" wire:model.live="media_gradient_angle" min="0" max="360"
+                                        step="15"
+                                        class="w-full accent-[#0F52BA]" />
+
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach ([0, 45, 90, 135, 180, 225, 270, 315] as $angle)
+                                            <button type="button" wire:click="$set('media_gradient_angle', {{ $angle }})"
+                                                @class([
+                                                    'rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer',
+                                                    'border-[#0F52BA] bg-primary/10 text-primary' => $media_gradient_angle == $angle,
+                                                    'border-outline-variant bg-white text-secondary hover:text-on-surface' => $media_gradient_angle != $angle,
+                                                ])>
+                                                {{ $angle }}°
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="flex h-48 items-center justify-center rounded-lg border border-slate-100"
+                                    style="background-image: linear-gradient({{ $media_gradient_angle }}deg, {{ $media_gradient_from }}, {{ $media_gradient_to }});">
+                                    <span class="material-symbols-outlined text-5xl text-white/80">image</span>
+                                </div>
+
+                                @error('media_gradient_from')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+
+                                @error('media_gradient_to')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -826,7 +1034,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 placeholder="e.g., Infrastructure" type="text" />
 
                             <button type="button" wire:click="addTag"
-                                class="flex items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
+                                class="flex cursor-pointer items-center gap-1 rounded border border-dashed border-[#0F52BA] px-4 py-2.5 text-sm font-semibold text-[#0F52BA] transition-colors hover:bg-primary/5">
                                 <span class="material-symbols-outlined text-sm">add</span>
                                 Tag
                             </button>
@@ -840,7 +1048,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     <span class="text-sm font-body-md">{{ $serviceTag }}</span>
 
                                     <button type="button" wire:click="removeTag({{ $index }})"
-                                        class="material-symbols-outlined text-sm text-outline hover:text-error">
+                                        class="material-symbols-outlined cursor-pointer text-sm text-outline hover:text-error">
                                         close
                                     </button>
                                 </div>
@@ -915,6 +1123,61 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         </label>
                     </div>
 
+                    <div
+                        class="mt-3 flex items-center justify-between rounded-lg border border-cyan-100 bg-cyan-50/50 p-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-100 text-cyan-600">
+                                <span class="material-symbols-outlined text-[18px]">notes</span>
+                            </div>
+
+                            <div>
+                                <span class="block text-label-md font-label-md text-on-surface">
+                                    Show Short Description
+                                </span>
+
+                                <span class="text-xs text-secondary">
+                                    Display the summary text on service cards.
+                                </span>
+                            </div>
+                        </div>
+
+                        <label class="relative inline-flex cursor-pointer items-center">
+                            <input type="checkbox" wire:model.live="show_short_description" class="peer sr-only" />
+
+                            <div
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-cyan-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100">
+                            </div>
+                        </label>
+                    </div>
+
+                    <div
+                        class="mt-3 flex items-center justify-between rounded-lg border border-violet-100 bg-violet-50/50 p-3">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-violet-600">
+                                <span class="material-symbols-outlined text-[18px]">checklist</span>
+                            </div>
+
+                            <div>
+                                <span class="block text-label-md font-label-md text-on-surface">
+                                    Show Key Benefits
+                                </span>
+
+                                <span class="text-xs text-secondary">
+                                    Display benefit bullets on service cards.
+                                </span>
+                            </div>
+                        </div>
+
+                        <label class="relative inline-flex cursor-pointer items-center">
+                            <input type="checkbox" wire:model.live="show_benefits" class="peer sr-only" />
+
+                            <div
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-violet-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-100">
+                            </div>
+                        </label>
+                    </div>
+
                     <p class="mt-3 text-body-sm font-body-sm leading-relaxed text-secondary">
                         Active services are visible publicly. Featured services can appear in premium website sections.
                     </p>
@@ -964,9 +1227,28 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                             {{ $card_title ?: 'Service Card Title' }}
                         </h4>
 
+                        @if ($show_short_description)
                         <p class="mt-2 text-sm leading-relaxed text-secondary">
                             {{ $short_description ?: 'Short service description will appear here.' }}
                         </p>
+                        @endif
+
+                        @if ($show_benefits)
+                        <div class="mt-4 space-y-1.5">
+                            @forelse (array_slice($benefits, 0, 3) as $benefit)
+                                @if (!empty($benefit['title']))
+                                    <p class="flex items-start gap-1.5 text-xs text-secondary">
+                                        <span class="material-symbols-outlined text-sm text-primary">check_circle</span>
+                                        {{ $benefit['title'] }}
+                                    </p>
+                                @endif
+                            @empty
+                                <p class="text-xs text-slate-400">
+                                    Key benefits will appear here.
+                                </p>
+                            @endforelse
+                        </div>
+                        @endif
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             @forelse ($tags as $previewTag)

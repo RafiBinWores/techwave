@@ -192,7 +192,10 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
-                                            @if ($service->image)
+                                            @if ($service->media_background_style)
+                                                <div class="h-full w-full" style="{{ $service->media_background_style }}">
+                                                </div>
+                                            @elseif ($service->image)
                                                 <img src="{{ Storage::url($service->image) }}"
                                                     alt="{{ $service->card_title }}"
                                                     class="h-full w-full object-cover" />

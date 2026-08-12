@@ -372,8 +372,17 @@ new #[Title('Service Details | Techwave')] class extends Component {
                         <div class="absolute bottom-8 right-8 h-32 w-32 rounded-full bg-blue-500/12 blur-3xl"></div>
 
                         <div class="overflow-hidden rounded-3xl border border-white/10">
-                            <img src="{{ $this->serviceImage() }}" alt="{{ $entity->card_title }}"
-                                class="h-80 w-full object-cover sm:h-100">
+                            @php
+                                $mediaStyle = $this->entity->media_background_style ?? $this->service->media_background_style;
+                            @endphp
+
+                            @if ($mediaStyle)
+                                <div class="h-80 w-full sm:h-100" style="{{ $mediaStyle }}">
+                                </div>
+                            @else
+                                <img src="{{ $this->serviceImage() }}" alt="{{ $entity->card_title }}"
+                                    class="h-80 w-full object-cover sm:h-100">
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -995,9 +1004,11 @@ new #[Title('Service Details | Techwave')] class extends Component {
                                             {{ $otherService->card_title }}
                                         </h3>
 
+                                        @if ($otherService->show_short_description)
                                         <p class="mt-2 text-sm leading-6 text-blue-100/64">
                                             {{ Str::limit($otherService->short_description, 95) }}
                                         </p>
+                                        @endif
 
                                         <div
                                             class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200/85">
