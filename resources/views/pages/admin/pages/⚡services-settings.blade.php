@@ -172,7 +172,7 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
 
         <form wire:submit.prevent="save">
             <div class="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
-                <div class="space-y-6 xl:col-span-7">
+                <div class="space-y-6 xl:col-span-12">
                     {{-- Layout Tab --}}
                     @if ($activeTab === 'layout')
                         <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -184,19 +184,19 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                 Select the layout used to display active services on the public services page.
                             </p>
 
-                            <div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 @foreach ($layoutOptions as $styleKey => $option)
                                     @php
                                         $selected = ($layout['layout_style'] ?? 'bento') === $styleKey;
                                     @endphp
 
                                     <label wire:key="layout-{{ $styleKey }}"
-                                        class="cursor-pointer rounded-xl border p-4 transition {{ $selected ? 'border-primary bg-blue-50 ring-2 ring-primary/10' : 'border-slate-200 hover:border-primary/40' }}">
+                                        class="flex cursor-pointer flex-col rounded-xl border p-4 transition {{ $selected ? 'border-primary bg-blue-50 ring-2 ring-primary/10' : 'border-slate-200 hover:border-primary/40' }}">
                                         <input type="radio" wire:model.live="layout.layout_style"
                                             value="{{ $styleKey }}" class="sr-only">
 
-                                        <div class="rounded-lg bg-slate-950 p-3">
-                                            <div class="h-24">
+                                        <div class="flex-1 rounded-lg bg-slate-950 p-3">
+                                            <div class="h-full min-h-24">
                                                 @if ($styleKey === 'bento_featured')
                                                     <div class="grid h-full grid-cols-3 grid-rows-2 gap-1.5">
                                                         <span class="col-span-2 row-span-2 rounded-md border border-white/10 bg-linear-to-br from-violet-500 to-blue-500"></span>
@@ -215,12 +215,20 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                                         <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
                                                     </div>
                                                 @elseif ($styleKey === 'bento_wide')
-                                                    <div class="grid h-full grid-cols-3 gap-1.5">
+                                                    <div class="grid h-full grid-cols-3 grid-rows-2 gap-1.5">
                                                         <span class="col-span-2 rounded-md border border-white/10 bg-linear-to-br from-violet-500 to-blue-500"></span>
                                                         <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-700 to-slate-800"></span>
                                                         <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-700 to-slate-800"></span>
-                                                        <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
                                                         <span class="col-span-2 rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
+                                                        <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
+                                                    </div>
+                                                @elseif ($styleKey === 'bento_wide_minimal')
+                                                    <div class="grid h-full grid-cols-3 grid-rows-2 gap-1.5">
+                                                        <span class="col-span-2 rounded-md border border-white/20 bg-linear-to-br from-emerald-500 to-teal-600"></span>
+                                                        <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-700 to-slate-800"></span>
+                                                        <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-700 to-slate-800"></span>
+                                                        <span class="col-span-2 rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
+                                                        <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
                                                     </div>
                                                 @elseif ($styleKey === 'bento_mosaic')
                                                     <div class="grid h-full grid-cols-3 grid-rows-2 gap-1.5">
@@ -570,30 +578,14 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                         </div>
                     @endif
                 </div>
+            </div>
 
-                <div class="xl:col-span-5">
-                    <div class="rounded-xl border border-blue-100 bg-blue-50 p-5">
-                        <div class="flex items-start gap-3">
-                            <span class="material-symbols-outlined text-primary">info</span>
-                            <div>
-                                <p class="font-label-md text-on-surface">Public services page</p>
-                                <p class="mt-1 text-xs leading-5 text-secondary">
-                                    Every section on the services page is editable here. Sections can be hidden with
-                                    their toggle. All bento patterns tile cleanly on repeating cycles so they stay
-                                    balanced with many services.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 flex items-center gap-3">
-                        <button type="submit" wire:loading.attr="disabled" wire:target="save"
-                            class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">
-                            <span wire:loading.remove wire:target="save">Save Settings</span>
-                            <span wire:loading wire:target="save">Saving...</span>
-                        </button>
-                    </div>
-                </div>
+            <div class="mt-8 flex items-center justify-end gap-3">
+                <button type="submit" wire:loading.attr="disabled" wire:target="save"
+                    class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">
+                    <span wire:loading.remove wire:target="save">Save Settings</span>
+                    <span wire:loading wire:target="save">Saving...</span>
+                </button>
             </div>
         </form>
     </div>

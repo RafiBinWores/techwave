@@ -300,7 +300,7 @@ new #[Title('Services | Techwave')] class extends Component {
                             </p>
                             @endif
 
-                            @if ($service->show_benefits)
+                            @if (ServicePageLayout::showsBenefits($this->layoutStyle) && $service->show_benefits)
                             <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                                 @foreach ($this->serviceBullets($service) as $bullet)
                                 <li class="service-bullet">{{ $bullet }}</li>
@@ -365,7 +365,7 @@ new #[Title('Services | Techwave')] class extends Component {
                             </p>
                             @endif
 
-                            @if ($service->show_benefits)
+                            @if (ServicePageLayout::showsBenefits($this->layoutStyle) && $service->show_benefits)
                             <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                                 @foreach ($this->serviceBullets($service) as $bullet)
                                 <li class="service-bullet">{{ $bullet }}</li>

@@ -20,6 +20,11 @@ class ServicePageLayout
             'description' => 'Wide feature cards that alternate evenly with standard cards, filling every row perfectly at any scale.',
             'icon' => 'view_quilt',
         ],
+        'bento_wide_minimal' => [
+            'label' => 'Minimal Wide Bento',
+            'description' => 'Wide bento grid that shows only the service name and short description — no benefit bullets.',
+            'icon' => 'view_quilt',
+        ],
         'bento_mosaic' => [
             'label' => 'Mosaic Bento',
             'description' => 'A large square card paired with two stacked cards, repeating in a balanced six-card cycle.',
@@ -56,6 +61,7 @@ class ServicePageLayout
         return match (self::normalize($style)) {
             'list' => 'flex flex-col gap-6',
             'cards_2' => 'grid w-full grid-cols-1 gap-6 md:grid-cols-2',
+            'bento_wide_minimal' => 'grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3',
             'bento', 'bento_wide', 'bento_mosaic', 'bento_featured' => $bentoGrid,
             default => 'grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3',
         };
@@ -70,6 +76,9 @@ class ServicePageLayout
             'bento_wide' => $index % 3 === 0
                 ? 'xl:col-span-2'
                 : '',
+            'bento_wide_minimal' => $index % 3 === 0
+                ? 'xl:col-span-2'
+                : '',
             'bento_mosaic' => $index % 6 === 0
                 ? 'xl:col-span-2 xl:row-span-2'
                 : '',
@@ -82,7 +91,7 @@ class ServicePageLayout
 
     public static function minHeightClass(string $style): string
     {
-        return self::normalize($style) === 'list' ? '' : 'min-h-107.5';
+        return in_array(self::normalize($style), ['list', 'bento_wide_minimal'], true) ? '' : 'min-h-107.5';
     }
 
     public static function isList(string $style): bool
@@ -93,5 +102,10 @@ class ServicePageLayout
     public static function isCards(string $style): bool
     {
         return self::normalize($style) === 'cards_2';
+    }
+
+    public static function showsBenefits(string $style): bool
+    {
+        return self::normalize($style) !== 'bento_wide_minimal';
     }
 }
