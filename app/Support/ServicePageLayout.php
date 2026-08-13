@@ -25,11 +25,6 @@ class ServicePageLayout
             'description' => 'Wide bento grid that shows only the service name and short description — no benefit bullets.',
             'icon' => 'view_quilt',
         ],
-        'bento_mosaic' => [
-            'label' => 'Mosaic Bento',
-            'description' => 'A large square card paired with two stacked cards, repeating in a balanced six-card cycle.',
-            'icon' => 'dashboard_customize',
-        ],
         'standard' => [
             'label' => 'Standard Grid',
             'description' => 'Uniform equal-size cards in a clean three-column grid that scales to any number of services.',
@@ -62,7 +57,7 @@ class ServicePageLayout
             'list' => 'flex flex-col gap-6',
             'cards_2' => 'grid w-full grid-cols-1 gap-6 md:grid-cols-2',
             'bento_wide_minimal' => 'grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3',
-            'bento', 'bento_wide', 'bento_mosaic', 'bento_featured' => $bentoGrid,
+            'bento', 'bento_wide', 'bento_featured' => $bentoGrid,
             default => 'grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3',
         };
     }
@@ -73,14 +68,11 @@ class ServicePageLayout
             'bento' => $index % 4 === 0
                 ? 'md:col-span-2 xl:col-span-2 xl:row-span-2'
                 : '',
-            'bento_wide' => $index % 3 === 0
+            'bento_wide' => in_array($index % 7, [0, 3], true)
                 ? 'xl:col-span-2'
                 : '',
-            'bento_wide_minimal' => $index % 3 === 0
+            'bento_wide_minimal' => in_array($index % 7, [0, 3], true)
                 ? 'xl:col-span-2'
-                : '',
-            'bento_mosaic' => $index % 6 === 0
-                ? 'xl:col-span-2 xl:row-span-2'
                 : '',
             'bento_featured' => $index === 0
                 ? 'md:col-span-2 xl:col-span-2 xl:row-span-2'

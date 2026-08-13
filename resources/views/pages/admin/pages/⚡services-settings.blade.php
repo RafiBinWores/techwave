@@ -230,17 +230,10 @@ new #[Layout('layouts.admin-app')] #[Title('Services Page Settings')] class exte
                                                         <span class="col-span-2 rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
                                                         <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
                                                     </div>
-                                                @elseif ($styleKey === 'bento_mosaic')
-                                                    <div class="grid h-full grid-cols-3 grid-rows-2 gap-1.5">
-                                                        <span class="col-span-2 row-span-2 rounded-md border border-white/10 bg-linear-to-br from-violet-500 to-blue-500"></span>
-                                                        <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-700 to-slate-800"></span>
-                                                        <span class="rounded-md border border-white/10 bg-linear-to-br from-slate-700 to-slate-800"></span>
-                                                        <span class="col-span-3 rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
-                                                    </div>
                                                 @elseif ($styleKey === 'list')
                                                     <div class="flex h-full flex-col justify-between gap-1.5">
                                                         @for ($i = 0; $i < 3; $i++)
-                                                            <div class="flex h-1/3 gap-1.5">
+                                                            <div class="flex flex-1 gap-1.5">
                                                                 <span class="w-1/3 rounded-md border border-white/10 bg-linear-to-br from-slate-700 to-slate-800"></span>
                                                                 <span class="flex-1 rounded-md border border-white/10 bg-linear-to-br from-slate-600 to-slate-700"></span>
                                                             </div>

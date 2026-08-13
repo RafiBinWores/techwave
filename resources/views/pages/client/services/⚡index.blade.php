@@ -206,11 +206,11 @@ new #[Title('Services | Techwave')] class extends Component {
                     class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
 
                     @if ($this->serviceMediaStyle($service))
-                        <div class="absolute inset-0" style="{{ $this->serviceMediaStyle($service) }}">
-                        </div>
+                    <div class="absolute inset-0" style="{{ $this->serviceMediaStyle($service) }}">
+                    </div>
                     @else
-                        <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
-                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
+                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
                     @endif
 
                     <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/70 to-slate-950/20">
@@ -262,11 +262,11 @@ new #[Title('Services | Techwave')] class extends Component {
 
                     <div class="relative h-56 w-full shrink-0 overflow-hidden md:h-auto md:w-80">
                         @if ($this->serviceMediaStyle($service))
-                            <div class="absolute inset-0" style="{{ $this->serviceMediaStyle($service) }}">
-                            </div>
+                        <div class="absolute inset-0" style="{{ $this->serviceMediaStyle($service) }}">
+                        </div>
                         @else
-                            <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
-                                class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+                        <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
+                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
                         @endif
                         <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/40 to-transparent md:bg-linear-to-r">
                         </div>
@@ -300,7 +300,7 @@ new #[Title('Services | Techwave')] class extends Component {
                             </p>
                             @endif
 
-                            @if (ServicePageLayout::showsBenefits($this->layoutStyle) && $service->show_benefits)
+                            @if ($service->show_benefits)
                             <ul class="mt-6 space-y-3 text-sm text-blue-50/85">
                                 @foreach ($this->serviceBullets($service) as $bullet)
                                 <li class="service-bullet">{{ $bullet }}</li>
@@ -325,11 +325,11 @@ new #[Title('Services | Techwave')] class extends Component {
                     class="group relative block {{ ServicePageLayout::minHeightClass($this->layoutStyle) }} {{ ServicePageLayout::cardClass($this->layoutStyle, $index) }} overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl shadow-blue-950/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-cyan-950/30">
 
                     @if ($this->serviceMediaStyle($service))
-                        <div class="absolute inset-0" style="{{ $this->serviceMediaStyle($service) }}">
-                        </div>
+                    <div class="absolute inset-0" style="{{ $this->serviceMediaStyle($service) }}">
+                    </div>
                     @else
-                        <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
-                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="{{ $this->serviceImage($service) }}" alt="{{ $service->card_title }}"
+                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110">
                     @endif
 
                     <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/75 to-blue-950/20">
