@@ -11,6 +11,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
 
     public string $search = '';
     public string $status = 'all';
+    public string $verification = 'all';
     public int $perPage = 10;
 
     public function updatedSearch(): void
@@ -19,6 +20,11 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
     }
 
     public function updatedStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedVerification(): void
     {
         $this->resetPage();
     }
@@ -64,6 +70,8 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
             ->when($this->status !== 'all', function ($query) {
                 $query->where('is_active', $this->status === 'active');
             })
+            ->when($this->verification === 'verified', fn ($query) => $query->whereNotNull('email_verified_at'))
+            ->when($this->verification === 'pending', fn ($query) => $query->whereNull('email_verified_at'))
             ->latest()
             ->paginate($this->perPage);
     }
@@ -136,6 +144,11 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
                         <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                             Account Status
                         </th>
+
+                        <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                            Email Verification
+                        </th>
+
                         <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                             Created At
                         </th>
@@ -200,6 +213,18 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
                                 </button>
                             </td>
 
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold @if ($user->hasVerifiedEmail()) bg-emerald-50 text-emerald-700 @else bg-amber-50 text-amber-700 @endif">
+                                    @if ($user->hasVerifiedEmail())
+                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                        Verified
+                                    @else
+                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                        Pending
+                                    @endif
+                                </span>
+                            </td>
+
                             <td class="px-6 py-4 font-mono text-body-sm text-secondary">
                                     {{ $user->created_at?->format('M d, Y') }}
                                 </td>
@@ -240,7 +265,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-14 text-center">
+                            <td colspan="7" class="px-6 py-14 text-center">
                                 <div class="mx-auto flex max-w-sm flex-col items-center">
                                     <div
                                         class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
@@ -255,7 +280,21 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
                                         Create your first user to manage system access.
                                     </p>
 
-                                    <a href="{{ route('admin.users.create') }}" wire:navigate
+            <div class="relative">
+                <select wire:model.live="verification"
+                    class="w-full appearance-none rounded-lg border border-outline-variant bg-white px-4 py-2.5 pr-10 text-label-md font-label-md text-on-surface transition-colors hover:bg-surface-container-low focus:border-primary focus:ring-2 focus:ring-primary/10 sm:w-44">
+                    <option value="all">All Verification</option>
+                    <option value="verified">Verified Only</option>
+                    <option value="pending">Unverified Only</option>
+                </select>
+
+                <span
+                    class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
+                    expand_more
+                </span>
+            </div>
+
+            <a href="{{ route('admin.users.create') }}" wire:navigate
                                         class="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90">
                                         Create User
                                     </a>

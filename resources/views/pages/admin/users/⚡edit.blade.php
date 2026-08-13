@@ -157,6 +157,48 @@ new #[Layout('layouts.admin-app')] #[Title('Edit User')] class extends Component
             type: 'success'
         );
     }
+
+    public function verifyEmail(): void
+    {
+        if ($this->user->hasVerifiedEmail()) {
+            $this->dispatch(
+                'toast',
+                message: 'Email is already verified.',
+                type: 'info'
+            );
+
+            return;
+        }
+
+        $this->user->markEmailAsVerified();
+
+        $this->dispatch(
+            'toast',
+            message: 'Email marked as verified.',
+            type: 'success'
+        );
+    }
+
+    public function resendVerification(): void
+    {
+        if ($this->user->hasVerifiedEmail()) {
+            $this->dispatch(
+                'toast',
+                message: 'Email is already verified.',
+                type: 'info'
+            );
+
+            return;
+        }
+
+        $this->user->sendEmailVerificationNotification();
+
+        $this->dispatch(
+            'toast',
+            message: 'Verification email sent to '.$this->user->email,
+            type: 'success'
+        );
+    }
 };
 ?>
 
@@ -285,6 +327,62 @@ new #[Layout('layouts.admin-app')] #[Title('Edit User')] class extends Component
                     <p class="mt-3 text-body-sm font-body-sm leading-relaxed text-secondary">
                         Suspended users cannot access the dashboard or receive system alerts.
                     </p>
+                </div>
+
+                <!-- Email Verification Section -->
+                <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h3 class="mb-4 text-label-sm font-label-sm uppercase tracking-widest text-secondary">
+                        Email Verification
+                    </h3>
+
+                    <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        @if ($user->hasVerifiedEmail())
+                            <div class="flex items-center gap-3">
+                                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                                <span class="text-label-md font-label-md text-on-surface">
+                                    Verified
+                                </span>
+                            </div>
+
+                            <span class="text-body-sm font-body-sm text-secondary">
+                                {{ $user->email_verified_at?->format('M d, Y h:i A') }}
+                            </span>
+                        @else
+                            <div class="flex items-center gap-3">
+                                <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                                <span class="text-label-md font-label-md text-on-surface">
+                                    Pending
+                                </span>
+                            </div>
+
+                            <span class="text-body-sm font-body-sm text-secondary">
+                                Not verified yet
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="mt-4 space-y-2">
+                        @if ($user->hasVerifiedEmail())
+                            <button type="button" wire:click="verifyEmail"
+                                class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-label-md font-label-md text-muted transition-colors hover:bg-slate-50 cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                                Email Already Verified
+                            </button>
+                        @else
+                            <button type="button" wire:click="verifyEmail"
+                                wire:confirm="Mark this user's email as verified?"
+                                class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-label-md font-label-md text-white shadow-sm transition hover:bg-primary/90 cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                                Mark Email Verified
+                            </button>
+
+                            <button type="button" wire:click="resendVerification"
+                                class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">mail</span>
+                                Resend Verification Email
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
 
