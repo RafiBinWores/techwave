@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\ToolCategory;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -17,15 +16,12 @@ new class extends Component {
 
     public function getIsToolsPremiumProperty(): bool
     {
-        return ToolCategory::query()
-            ->where('slug', 'image-tools')
-            ->whereHas('toolSubscriptions', fn($q) => $q->where('user_id', auth()->id())->active())
-            ->exists();
+        return auth()->check()
+            && auth()->user()->toolSubscriptions()->active()->exists();
     }
 };
 ?>
 
-<!-- sidebar -->
 <aside
     :class="sidebarOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100'"
     class="fixed left-4 top-4 bottom-4 z-50 w-71.25 rounded-[28px] border border-white/10 bg-slate-950/35 p-5 backdrop-blur-2xl transition-all duration-300 lg:static lg:w-70 lg:translate-x-0 lg:rounded-none lg:border-0 lg:border-r ">
@@ -207,6 +203,19 @@ new class extends Component {
                                 </svg>
                             </span>
                             <span>Resized Images</span>
+                        </a>
+
+                        <a href="{{ route('account.pdf-files') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                            class="client-dash-link">
+                            <span class="client-dash-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                                    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                                    <path d="M9 13h6M9 17h6" />
+                                </svg>
+                            </span>
+                            <span>PDF Files</span>
                         </a>
                     </div>
                 </div>

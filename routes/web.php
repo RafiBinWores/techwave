@@ -185,6 +185,9 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Compressed images backup
     Route::livewire('/account/compressed-images', 'pages::client.account.backup.compressed-images')->name('account.compressed-images');
 
+    // PDF files backup
+    Route::livewire('/account/pdf-files', 'pages::client.account.backup.pdf-files')->name('account.pdf-files');
+
     Route::middleware('auth')->get('/compressed-images/{image}', [CompressedImageController::class, 'show'])->name('storage.compressed-images');
 
     Route::post('/bg-removed-images', [BgRemovedImageController::class, 'store'])->name('bg-removed-images.store');
