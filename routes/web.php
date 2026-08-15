@@ -111,6 +111,7 @@ Route::livewire('/vcard/{slug}', 'pages::client.tools.v-card.show')->name('vcard
 
 // pdf tools
 Route::livewire('/tools/pdf-compressor', 'pages::client.tools.pdf.pdf-compressor')->name('client.tools.pdf-compressor');
+Route::livewire('/tools/pdf-merger', 'pages::client.tools.pdf.pdf-merger')->name('client.tools.pdf-merger');
 
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');

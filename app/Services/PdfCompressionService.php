@@ -100,7 +100,7 @@ class PdfCompressionService
             $record->update([
                 'status' => 'failed',
                 'error_message' => 'Invalid compression level: '
-                    . $record->compression_level,
+                    .$record->compression_level,
                 'processed_at' => now(),
             ]);
 
@@ -112,7 +112,7 @@ class PdfCompressionService
         $disk->makeDirectory($compressedDirectory);
 
         $compressedPath = $compressedDirectory
-            . '/' . Str::random(30) . '.pdf';
+            .'/'.Str::random(30).'.pdf';
 
         $outputFullPath = $disk->path($compressedPath);
 
@@ -243,11 +243,11 @@ class PdfCompressionService
         CompressedPdf $record
     ): string {
         if ($record->is_backup_enabled && $record->user_id) {
-            return 'compressed-pdfs/users/' . $record->user_id;
+            return 'compressed-pdfs/users/'.$record->user_id;
         }
 
         if ($record->session_id) {
-            return 'compressed-pdfs/guests/' . $record->session_id;
+            return 'compressed-pdfs/guests/'.$record->session_id;
         }
 
         return 'compressed-pdfs/temporary';

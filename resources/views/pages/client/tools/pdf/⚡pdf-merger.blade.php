@@ -1,7 +1,7 @@
 <?php
 
-use App\Jobs\CompressPdfJob;
-use App\Models\CompressedPdf;
+use App\Jobs\MergePdfJob;
+use App\Models\MergedPdf;
 use App\Models\ToolCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -10,14 +10,14 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-new #[Title('PDF Compressor')] class extends Component {
+new #[Title('PDF Merger')] class extends Component {
     use WithFileUploads;
 
     public array $files = [];
 
     public array $fileSizes = [];
 
-    public string $compressionLevel = 'recommended';
+    public string $outputName = '';
 
     public bool $processing = false;
 
@@ -25,7 +25,7 @@ new #[Title('PDF Compressor')] class extends Component {
 
     public int $progressPercent = 0;
 
-    /** @var array<int, CompressedPdf> */
+    /** @var array<int, MergedPdf> */
     public array $records = [];
 
     private ?ToolCategory $category = null;
@@ -42,7 +42,7 @@ new #[Title('PDF Compressor')] class extends Component {
 
             'files.*' => ['required', 'file', 'mimes:pdf', 'max:' . (int) (config('pdf-compressor.max_upload_size') / 1024)],
 
-            'compressionLevel' => ['required', 'in:low,recommended,extreme'],
+            'outputName' => ['nullable', 'string', 'max:80'],
         ];
     }
 
@@ -51,17 +51,17 @@ new #[Title('PDF Compressor')] class extends Component {
         return [
             'files' => 'PDF files',
             'files.*' => 'PDF file',
-            'compressionLevel' => 'compression level',
+            'outputName' => 'output file name',
         ];
     }
 
     public function getMaxFilesProperty(): int
     {
         if (!$this->category) {
-            return 1;
+            return 2;
         }
 
-        return auth()->user()?->maxFileUploadFor($this->category) ?? ($this->category->free_max_file_upload ?? 1);
+        return auth()->user()?->maxFileUploadFor($this->category) ?? ($this->category->free_max_file_upload ?? 2);
     }
 
     public function getIsPremiumUserProperty(): bool
@@ -69,14 +69,22 @@ new #[Title('PDF Compressor')] class extends Component {
         return $this->category !== null && auth()->check() && auth()->user()->hasActiveToolSubscription($this->category);
     }
 
-    public function getLevelsProperty(): array
-    {
-        return config('pdf-compressor.levels', []);
-    }
-
     public function getMaxUploadSizeMbProperty(): int
     {
         return (int) (config('pdf-compressor.max_upload_size') / 1024 / 1024);
+    }
+
+    public function getSuggestedOutputNameProperty(): string
+    {
+        $first = $this->files[0] ?? null;
+
+        $base = is_object($first) && method_exists($first, 'getClientOriginalName')
+            ? pathinfo($first->getClientOriginalName(), PATHINFO_FILENAME)
+            : 'merged';
+
+        return trim($this->outputName) !== ''
+            ? trim($this->outputName)
+            : $base . '_merged';
     }
 
     private function retentionSettings(): array
@@ -107,7 +115,7 @@ new #[Title('PDF Compressor')] class extends Component {
         if (count($this->files) > $this->maxFiles) {
             $this->files = array_slice($this->files, 0, $this->maxFiles);
 
-            $this->dispatch('toast', message: 'You can upload a maximum of ' . $this->maxFiles . ' PDF(s) at a time. Extra files were removed.', type: 'warning');
+            $this->dispatch('toast', message: 'You can merge a maximum of ' . $this->maxFiles . ' PDF(s) at a time. Extra files were removed.', type: 'warning');
         }
 
         $this->fileSizes = [];
@@ -148,10 +156,38 @@ new #[Title('PDF Compressor')] class extends Component {
         $this->resetErrorBag();
     }
 
-    public function compress(): void
+    public function moveFile(int $index, string $direction): void
+    {
+        $target = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if (!isset($this->files[$index], $this->files[$target])) {
+            return;
+        }
+
+        $file = $this->files[$index];
+        $size = $this->fileSizes[$index] ?? null;
+
+        $this->files[$index] = $this->files[$target];
+        $this->files[$target] = $file;
+
+        $this->fileSizes[$index] = $this->fileSizes[$target] ?? null;
+        $this->fileSizes[$target] = $size;
+
+        $this->records = [];
+        $this->processing = false;
+        $this->progressPercent = 0;
+    }
+
+    public function merge(): void
     {
         if (empty($this->files)) {
-            $this->dispatch('toast', message: 'Please select at least one PDF file.', type: 'error');
+            $this->dispatch('toast', message: 'Please select at least two PDF files to merge.', type: 'error');
+
+            return;
+        }
+
+        if (count($this->files) < 2) {
+            $this->dispatch('toast', message: 'Add at least one more PDF file to merge.', type: 'error');
 
             return;
         }
@@ -171,8 +207,8 @@ new #[Title('PDF Compressor')] class extends Component {
             ->values()
             ->all();
 
-        if (empty($validFiles)) {
-            $this->dispatch('toast', message: 'No valid PDF files found. Please upload again.', type: 'error');
+        if (count($validFiles) < 2) {
+            $this->dispatch('toast', message: 'At least two valid PDF files are required to merge.', type: 'error');
 
             return;
         }
@@ -197,12 +233,11 @@ new #[Title('PDF Compressor')] class extends Component {
         try {
             Storage::disk($disk)->makeDirectory($directory);
 
-            foreach ($validFiles as $file) {
-                $originalName = $file->getClientOriginalName();
+            $sourcePaths = [];
+            $sourceNames = [];
 
+            foreach ($validFiles as $index => $file) {
                 $uniqueId = Str::random(30);
-
-                $originalPath = $directory . '/' . $uniqueId . '.pdf';
 
                 $storedPath = $file->storeAs($directory, $uniqueId . '.pdf', $disk);
 
@@ -210,35 +245,32 @@ new #[Title('PDF Compressor')] class extends Component {
                     throw new RuntimeException('Unable to store uploaded PDF.');
                 }
 
-                $originalSize = (int) Storage::disk($disk)->size($storedPath);
-
-                $record = CompressedPdf::create([
-                    'user_id' => $userId,
-                    'session_id' => $sessionId,
-                    'original_name' => $originalName,
-                    'original_path' => $originalPath,
-                    'original_size' => $originalSize,
-                    'compression_level' => $this->compressionLevel,
-                    'status' => 'pending',
-
-                    'is_backup_enabled' => $retention['is_backup_enabled'],
-
-                    'expires_at' => $retention['expires_at'],
-
-                    'backup_expires_at' => $retention['backup_expires_at'],
-                ]);
-
-                CompressPdfJob::dispatchSync($record->id);
-
-                $this->records[] = $record->fresh();
+                $sourcePaths[] = $storedPath;
+                $sourceNames[] = $file->getClientOriginalName();
             }
+
+            $outputName = $this->suggestedOutputName . '.pdf';
+
+            $record = MergedPdf::create([
+                'user_id' => $userId,
+                'session_id' => $sessionId,
+                'output_name' => $outputName,
+                'source_names' => $sourceNames,
+                'source_paths' => $sourcePaths,
+                'is_backup_enabled' => $retention['is_backup_enabled'],
+                'expires_at' => $retention['expires_at'],
+                'backup_expires_at' => $retention['backup_expires_at'],
+                'status' => 'pending',
+            ]);
+
+            MergePdfJob::dispatchSync($record->id);
+
+            $this->records[] = $record->fresh();
 
             $this->files = [];
             $this->fileSizes = [];
 
-            $count = count($this->records);
-
-            $this->dispatch('toast', message: $count . ' PDF(s) processed and ready to download.', type: 'success');
+            $this->dispatch('toast', message: 'PDFs merged successfully.', type: 'success');
         } catch (\Throwable $e) {
             report($e);
 
@@ -255,11 +287,9 @@ new #[Title('PDF Compressor')] class extends Component {
         }
 
         $allDone = true;
-        $completedCount = 0;
-        $totalCount = count($this->records);
 
         foreach ($this->records as $index => $record) {
-            $refreshed = CompressedPdf::find($record->id);
+            $refreshed = MergedPdf::find($record->id);
 
             if (!$refreshed) {
                 continue;
@@ -267,21 +297,10 @@ new #[Title('PDF Compressor')] class extends Component {
 
             $this->records[$index] = $refreshed;
 
-            if ($refreshed->isCompleted() || $refreshed->isFailed()) {
-                $completedCount++;
-            } else {
+            if (!$refreshed->isCompleted() && !$refreshed->isFailed()) {
                 $allDone = false;
             }
         }
-
-        /*
-         * This is reliable batch progress. Ghostscript itself does not
-         * provide a simple percentage for one PDF through this job.
-         *
-         * While a single file is processing, move smoothly up to 90%.
-         * When files complete, calculate progress from completed files.
-         */
-        $batchProgress = $totalCount > 0 ? (int) floor(($completedCount / $totalCount) * 100) : 0;
 
         if ($allDone) {
             $this->progressPercent = 100;
@@ -294,7 +313,7 @@ new #[Title('PDF Compressor')] class extends Component {
 
         $estimatedProgress = min(90, 8 + (int) floor($elapsedSeconds / 2));
 
-        $this->progressPercent = max($this->progressPercent, $batchProgress, $estimatedProgress);
+        $this->progressPercent = max($this->progressPercent, $estimatedProgress);
     }
 
     public function downloadResult(int $index): mixed
@@ -303,7 +322,7 @@ new #[Title('PDF Compressor')] class extends Component {
             return null;
         }
 
-        $record = CompressedPdf::find($this->records[$index]->id);
+        $record = MergedPdf::find($this->records[$index]->id);
 
         if (!$record || !$record->isCompleted()) {
             return null;
@@ -319,19 +338,13 @@ new #[Title('PDF Compressor')] class extends Component {
             abort(403);
         }
 
-        if (!$record->downloadableFileExists()) {
-            $this->dispatch('toast', message: 'The downloadable PDF file was not found.', type: 'error');
+        if (!$record->outputFileExists()) {
+            $this->dispatch('toast', message: 'The merged PDF file was not found.', type: 'error');
 
             return null;
         }
 
-        $path = $record->downloadablePath();
-
-        if (!$path) {
-            return null;
-        }
-
-        return Storage::disk(config('pdf-compressor.storage_disk'))->download($path, $record->downloadName());
+        return Storage::disk(config('pdf-compressor.storage_disk'))->download($record->output_path, $record->output_name);
     }
 
     public function getElapsedTimeProperty(): string
@@ -355,21 +368,21 @@ new #[Title('PDF Compressor')] class extends Component {
     public function startOver(): void
     {
         foreach ($this->records as $record) {
-            /*
-             * Do not delete premium backups when the user
-             * presses Start over.
-             */
             if ($record->is_backup_enabled) {
                 continue;
             }
 
-            $record->deleteAllFiles();
+            foreach ($record->sourceFilePaths() as $path) {
+                Storage::disk(config('pdf-compressor.storage_disk'))->delete($path);
+            }
+
+            $record->deleteOutputFile();
             $record->delete();
         }
 
-        $this->reset(['files', 'fileSizes', 'records', 'processing', 'compressionLevel', 'startedAt', 'progressPercent']);
+        $this->reset(['files', 'fileSizes', 'records', 'processing', 'outputName', 'startedAt', 'progressPercent']);
 
-        $this->compressionLevel = 'recommended';
+        $this->outputName = '';
         $this->startedAt = null;
     }
 
@@ -395,86 +408,21 @@ new #[Title('PDF Compressor')] class extends Component {
 
         <div class="mb-10 text-center">
             <h1 class="text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl">
-                Compress your
+                Merge your
                 <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text italic text-transparent">PDFs</span>
             </h1>
             <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/60 md:text-lg">
-                Reduce PDF file size with Ghostscript-powered compression. Choose a compression level and download your
-                optimized PDF.
+                Combine multiple PDF files into a single document. Reorder the files to control the final page order and
+                download the result instantly.
             </p>
-            {{-- @if (!$this->isPremiumUser)
-                <p class="mt-2 text-xs text-blue-100/40">
-                    Free plan: {{ $this->maxFiles }} PDF at a time.
-                    <a href="{{ route('client.tools.index') }}" wire:navigate
-                        class="underline text-cyan-300/70 hover:text-cyan-300">Upgrade to Premium</a> for batch
-                    processing.
-                </p>
-            @else
-                <p class="mt-2 text-xs text-emerald-300/60">
-                    <span class="material-symbols-outlined align-middle text-sm">verified</span>
-                    Premium: up to {{ $this->maxFiles }} PDFs at a time.
-                </p>
-            @endif --}}
-        </div>
-
-        <div class="mb-12 hidden lg:flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <div class="flex items-center gap-3">
-                <div
-                    class="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-300/40 bg-cyan-400/15 text-sm font-bold text-cyan-200 shadow-lg shadow-cyan-500/20">
-                    1
-                </div>
-                <span class="text-xs font-bold tracking-[0.22em] text-white">UPLOAD</span>
-            </div>
-            <div class="hidden h-px w-10 bg-white/15 sm:block"></div>
-            <div class="flex items-center gap-3 opacity-70">
-                <div
-                    class="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm font-bold text-blue-100/60">
-                    2
-                </div>
-                <span class="text-xs font-bold tracking-[0.22em] text-blue-100/50">COMPRESS</span>
-            </div>
-            <div class="hidden h-px w-10 bg-white/15 sm:block"></div>
-            <div class="flex items-center gap-3 opacity-70">
-                <div
-                    class="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm font-bold text-blue-100/60">
-                    3
-                </div>
-                <span class="text-xs font-bold tracking-[0.22em] text-blue-100/50">DOWNLOAD</span>
-            </div>
         </div>
 
         @php
             $hasRecords = !empty($this->records);
-            $allCompleted =
-                $hasRecords && collect($this->records)->every(fn($r) => $r->isCompleted() || $r->isFailed());
-            $anyProcessing =
-                $hasRecords &&
-                collect($this->records)->contains(fn($r) => $r->isProcessing() || $r->status === 'pending');
+            $allCompleted = $hasRecords && collect($this->records)->every(fn($r) => $r->isCompleted() || $r->isFailed());
+            $anyProcessing = $hasRecords && collect($this->records)->contains(fn($r) => $r->isProcessing());
             $anyFailed = $hasRecords && collect($this->records)->contains(fn($r) => $r->isFailed());
         @endphp
-
-        <div wire:loading.flex wire:target="compress"
-            class="fixed inset-0 z-[100] items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md">
-            <div
-                class="flex w-full max-w-md flex-col items-center gap-6 rounded-2xl border border-white/10 bg-slate-900/80 p-8 text-center shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
-                <div
-                    class="flex h-16 w-16 items-center justify-center rounded-full border border-cyan-300/15 bg-cyan-400/10 text-cyan-300">
-                    <span class="h-9 w-9 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-300"></span>
-                </div>
-                <div>
-                    <h3 class="text-xl font-extrabold text-white">
-                        Compressing {{ count($this->files) > 1 ? count($this->files) . ' PDFs' : 'your PDF' }}...
-                    </h3>
-                    <p class="mt-1 text-sm text-blue-100/55">
-                        Please keep this page open. Large files may take a minute.
-                    </p>
-                </div>
-                <div class="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div class="h-full w-2/5 rounded-full bg-linear-to-r from-cyan-400 to-blue-500"
-                        style="animation: compress-progress 1.3s ease-in-out infinite"></div>
-                </div>
-            </div>
-        </div>
 
         @if ($hasRecords && $anyProcessing)
             <div wire:poll.2s.keep-alive="pollStatus" class="w-full">
@@ -488,15 +436,14 @@ new #[Title('PDF Compressor')] class extends Component {
         @if ($hasRecords && $allCompleted)
             <section
                 class="relative overflow-hidden rounded-2xl border border-white/10 bg-white/6 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:p-8">
-                <div
-                    class="pointer-events-none absolute inset-0 bg-linear-to-br from-cyan-400/5 via-transparent to-blue-500/5">
+                <div class="pointer-events-none absolute inset-0 bg-linear-to-br from-cyan-400/5 via-transparent to-blue-500/5">
                 </div>
 
                 <div class="relative mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h2 class="text-2xl font-extrabold text-white">Compression complete</h2>
+                        <h2 class="text-2xl font-extrabold text-white">Merge complete</h2>
                         <p class="mt-1 text-sm text-blue-100/55">
-                            {{ count($this->records) }} PDF(s) processed.
+                            {{ count($this->records) }} document(s) combined.
                         </p>
                     </div>
                     <button type="button" wire:click="startOver" wire:loading.attr="disabled"
@@ -508,30 +455,21 @@ new #[Title('PDF Compressor')] class extends Component {
 
                 <div class="space-y-4">
                     @foreach ($this->records as $index => $record)
-                        @php
-                            $hasReduction = !$record->no_reduction && $record->compressed_size;
-                        @endphp
-                        <div
-                            class="relative flex items-center gap-4 rounded-xl border border-white/10 bg-slate-950/25 p-4">
+                        <div class="relative flex items-center gap-4 rounded-xl border border-white/10 bg-slate-950/25 p-4">
                             <div
-                                class="h-2.5 w-2.5 shrink-0 rounded-full {{ $record->isFailed() ? 'bg-red-400 shadow-lg shadow-red-400/25' : ($hasReduction ? 'bg-emerald-400 shadow-lg shadow-emerald-400/25' : 'bg-amber-400 shadow-lg shadow-amber-400/25') }}">
+                                class="h-2.5 w-2.5 shrink-0 rounded-full {{ $record->isFailed() ? 'bg-red-400 shadow-lg shadow-red-400/25' : 'bg-emerald-400 shadow-lg shadow-emerald-400/25' }}">
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-semibold text-white">{{ $record->original_name }}
+                                <p class="truncate text-sm font-semibold text-white">{{ $record->output_name }}
                                 </p>
                                 <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-blue-100/50">
-                                    <span>{{ $this->formatBytes($record->original_size) }}</span>
+                                    <span>{{ $record->sourceCount() }} source file(s)</span>
                                     @if ($record->isFailed())
                                         <span class="font-semibold text-red-400">Failed:
                                             {{ $record->error_message }}</span>
-                                    @elseif ($hasReduction)
-                                        <span class="text-blue-100/30">&rarr;</span>
-                                        <span
-                                            class="font-semibold text-cyan-300">{{ $this->formatBytes($record->compressed_size) }}</span>
-                                        <span
-                                            class="font-semibold text-emerald-400">-{{ $record->savingsPercent() }}%</span>
                                     @else
-                                        <span class="text-amber-300/70">Already optimized - original kept</span>
+                                        <span class="text-blue-100/30">&rarr;</span>
+                                        <span class="font-semibold text-cyan-300">{{ $this->formatBytes($record->output_size) }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -546,58 +484,22 @@ new #[Title('PDF Compressor')] class extends Component {
                         </div>
                     @endforeach
                 </div>
-
-                @php
-                    $successfulCount = collect($this->records)
-                        ->filter(fn($r) => $r->isCompleted() && !$r->no_reduction)
-                        ->count();
-                    $totalOriginal = collect($this->records)->sum('original_size');
-                    $totalCompressed = collect($this->records)
-                        ->filter(fn($r) => $r->compressed_size)
-                        ->sum('compressed_size');
-                    $totalSaved = $totalOriginal - $totalCompressed;
-                @endphp
-
-                @if ($successfulCount > 0)
-                    <div class="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <div class="rounded-xl border border-white/10 bg-slate-950/30 px-4 py-3">
-                            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-100/45">Original
-                            </p>
-                            <p class="mt-1 text-lg font-extrabold text-white">
-                                {{ $this->formatBytes($totalOriginal) }}</p>
-                        </div>
-                        <div class="rounded-xl border border-white/10 bg-slate-950/30 px-4 py-3">
-                            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-100/45">Compressed
-                            </p>
-                            <p class="mt-1 text-lg font-extrabold text-cyan-300">
-                                {{ $this->formatBytes($totalCompressed) }}</p>
-                        </div>
-                        <div class="rounded-xl border border-white/10 bg-slate-950/30 px-4 py-3">
-                            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-100/45">Saved</p>
-                            <p class="mt-1 text-lg font-extrabold text-emerald-300">
-                                {{ $this->formatBytes($totalSaved) }}</p>
-                        </div>
-                    </div>
-                @endif
             </section>
 
             {{-- Processing View --}}
         @elseif ($hasRecords && $anyProcessing)
-            <section wire:key="pdf-processing-panel"
+            <section wire:key="pdf-merge-processing-panel"
                 class="relative overflow-hidden rounded-2xl border border-white/10 bg-white/6 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:p-8">
-                <div
-                    class="pointer-events-none absolute inset-0 bg-linear-to-br from-cyan-400/5 via-transparent to-blue-500/5">
+                <div class="pointer-events-none absolute inset-0 bg-linear-to-br from-cyan-400/5 via-transparent to-blue-500/5">
                 </div>
 
                 <div class="relative flex flex-col items-center text-center">
                     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-300">
-                        <span
-                            class="h-8 w-8 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-100"></span>
+                        <span class="h-8 w-8 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-100"></span>
                     </div>
-                    <h2 class="mt-5 text-2xl font-extrabold text-white">Compressing your PDFs...</h2>
+                    <h2 class="mt-5 text-2xl font-extrabold text-white">Merging your PDFs...</h2>
                     <p class="mt-2 text-sm text-blue-100/55">
-                        Processing {{ count($this->records) }} file(s) with
-                        {{ $this->levels[$this->compressionLevel]['label'] ?? 'Recommended' }} settings.
+                        Combining {{ count($this->records) }} document(s) into a single PDF.
                     </p>
                     <p class="mt-1 text-xs text-blue-100/40">
                         Elapsed: {{ $this->elapsedTime }} &middot; Large files may take a few minutes.
@@ -618,25 +520,8 @@ new #[Title('PDF Compressor')] class extends Component {
                         </div>
                     </div>
 
-                    <div class="mt-6 w-full max-w-md space-y-2">
-                        @foreach ($this->records as $record)
-                            <div wire:key="processing-record-{{ $record->id }}"
-                                class="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs">
-                                @if ($record->isCompleted())
-                                    <span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span>
-                                @elseif ($record->isFailed())
-                                    <span class="material-symbols-outlined text-sm text-red-400">error</span>
-                                @else
-                                    <span
-                                        class="h-3 w-3 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-100"></span>
-                                @endif
-                                <span class="truncate text-blue-100/70">{{ $record->original_name }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-
                     <p class="mt-4 text-xs leading-5 text-blue-100/45">
-                        Please keep this page open while your PDFs are being optimized.
+                        Please keep this page open while your PDFs are being combined.
                     </p>
                 </div>
             </section>
@@ -646,15 +531,13 @@ new #[Title('PDF Compressor')] class extends Component {
             <div class="grid w-full grid-cols-1 gap-8 lg:grid-cols-12">
                 <section
                     class="relative flex min-h-140 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/6 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-2xl lg:col-span-8 sm:p-8">
-                    <div
-                        class="pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-br from-cyan-400/5 via-transparent to-blue-500/5">
+                    <div class="pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-br from-cyan-400/5 via-transparent to-blue-500/5">
                     </div>
 
                     <div wire:loading.flex wire:target="files"
                         class="absolute inset-0 z-30 items-center justify-center rounded-2xl bg-slate-950/90 backdrop-blur-md">
                         <div class="flex flex-col items-center gap-4 text-center">
-                            <span
-                                class="h-10 w-10 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-300"></span>
+                            <span class="h-10 w-10 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-300"></span>
                             <div>
                                 <p class="font-semibold text-white">Uploading PDF...</p>
                                 <p class="mt-1 text-sm text-blue-100/50">Please wait a moment.</p>
@@ -662,9 +545,20 @@ new #[Title('PDF Compressor')] class extends Component {
                         </div>
                     </div>
 
+                    <div wire:loading.flex wire:target="merge"
+                        class="absolute inset-0 z-30 items-center justify-center rounded-2xl bg-slate-950/90 backdrop-blur-md">
+                        <div class="flex flex-col items-center gap-4 text-center">
+                            <span class="h-10 w-10 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-300"></span>
+                            <div>
+                                <p class="font-semibold text-white">Merging PDFs...</p>
+                                <p class="mt-1 text-sm text-blue-100/50">Please wait a moment.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="relative mb-6 flex items-center justify-between gap-4">
                         <div>
-                            <h2 class="text-xl font-extrabold text-white">PDFs to Process</h2>
+                            <h2 class="text-xl font-extrabold text-white">PDFs to Merge</h2>
                             <p class="mt-1 text-sm text-blue-100/45">
                                 @if (!empty($this->files))
                                     {{ count($this->files) }} file(s) selected. Max {{ $this->maxFiles }}.
@@ -676,11 +570,10 @@ new #[Title('PDF Compressor')] class extends Component {
                     </div>
 
                     @if (!empty($this->files))
-                        <div
-                            class="relative flex flex-1 flex-col gap-3 rounded-xl border border-white/10 bg-slate-950/25 p-4">
+                        <div class="relative flex flex-1 flex-col gap-3 rounded-xl border border-white/10 bg-slate-950/25 p-4">
                             @foreach ($this->files as $index => $file)
                                 @if (is_object($file) && method_exists($file, 'getClientOriginalName'))
-                                    <div
+                                    <div wire:key="merge-file-{{ $index }}"
                                         class="flex items-center gap-3 rounded-lg border border-white/10 bg-white/4 px-4 py-3">
                                         <div
                                             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-300/15 bg-cyan-400/10 text-cyan-300">
@@ -693,10 +586,22 @@ new #[Title('PDF Compressor')] class extends Component {
                                                 {{ $this->formatBytes($this->fileSizes[$index] ?? null) }}
                                             </p>
                                         </div>
-                                        <button type="button" wire:click="removeFile({{ $index }})"
-                                            class="shrink-0 inline-flex items-center gap-1 rounded-lg border border-red-400/20 bg-red-400/10 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition hover:border-red-400/30 hover:bg-red-400/15 cursor-pointer">
-                                            <span class="material-symbols-outlined text-sm">close</span>
-                                        </button>
+                                        <div class="flex shrink-0 items-center gap-1">
+                                            <button type="button" wire:click="moveFile({{ $index }}, 'up')"
+                                                @if ($index === 0) disabled @endif
+                                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-blue-100/70 transition hover:border-cyan-400/30 hover:text-cyan-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30">
+                                                <span class="material-symbols-outlined text-base">arrow_upward</span>
+                                            </button>
+                                            <button type="button" wire:click="moveFile({{ $index }}, 'down')"
+                                                @if ($index === count($this->files) - 1) disabled @endif
+                                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-blue-100/70 transition hover:border-cyan-400/30 hover:text-cyan-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30">
+                                                <span class="material-symbols-outlined text-base">arrow_downward</span>
+                                            </button>
+                                            <button type="button" wire:click="removeFile({{ $index }})"
+                                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-400/20 bg-red-400/10 text-red-300 transition hover:border-red-400/30 hover:bg-red-400/15 cursor-pointer">
+                                                <span class="material-symbols-outlined text-base">close</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 @endif
                             @endforeach
@@ -717,13 +622,13 @@ new #[Title('PDF Compressor')] class extends Component {
                             :class="{ 'border-cyan-300/50 bg-cyan-400/5': dragover }">
                             <div
                                 class="flex h-16 w-16 items-center justify-center rounded-full border border-cyan-300/15 bg-cyan-400/10 text-cyan-300 transition group-hover:scale-110">
-                                <span class="material-symbols-outlined text-4xl">cloud_upload</span>
+                                <span class="material-symbols-outlined text-4xl">merge</span>
                             </div>
                             <h3 class="mt-6 text-2xl font-extrabold text-white">
-                                {{ $this->maxFiles > 1 ? 'Drop your PDFs here' : 'Drop your PDF here' }}
+                                Drop your PDFs here
                             </h3>
                             <p class="mt-2 text-sm text-blue-100/55">
-                                Or click to browse. PDF only, up to {{ $this->maxFiles }} file(s),
+                                Or click to browse. PDF only, up to {{ $this->maxFiles }} files,
                                 {{ $this->max_upload_size_mb }}MB each.
                             </p>
                             <div
@@ -732,20 +637,17 @@ new #[Title('PDF Compressor')] class extends Component {
                                 Browse Files
                             </div>
                             <div class="mt-6 flex flex-wrap justify-center gap-2">
-                                <span
-                                    class="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] font-medium text-blue-100/60">PDF</span>
-                                <span
-                                    class="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] text-blue-100/60">Max
-                                    {{ $this->maxFiles }} file(s)</span>
-                                <span
-                                    class="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] text-blue-100/60">{{ $this->max_upload_size_mb }}MB
+                                <span class="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] font-medium text-blue-100/60">PDF</span>
+                                <span class="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] text-blue-100/60">Max
+                                    {{ $this->maxFiles }} files</span>
+                                <span class="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] text-blue-100/60">{{ $this->max_upload_size_mb }}MB
                                     each</span>
                             </div>
                         </label>
                     @endif
 
-                    <input id="pdf-upload" type="file" wire:model="files" accept="application/pdf"
-                        {{ $this->maxFiles > 1 ? 'multiple' : '' }} class="hidden" />
+                    <input id="pdf-upload" type="file" wire:model="files" accept="application/pdf" multiple
+                        class="hidden" />
                 </section>
 
                 <aside class="flex flex-col gap-6 lg:col-span-4">
@@ -753,61 +655,52 @@ new #[Title('PDF Compressor')] class extends Component {
                         class="flex h-full flex-col rounded-2xl border border-white/10 bg-white/6 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-2xl sm:p-8 lg:sticky lg:top-24">
                         <div class="mb-8 flex items-center gap-4">
                             <div class="rounded-xl border border-cyan-300/15 bg-cyan-400/10 p-3 text-cyan-300">
-                                <span class="material-symbols-outlined">tune</span>
+                                <span class="material-symbols-outlined">merge</span>
                             </div>
                             <div>
-                                <h2 class="text-lg font-extrabold leading-none text-white">Compression Level
-                                </h2>
-                                <p class="mt-1 text-xs text-blue-100/45">Choose how aggressively to compress.
-                                </p>
+                                <h2 class="text-lg font-extrabold leading-none text-white">Output Settings</h2>
+                                <p class="mt-1 text-xs text-blue-100/45">Name your combined document.</p>
                             </div>
                         </div>
 
-                        <div class="mb-6 space-y-3">
-                            @foreach ($this->levels as $key => $level)
-                                <label wire:key="level-{{ $key }}"
-                                    class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition {{ $compressionLevel === $key ? 'border-cyan-400/30 bg-cyan-400/5' : 'border-white/10 bg-slate-950/25 hover:border-cyan-400/20 hover:bg-cyan-400/3' }}">
-                                    <span class="relative mt-0.5 shrink-0">
-                                        <input type="radio" wire:model.live="compressionLevel"
-                                            value="{{ $key }}" class="peer sr-only" />
-                                        <span
-                                            class="block h-5 w-5 rounded-full border-2 border-white/20 transition peer-checked:border-cyan-400 peer-checked:bg-cyan-400/20"></span>
-                                        <span
-                                            class="absolute inset-0 m-auto hidden h-2 w-2 rounded-full bg-cyan-300 peer-checked:block"></span>
-                                    </span>
-                                    <span class="flex-1">
-                                        <span class="block text-sm font-bold text-white">{{ $level['label'] }}</span>
-                                        <span
-                                            class="mt-0.5 block text-[11px] leading-5 text-blue-100/45">{{ $level['description'] }}</span>
-                                        <span class="mt-1 block text-[10px] text-blue-100/35">
-                                            {{ $level['image_resolution'] }} DPI &middot; Quality
-                                            {{ $level['jpeg_quality'] ?? ($level['image_quality'] ?? 70) }}%
-                                        </span>
-                                    </span>
-                                </label>
-                            @endforeach
+                        <div class="mb-6">
+                            <label for="output-name" class="mb-2 block text-xs font-bold uppercase tracking-wider text-blue-100/50">
+                                File name
+                            </label>
+                            <div class="flex items-center rounded-xl border border-white/10 bg-slate-950/30 focus-within:border-cyan-400/40">
+                                <input id="output-name" type="text" wire:model.live="outputName"
+                                    maxlength="80" placeholder="merged_document"
+                                    class="w-full bg-transparent px-4 py-3 text-sm font-semibold text-white placeholder:text-blue-100/30 focus:outline-none" />
+                                <span class="pr-4 text-xs font-bold text-blue-100/40">.pdf</span>
+                            </div>
+                            <p class="mt-2 text-[11px] text-blue-100/40">
+                                Preview: <span class="font-semibold text-cyan-300">{{ $this->suggestedOutputName }}.pdf</span>
+                            </p>
                         </div>
 
                         @if (empty($this->files))
                             <button type="button" disabled
                                 class="mt-8 flex w-full cursor-not-allowed items-center justify-center gap-3 rounded-xl bg-white/8 px-6 py-4 font-extrabold text-white/30">
-                                <span class="material-symbols-outlined">compress</span>
-                                Select PDF(s) to compress
+                                <span class="material-symbols-outlined">merge</span>
+                                Select PDFs to merge
+                            </button>
+                        @elseif (count($this->files) < 2)
+                            <button type="button" disabled
+                                class="mt-8 flex w-full cursor-not-allowed items-center justify-center gap-3 rounded-xl bg-white/8 px-6 py-4 font-extrabold text-white/30">
+                                <span class="material-symbols-outlined">merge</span>
+                                Add at least 2 PDFs
                             </button>
                         @else
-                            <button type="button" wire:click="compress" wire:loading.attr="disabled"
+                            <button type="button" wire:click="merge" wire:loading.attr="disabled"
                                 class="group relative mt-8 flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 px-6 py-4 font-extrabold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5 hover:shadow-[0_0_25px_rgba(34,211,238,0.35)] active:translate-y-0 disabled:opacity-60 cursor-pointer">
-                                <span
-                                    class="absolute inset-y-0 -left-1/2 w-1/2 skew-x-[-20deg] bg-white/20 transition-all duration-700 group-hover:left-full"></span>
-                                <span wire:loading.remove wire:target="compress"
-                                    class="relative flex items-center gap-2">
-                                    <span class="material-symbols-outlined">compress</span>
-                                    Compress {{ count($this->files) > 1 ? count($this->files) . ' PDFs' : 'PDF' }}
+                                <span class="absolute inset-y-0 -left-1/2 w-1/2 skew-x-[-20deg] bg-white/20 transition-all duration-700 group-hover:left-full"></span>
+                                <span wire:loading.remove wire:target="merge" class="relative flex items-center gap-2">
+                                    <span class="material-symbols-outlined">merge</span>
+                                    Merge {{ count($this->files) }} PDFs
                                 </span>
-                                <span wire:loading wire:target="compress" class="relative flex items-center gap-2">
-                                    <span
-                                        class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                                    Compressing...
+                                <span wire:loading wire:target="merge" class="relative flex items-center gap-2">
+                                    <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                    Merging...
                                 </span>
                             </button>
                         @endif
@@ -815,28 +708,26 @@ new #[Title('PDF Compressor')] class extends Component {
                 </aside>
             </div>
 
-            <div
-                class="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-slate-950/90 backdrop-blur-xl lg:hidden">
+            <div class="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-slate-950/90 backdrop-blur-xl lg:hidden">
                 <div class="mx-auto max-w-3xl px-4 py-3">
                     @if (!empty($this->files))
                         <div class="flex items-center gap-3">
                             <div class="min-w-0 flex-1">
-                                <p class="text-sm font-semibold text-white truncate">{{ count($this->files) }}
+                                <p class="truncate text-sm font-semibold text-white">{{ count($this->files) }}
                                     PDF(s) selected</p>
-                                <p class="text-xs text-blue-100/45">
-                                    {{ $this->levels[$compressionLevel]['label'] }}
+                                <p class="truncate text-xs text-blue-100/45">
+                                    {{ $this->suggestedOutputName }}.pdf
                                 </p>
                             </div>
-                            <button type="button" wire:click="compress" wire:loading.attr="disabled"
+                            <button type="button" wire:click="merge" wire:loading.attr="disabled"
+                                @if (count($this->files) < 2) disabled @endif
                                 class="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition active:scale-95 disabled:opacity-60 cursor-pointer">
-                                <span wire:loading.remove wire:target="compress"
-                                    class="relative flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-base">compress</span>
-                                    Compress
+                                <span wire:loading.remove wire:target="merge" class="relative flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-base">merge</span>
+                                    Merge
                                 </span>
-                                <span wire:loading wire:target="compress" class="relative flex items-center gap-1.5">
-                                    <span
-                                        class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                <span wire:loading wire:target="merge" class="relative flex items-center gap-1.5">
+                                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
                                     Working...
                                 </span>
                             </button>
@@ -845,7 +736,7 @@ new #[Title('PDF Compressor')] class extends Component {
                         <label for="pdf-upload"
                             class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/25">
                             <span class="material-symbols-outlined text-base">upload_file</span>
-                            Choose PDF to Compress
+                            Choose PDFs to Merge
                         </label>
                     @endif
                 </div>
@@ -856,48 +747,33 @@ new #[Title('PDF Compressor')] class extends Component {
 </div>
 
 <div class="mt-12 grid w-full gap-6 sm:grid-cols-3">
-    <div
-        class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+    <div class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
             <span class="material-symbols-outlined">upload</span>
         </div>
         <h3 class="mt-4 font-semibold text-white">1. Upload</h3>
         <p class="mt-2 text-sm text-blue-100/62">
-            Select PDF file(s) up to {{ $this->max_upload_size_mb }}MB from your device.
+            Select up to {{ $this->maxFiles }} PDF files, {{ $this->max_upload_size_mb }}MB each.
         </p>
     </div>
-    <div
-        class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+    <div class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/15 text-blue-300">
-            <span class="material-symbols-outlined">tune</span>
+            <span class="material-symbols-outlined">swap_vert</span>
         </div>
-        <h3 class="mt-4 font-semibold text-white">2. Choose Level</h3>
+        <h3 class="mt-4 font-semibold text-white">2. Order &amp; Name</h3>
         <p class="mt-2 text-sm text-blue-100/62">
-            Select low, recommended, or extreme compression based on your needs.
+            Reorder files to control page order and choose the output name.
         </p>
     </div>
-    <div
-        class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-        <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+    <div class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
             <span class="material-symbols-outlined">download</span>
         </div>
         <h3 class="mt-4 font-semibold text-white">3. Download</h3>
         <p class="mt-2 text-sm text-blue-100/62">
-            Download your optimized PDFs with full details on size savings.
+            Download your combined PDF document in one click.
         </p>
     </div>
 </div>
 </main>
 </div>
-
-<style>
-    @keyframes compress-progress {
-        0% {
-            margin-left: -40%;
-        }
-        100% {
-            margin-left: 110%;
-        }
-    }
-</style>
