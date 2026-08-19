@@ -19,6 +19,7 @@
     "dependencies": {
         "@imgly/background-removal": "^1.7.0",
         "alpinejs": "^3.15.11",
-        "axios": "^1.16.0"
+        "axios": "^1.16.0",
+        "intl-tel-input": "^29.2.3"
     }
 }

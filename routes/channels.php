@@ -42,6 +42,10 @@ Broadcast::channel('user.{userId}.tickets', function ($user, $userId) use ($admi
     return (int) $user->id === (int) $userId;
 });
 
+Broadcast::channel('admin.proposals', function ($user) use ($adminRoles) {
+    return $user && in_array($user->role ?? null, $adminRoles, true);
+});
+
 Broadcast::channel('admin.contact-messages', function ($user) use ($adminRoles) {
     return $user && in_array($user->role ?? null, $adminRoles, true);
 });

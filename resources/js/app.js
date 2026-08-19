@@ -6,3 +6,4 @@
 
 import './echo';
 import './bg-remover';
+import './phone-input';

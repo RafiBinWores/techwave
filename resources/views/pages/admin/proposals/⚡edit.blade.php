@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Propaganistas\LaravelPhone\Rules\Phone;
 
 new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Component {
     public Proposal $proposal;
@@ -24,10 +25,12 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
     public string $customer_name = '';
     public string $customer_email = '';
     public string $customer_phone = '';
+    public string $customer_country = 'BD';
     public string $company_name = '';
 
     public string $subject = '';
     public string $note = '';
+    public string $terms = '';
 
     public string $discount_type = 'none';
     public string $discount_value = '0';
@@ -35,7 +38,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
     public ?int $selected_service_id = null;
     public ?int $selected_service_plan_id = null;
-    public ?int $selected_pricing_plan_id = null;
+    public ?int $selected_service_option_id = null;
+    public ?string $selected_billing_cycle = null;
 
     public string $custom_title = '';
     public string $custom_description = '';
@@ -65,10 +69,12 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
         $this->customer_name = $this->proposal->customer_name;
         $this->customer_email = $this->proposal->customer_email ?? '';
         $this->customer_phone = $this->proposal->customer_phone ?? '';
+        $this->customer_country = $this->proposal->user?->country ?: 'BD';
         $this->company_name = $this->proposal->company_name ?? '';
 
         $this->subject = $this->proposal->subject;
         $this->note = $this->proposal->note ?? '';
+        $this->terms = $this->proposal->terms ?? '';
 
         $this->discount_type = $this->proposal->discount_type;
         $this->discount_value = (string) $this->proposal->discount_value;
@@ -76,7 +82,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
         $this->valid_until = $this->proposal->valid_until?->format('Y-m-d') ?? '';
 
         $this->items = $this->proposal->items
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'item_type' => $item->item_type,
                 'item_id' => $item->item_id,
                 'title' => $item->title,
@@ -95,11 +101,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['nullable', 'email', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:255'],
+            'customer_phone' => ['nullable', 'string', 'max:255', (new Phone)->country($this->customer_country)],
+            'customer_country' => ['required', 'string', 'size:2'],
             'company_name' => ['nullable', 'string', 'max:255'],
 
             'subject' => ['required', 'string', 'max:255'],
             'note' => ['nullable', 'string'],
+            'terms' => ['nullable', 'string'],
 
             'discount_type' => ['required', 'in:none,fixed,percentage'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
@@ -107,7 +115,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             'valid_until' => ['nullable', 'date'],
 
             'items' => ['required', 'array', 'min:1'],
-            'items.*.item_type' => ['required', 'in:service,service_plan,pricing_plan,custom'],
+            'items.*.item_type' => ['required', 'in:service,service_plan,service_option,pricing_plan,custom'],
             'items.*.item_id' => ['nullable', 'integer'],
             'items.*.title' => ['required', 'string', 'max:255'],
             'items.*.description' => ['nullable', 'string'],
@@ -119,8 +127,210 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
     protected function messages(): array
     {
         return [
-            'items.required' => 'Please add at least one service, plan, pricing, or custom item.',
-            'items.min' => 'Please add at least one service, plan, pricing, or custom item.',
+            'items.required' => 'Please add at least one service, plan, option, or custom item.',
+            'items.min' => 'Please add at least one service, plan, option, or custom item.',
+            'customer_phone.phone' => 'The phone number must be a valid ' . ($this->countries()[strtoupper($this->customer_country)] ?? '') . ' phone number.',
+        ];
+    }
+
+    public function countries(): array
+    {
+        return [
+            'AF' => 'Afghanistan',
+            'AL' => 'Albania',
+            'DZ' => 'Algeria',
+            'AD' => 'Andorra',
+            'AO' => 'Angola',
+            'AG' => 'Antigua and Barbuda',
+            'AR' => 'Argentina',
+            'AM' => 'Armenia',
+            'AU' => 'Australia',
+            'AT' => 'Austria',
+            'AZ' => 'Azerbaijan',
+            'BS' => 'Bahamas',
+            'BH' => 'Bahrain',
+            'BD' => 'Bangladesh',
+            'BB' => 'Barbados',
+            'BY' => 'Belarus',
+            'BE' => 'Belgium',
+            'BZ' => 'Belize',
+            'BJ' => 'Benin',
+            'BT' => 'Bhutan',
+            'BO' => 'Bolivia',
+            'BA' => 'Bosnia and Herzegovina',
+            'BW' => 'Botswana',
+            'BR' => 'Brazil',
+            'BN' => 'Brunei',
+            'BG' => 'Bulgaria',
+            'BF' => 'Burkina Faso',
+            'BI' => 'Burundi',
+            'KH' => 'Cambodia',
+            'CM' => 'Cameroon',
+            'CA' => 'Canada',
+            'CV' => 'Cape Verde',
+            'CF' => 'Central African Republic',
+            'TD' => 'Chad',
+            'CL' => 'Chile',
+            'CN' => 'China',
+            'CO' => 'Colombia',
+            'KM' => 'Comoros',
+            'CG' => 'Congo',
+            'CR' => 'Costa Rica',
+            'CI' => 'Côte d’Ivoire',
+            'HR' => 'Croatia',
+            'CU' => 'Cuba',
+            'CY' => 'Cyprus',
+            'CZ' => 'Czech Republic',
+            'DK' => 'Denmark',
+            'DJ' => 'Djibouti',
+            'DM' => 'Dominica',
+            'DO' => 'Dominican Republic',
+            'EC' => 'Ecuador',
+            'EG' => 'Egypt',
+            'SV' => 'El Salvador',
+            'GQ' => 'Equatorial Guinea',
+            'ER' => 'Eritrea',
+            'EE' => 'Estonia',
+            'SZ' => 'Eswatini',
+            'ET' => 'Ethiopia',
+            'FJ' => 'Fiji',
+            'FI' => 'Finland',
+            'FR' => 'France',
+            'GA' => 'Gabon',
+            'GM' => 'Gambia',
+            'GE' => 'Georgia',
+            'DE' => 'Germany',
+            'GH' => 'Ghana',
+            'GR' => 'Greece',
+            'GD' => 'Grenada',
+            'GT' => 'Guatemala',
+            'GN' => 'Guinea',
+            'GW' => 'Guinea-Bissau',
+            'GY' => 'Guyana',
+            'HT' => 'Haiti',
+            'HN' => 'Honduras',
+            'HU' => 'Hungary',
+            'IS' => 'Iceland',
+            'IN' => 'India',
+            'ID' => 'Indonesia',
+            'IR' => 'Iran',
+            'IQ' => 'Iraq',
+            'IE' => 'Ireland',
+            'IL' => 'Israel',
+            'IT' => 'Italy',
+            'JM' => 'Jamaica',
+            'JP' => 'Japan',
+            'JO' => 'Jordan',
+            'KZ' => 'Kazakhstan',
+            'KE' => 'Kenya',
+            'KI' => 'Kiribati',
+            'KP' => 'North Korea',
+            'KR' => 'South Korea',
+            'KW' => 'Kuwait',
+            'KG' => 'Kyrgyzstan',
+            'LA' => 'Laos',
+            'LV' => 'Latvia',
+            'LB' => 'Lebanon',
+            'LS' => 'Lesotho',
+            'LR' => 'Liberia',
+            'LY' => 'Libya',
+            'LI' => 'Liechtenstein',
+            'LT' => 'Lithuania',
+            'LU' => 'Luxembourg',
+            'MG' => 'Madagascar',
+            'MW' => 'Malawi',
+            'MY' => 'Malaysia',
+            'MV' => 'Maldives',
+            'ML' => 'Mali',
+            'MT' => 'Malta',
+            'MH' => 'Marshall Islands',
+            'MR' => 'Mauritania',
+            'MU' => 'Mauritius',
+            'MX' => 'Mexico',
+            'FM' => 'Micronesia',
+            'MD' => 'Moldova',
+            'MC' => 'Monaco',
+            'MN' => 'Mongolia',
+            'ME' => 'Montenegro',
+            'MA' => 'Morocco',
+            'MZ' => 'Mozambique',
+            'MM' => 'Myanmar',
+            'NA' => 'Namibia',
+            'NR' => 'Nauru',
+            'NP' => 'Nepal',
+            'NL' => 'Netherlands',
+            'NZ' => 'New Zealand',
+            'NI' => 'Nicaragua',
+            'NE' => 'Niger',
+            'NG' => 'Nigeria',
+            'MK' => 'North Macedonia',
+            'NO' => 'Norway',
+            'OM' => 'Oman',
+            'PK' => 'Pakistan',
+            'PW' => 'Palau',
+            'PS' => 'Palestine',
+            'PA' => 'Panama',
+            'PG' => 'Papua New Guinea',
+            'PY' => 'Paraguay',
+            'PE' => 'Peru',
+            'PH' => 'Philippines',
+            'PL' => 'Poland',
+            'PT' => 'Portugal',
+            'QA' => 'Qatar',
+            'RO' => 'Romania',
+            'RU' => 'Russia',
+            'RW' => 'Rwanda',
+            'KN' => 'Saint Kitts and Nevis',
+            'LC' => 'Saint Lucia',
+            'VC' => 'Saint Vincent and the Grenadines',
+            'WS' => 'Samoa',
+            'SM' => 'San Marino',
+            'ST' => 'São Tomé and Príncipe',
+            'SA' => 'Saudi Arabia',
+            'SN' => 'Senegal',
+            'RS' => 'Serbia',
+            'SC' => 'Seychelles',
+            'SL' => 'Sierra Leone',
+            'SG' => 'Singapore',
+            'SK' => 'Slovakia',
+            'SI' => 'Slovenia',
+            'SB' => 'Solomon Islands',
+            'SO' => 'Somalia',
+            'ZA' => 'South Africa',
+            'SS' => 'South Sudan',
+            'ES' => 'Spain',
+            'LK' => 'Sri Lanka',
+            'SD' => 'Sudan',
+            'SR' => 'Suriname',
+            'SE' => 'Sweden',
+            'CH' => 'Switzerland',
+            'SY' => 'Syria',
+            'TW' => 'Taiwan',
+            'TJ' => 'Tajikistan',
+            'TZ' => 'Tanzania',
+            'TH' => 'Thailand',
+            'TL' => 'Timor-Leste',
+            'TG' => 'Togo',
+            'TO' => 'Tonga',
+            'TT' => 'Trinidad and Tobago',
+            'TN' => 'Tunisia',
+            'TR' => 'Turkey',
+            'TM' => 'Turkmenistan',
+            'TV' => 'Tuvalu',
+            'UG' => 'Uganda',
+            'UA' => 'Ukraine',
+            'AE' => 'United Arab Emirates',
+            'GB' => 'United Kingdom',
+            'US' => 'United States',
+            'UY' => 'Uruguay',
+            'UZ' => 'Uzbekistan',
+            'VU' => 'Vanuatu',
+            'VA' => 'Vatican City',
+            'VE' => 'Venezuela',
+            'VN' => 'Vietnam',
+            'YE' => 'Yemen',
+            'ZM' => 'Zambia',
+            'ZW' => 'Zimbabwe',
         ];
     }
 
@@ -158,7 +368,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
         $this->customer_name = $user->name ?? '';
         $this->customer_email = $user->email ?? '';
-        $this->customer_phone = $company?->phone ?? '';
+        $this->customer_phone = $user->phone ?: ($company?->phone ?? '');
+        $this->customer_country = $user->country ?: 'BD';
         $this->company_name = $company?->company_name ?? '';
 
         $this->customer_search = trim(($user->name ?? '') . ' - ' . ($user->email ?? ''));
@@ -170,6 +381,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             'customer_name',
             'customer_email',
             'customer_phone',
+            'customer_country',
             'company_name',
         ]);
     }
@@ -183,6 +395,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
         $this->customer_name = '';
         $this->customer_email = '';
         $this->customer_phone = '';
+        $this->customer_country = 'BD';
         $this->company_name = '';
 
         $this->customer_dropdown_open = false;
@@ -198,23 +411,146 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
     public function servicePlans()
     {
+        if (!$this->selected_service_id) {
+            return collect();
+        }
+
         return ServicePlan::query()
-            ->with('service')
+            ->where('service_id', $this->selected_service_id)
             ->where('is_active', true)
+            ->when(
+                $this->selected_service_option_id,
+                fn($q) => $q->where('service_option_id', $this->selected_service_option_id),
+                fn($q) => $q->whereNull('service_option_id'),
+            )
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
     }
 
-    public function pricingPlans()
+    public function serviceOptions()
     {
-        if (!class_exists(\App\Models\PricingPlan::class)) {
+        if (!$this->selected_service_id) {
             return collect();
         }
 
-        return \App\Models\PricingPlan::query()
-            ->orderBy('title')
+        return \App\Models\ServiceOption::query()
+            ->where('service_id', $this->selected_service_id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('card_title')
             ->get();
+    }
+
+    public function selectedServiceHasOptions(): bool
+    {
+        if (!$this->selected_service_id) {
+            return false;
+        }
+
+        return \App\Models\ServiceOption::query()
+            ->where('service_id', $this->selected_service_id)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function selectedOptionHasPlans(): bool
+    {
+        if (!$this->selected_service_option_id) {
+            return false;
+        }
+
+        return ServicePlan::query()
+            ->where('service_option_id', $this->selected_service_option_id)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function updatedSelectedServiceId(): void
+    {
+        $this->selected_service_plan_id = null;
+        $this->selected_service_option_id = null;
+        $this->selected_billing_cycle = null;
+    }
+
+    public function updatedSelectedServiceOptionId(): void
+    {
+        $this->selected_service_plan_id = null;
+        $this->selected_billing_cycle = null;
+    }
+
+    public function selectedServicePlan()
+    {
+        if (!$this->selected_service_plan_id) {
+            return null;
+        }
+
+        return ServicePlan::query()->find($this->selected_service_plan_id);
+    }
+
+    public function updatedSelectedServicePlanId(): void
+    {
+        $plan = $this->selectedServicePlan();
+
+        $this->selected_billing_cycle = $plan?->has_monthly_price && $plan->monthly_price
+            ? 'monthly'
+            : ($plan?->has_yearly_price && $plan->yearly_price
+                ? 'yearly'
+                : ($plan?->has_one_time_price && $plan->price ? 'one_time' : null));
+    }
+
+    public function planBillingCycles(): array
+    {
+        $plan = $this->selectedServicePlan();
+
+        if (!$plan) {
+            return [];
+        }
+
+        $cycles = [];
+
+        if ($plan->has_monthly_price && $plan->monthly_price > 0) {
+            $cycles[] = ['value' => 'monthly', 'label' => 'Monthly'];
+        }
+
+        if ($plan->has_yearly_price && $plan->yearly_price > 0) {
+            $cycles[] = ['value' => 'yearly', 'label' => 'Yearly'];
+        }
+
+        if ($plan->has_one_time_price && $plan->price > 0) {
+            $cycles[] = ['value' => 'one_time', 'label' => 'One-time'];
+        }
+
+        return $cycles;
+    }
+
+    public function selectedPlanPrice(): ?float
+    {
+        $plan = $this->selectedServicePlan();
+
+        if (!$plan) {
+            return null;
+        }
+
+        return match ($this->selected_billing_cycle) {
+            'monthly' => $this->finalPlanPrice($plan->monthly_price, $plan->monthly_discount_price),
+            'yearly' => $this->finalPlanPrice($plan->yearly_price, $plan->yearly_discount_price),
+            'one_time' => $this->finalPlanPrice($plan->price, $plan->discount_price),
+            default => null,
+        };
+    }
+
+    private function finalPlanPrice($regular, $discount): ?float
+    {
+        if (empty($regular) || (float) $regular <= 0) {
+            return null;
+        }
+
+        if (!empty($discount) && (float) $discount > 0 && (float) $discount < (float) $regular) {
+            return (float) $discount;
+        }
+
+        return (float) $regular;
     }
 
     public function addService(): void
@@ -246,42 +582,62 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
             return;
         }
 
+        $billingCycle = $this->selected_billing_cycle;
+
+        if (!$billingCycle) {
+            $this->dispatch('toast', message: 'This plan has no available pricing.', type: 'warning');
+            return;
+        }
+
         $plan = ServicePlan::query()->with('service')->findOrFail($this->selected_service_plan_id);
+
+        $price = $this->finalPlanPrice(
+            match ($billingCycle) {
+                'monthly' => $plan->monthly_price,
+                'yearly' => $plan->yearly_price,
+                default => $plan->price,
+            },
+            match ($billingCycle) {
+                'monthly' => $plan->monthly_discount_price,
+                'yearly' => $plan->yearly_discount_price,
+                default => $plan->discount_price,
+            },
+        );
 
         $this->items[] = [
             'item_type' => 'service_plan',
             'item_id' => $plan->id,
-            'title' => ($plan->service?->card_title ? $plan->service->card_title . ' - ' : '') . $plan->name,
+            'title' => ($plan->service?->card_title ? $plan->service->card_title . ' - ' : '') . $plan->name . ' (' . ucwords(str_replace('_', ' ', $billingCycle)) . ')',
             'description' => $plan->description ?? '',
             'quantity' => 1,
-            'unit_price' => $plan->price ?? 0,
+            'unit_price' => $price ?? 0,
         ];
 
         $this->selected_service_plan_id = null;
+        $this->selected_service_option_id = null;
+        $this->selected_billing_cycle = null;
         $this->resetValidation('items');
     }
 
-    public function addPricingPlan(): void
+    public function addServiceOption(): void
     {
-        if (!$this->selected_pricing_plan_id || !class_exists(\App\Models\PricingPlan::class)) {
-            $this->dispatch('toast', message: 'Please select a pricing plan first.', type: 'warning');
+        if (!$this->selected_service_option_id) {
+            $this->dispatch('toast', message: 'Please select a service option first.', type: 'warning');
             return;
         }
 
-        $plan = \App\Models\PricingPlan::query()->findOrFail($this->selected_pricing_plan_id);
-
-        $price = $plan->yearly_price ?? $plan->monthly_price ?? $plan->price ?? 0;
+        $option = \App\Models\ServiceOption::query()->findOrFail($this->selected_service_option_id);
 
         $this->items[] = [
-            'item_type' => 'pricing_plan',
-            'item_id' => $plan->id,
-            'title' => $plan->title ?? $plan->name ?? 'Pricing Plan',
-            'description' => $plan->description ?? '',
+            'item_type' => 'service_option',
+            'item_id' => $option->id,
+            'title' => $option->card_title ?? ($option->detail_title ?? 'Service Option'),
+            'description' => $option->short_description ?? '',
             'quantity' => 1,
-            'unit_price' => $price,
+            'unit_price' => 0,
         ];
 
-        $this->selected_pricing_plan_id = null;
+        $this->selected_service_option_id = null;
         $this->resetValidation('items');
     }
 
@@ -359,6 +715,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
                 'subject' => $validated['subject'],
                 'note' => $validated['note'] ?: null,
+                'terms' => $validated['terms'] ?: null,
 
                 'discount_type' => $validated['discount_type'],
                 'discount_value' => $validated['discount_value'] ?: 0,
@@ -397,7 +754,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
 
         $this->selected_service_id = null;
         $this->selected_service_plan_id = null;
-        $this->selected_pricing_plan_id = null;
+        $this->selected_service_option_id = null;
 
         $this->custom_title = '';
         $this->custom_description = '';
@@ -457,76 +814,76 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                                         class="w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-10 pr-12 text-label-md font-label-md text-on-surface transition-colors placeholder:text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10" />
 
                                     @if ($user_id)
-                                        <button type="button" wire:click="clearCustomer"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-red-500">
-                                            <span class="material-symbols-outlined text-lg">close</span>
-                                        </button>
+                                    <button type="button" wire:click="clearCustomer"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-red-500">
+                                        <span class="material-symbols-outlined text-lg">close</span>
+                                    </button>
                                     @endif
                                 </div>
 
                                 @if ($customer_dropdown_open)
-                                    <div
-                                        class="absolute z-30 mt-2 max-h-80 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl">
-                                        @forelse ($this->users() as $user)
-                                            <button type="button" wire:click="selectCustomer({{ $user->id }})"
-                                                class="flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50">
-                                                <div
-                                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                                    <span class="material-symbols-outlined text-[20px]">
-                                                        {{ $user->type === 'company' ? 'business' : 'person' }}
-                                                    </span>
-                                                </div>
+                                <div
+                                    class="absolute z-30 mt-2 max-h-80 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl">
+                                    @forelse ($this->users() as $user)
+                                    <button type="button" wire:click="selectCustomer({{ $user->id }})"
+                                        class="flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50">
+                                        <div
+                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                            <span class="material-symbols-outlined text-[20px]">
+                                                {{ $user->type === 'company' ? 'business' : 'person' }}
+                                            </span>
+                                        </div>
 
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="flex flex-wrap items-center gap-2">
-                                                        <p class="truncate text-sm font-semibold text-on-surface">
-                                                            {{ $user->name }}
-                                                        </p>
-
-                                                        <span
-                                                            class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase text-slate-600">
-                                                            {{ $user->type }}
-                                                        </span>
-                                                    </div>
-
-                                                    <p class="truncate text-xs text-secondary">
-                                                        {{ $user->email }}
-                                                    </p>
-
-                                                    @if ($user->company)
-                                                        <p class="mt-1 truncate text-xs text-blue-700">
-                                                            {{ $user->company->company_name }}
-                                                        </p>
-                                                    @else
-                                                        <p class="mt-1 text-xs text-amber-600">
-                                                            No company attached
-                                                        </p>
-                                                    @endif
-                                                </div>
-                                            </button>
-                                        @empty
-                                            <div class="px-4 py-6 text-center">
-                                                <p class="text-sm font-medium text-slate-600">
-                                                    No customer found
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="truncate text-sm font-semibold text-on-surface">
+                                                    {{ $user->name }}
                                                 </p>
 
-                                                <p class="text-xs text-secondary">
-                                                    You can still type customer details manually below.
-                                                </p>
+                                                <span
+                                                    class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase text-slate-600">
+                                                    {{ $user->type }}
+                                                </span>
                                             </div>
-                                        @endforelse
+
+                                            <p class="truncate text-xs text-secondary">
+                                                {{ $user->email }}
+                                            </p>
+
+                                            @if ($user->company)
+                                            <p class="mt-1 truncate text-xs text-blue-700">
+                                                {{ $user->company->company_name }}
+                                            </p>
+                                            @else
+                                            <p class="mt-1 text-xs text-amber-600">
+                                                No company attached
+                                            </p>
+                                            @endif
+                                        </div>
+                                    </button>
+                                    @empty
+                                    <div class="px-4 py-6 text-center">
+                                        <p class="text-sm font-medium text-slate-600">
+                                            No customer found
+                                        </p>
+
+                                        <p class="text-xs text-secondary">
+                                            You can still type customer details manually below.
+                                        </p>
                                     </div>
+                                    @endforelse
+                                </div>
                                 @endif
                             </div>
 
                             @if ($user_id)
-                                <p class="text-xs text-emerald-600">
-                                    Customer selected. You can still edit details below.
-                                </p>
+                            <p class="text-xs text-emerald-600">
+                                Customer selected. You can still edit details below.
+                            </p>
                             @else
-                                <p class="text-xs text-secondary">
-                                    Search and select an existing user, or fill customer details manually.
-                                </p>
+                            <p class="text-xs text-secondary">
+                                Search and select an existing user, or fill customer details manually.
+                            </p>
                             @endif
                         </div>
 
@@ -542,7 +899,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                                     placeholder="Customer name" />
 
                                 @error('customer_name')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -554,19 +911,25 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                                     placeholder="customer@email.com" />
 
                                 @error('customer_email')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div class="space-y-2">
                                 <label class="block font-label-md text-on-surface">Customer Phone</label>
 
-                                <input type="text" wire:model.live="customer_phone"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
-                                    placeholder="+880..." />
+                                <div wire:ignore
+                                    x-data="phoneInput('customer_phone', 'customer_country')">
+                                    <input type="tel" x-ref="input" autocomplete="off"
+                                        class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
+                                        placeholder="Phone number" />
+
+                                    <input type="hidden" x-ref="phone" value="{{ $customer_phone }}" />
+                                    <input type="hidden" x-ref="country" value="{{ $customer_country }}" />
+                                </div>
 
                                 @error('customer_phone')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -578,7 +941,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                                     placeholder="Company name" />
 
                                 @error('company_name')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                <p class="text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -598,7 +961,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                                 class="w-full rounded border border-outline-variant px-4 py-2.5"
                                 placeholder="Managed IT Service Proposal" />
                             @error('subject')
-                                <p class="text-sm text-red-500">{{ $message }}</p>
+                            <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -607,7 +970,19 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                             <textarea wire:model.live="note" rows="5" class="w-full rounded border border-outline-variant px-4 py-2.5"
                                 placeholder="Write a convincing proposal message..."></textarea>
                             @error('note')
-                                <p class="text-sm text-red-500">{{ $message }}</p>
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">
+                                Terms & Conditions
+                                <span class="text-xs font-normal text-secondary">(optional)</span>
+                            </label>
+                            <textarea wire:model.live="terms" rows="5" class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="Example: Payment is due within 7 days. Prices are valid for 30 days."></textarea>
+                            @error('terms')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
@@ -619,54 +994,88 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                         Add Services / Plans
                     </h3>
 
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div class="grid grid-cols-1 gap-6 {{ $this->selectedServiceHasOptions() ? 'md:grid-cols-3' : 'md:grid-cols-2' }}">
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Select Service</label>
                             <select wire:model.live="selected_service_id"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5">
                                 <option value="">Select service</option>
                                 @foreach ($this->services() as $service)
-                                    <option value="{{ $service->id }}">{{ $service->card_title }}</option>
+                                <option value="{{ $service->id }}">{{ $service->card_title }}</option>
                                 @endforeach
                             </select>
 
+                            @unless ($this->selectedServiceHasOptions())
                             <button type="button" wire:click="addService"
                                 class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
                                 Add Service
                             </button>
+                            @endunless
                         </div>
+
+                        @if ($this->selectedServiceHasOptions())
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Select Service Option</label>
+                            <select wire:model.live="selected_service_option_id"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5">
+                                <option value="">Select service option</option>
+                                @foreach ($this->serviceOptions() as $option)
+                                <option value="{{ $option->id }}">{{ $option->card_title }}</option>
+                                @endforeach
+                            </select>
+
+                            @unless ($this->selectedOptionHasPlans())
+                            <button type="button" wire:click="addServiceOption"
+                                class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
+                                Add Service Option
+                            </button>
+                            @endunless
+                        </div>
+                        @endif
 
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Select Service Plan</label>
                             <select wire:model.live="selected_service_plan_id"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5">
-                                <option value="">Select service plan</option>
-                                @foreach ($this->servicePlans() as $plan)
-                                    <option value="{{ $plan->id }}">
-                                        {{ $plan->service?->card_title }} - {{ $plan->name }}
-                                    </option>
-                                @endforeach
+                                <option value="">
+                                    {{ $selected_service_id ? 'Select service plan' : 'Select a service first' }}
+                                </option>
+                                @forelse ($this->servicePlans() as $plan)
+                                <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                                @empty
+                                @if ($selected_service_id)
+                                <option value="" disabled>
+                                    {{ $selected_service_option_id ? 'No plans available for this option' : 'No plans available for this service' }}
+                                </option>
+                                @endif
+                                @endforelse
                             </select>
+
+                            @if ($this->selected_service_plan_id && $this->planBillingCycles())
+                            <div class="mt-3 space-y-1.5">
+                                <label class="block text-xs font-semibold text-secondary">Billing Cycle</label>
+
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach ($this->planBillingCycles() as $cycle)
+                                    <button type="button" wire:click="$set('selected_billing_cycle', '{{ $cycle['value'] }}')"
+                                        class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer {{ $selected_billing_cycle === $cycle['value'] ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant text-on-surface hover:bg-slate-50' }}">
+                                        {{ $cycle['label'] }}
+                                    </button>
+                                    @endforeach
+                                </div>
+
+                                @if ($this->selectedPlanPrice() !== null)
+                                <p class="text-xs text-emerald-600">
+                                    Price: ৳{{ number_format($this->selectedPlanPrice(), 2) }}
+                                    per {{ $selected_billing_cycle === 'one_time' ? 'service' : $selected_billing_cycle }}
+                                </p>
+                                @endif
+                            </div>
+                            @endif
 
                             <button type="button" wire:click="addServicePlan"
                                 class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
                                 Add Plan
-                            </button>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">Select Pricing</label>
-                            <select wire:model.live="selected_pricing_plan_id"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5">
-                                <option value="">Select pricing plan</option>
-                                @foreach ($this->pricingPlans() as $plan)
-                                    <option value="{{ $plan->id }}">{{ $plan->title }}</option>
-                                @endforeach
-                            </select>
-
-                            <button type="button" wire:click="addPricingPlan"
-                                class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
-                                Add Pricing
                             </button>
                         </div>
                     </div>
@@ -701,51 +1110,51 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                     </h3>
 
                     @error('items')
-                        <p class="mb-3 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mb-3 text-sm text-red-500">{{ $message }}</p>
                     @enderror
 
                     <div class="space-y-4">
                         @forelse ($items as $index => $item)
-                            <div wire:key="proposal-item-{{ $index }}"
-                                class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                                    <div class="md:col-span-4">
-                                        <label class="text-xs text-secondary">Title</label>
-                                        <input wire:model.live="items.{{ $index }}.title"
-                                            class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
-                                    </div>
+                        <div wire:key="proposal-item-{{ $index }}"
+                            class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                                <div class="md:col-span-4">
+                                    <label class="text-xs text-secondary">Title</label>
+                                    <input wire:model.live="items.{{ $index }}.title"
+                                        class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
+                                </div>
 
-                                    <div class="md:col-span-3">
-                                        <label class="text-xs text-secondary">Description</label>
-                                        <input wire:model.live="items.{{ $index }}.description"
-                                            class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
-                                    </div>
+                                <div class="md:col-span-3">
+                                    <label class="text-xs text-secondary">Description</label>
+                                    <input wire:model.live="items.{{ $index }}.description"
+                                        class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
+                                </div>
 
-                                    <div class="md:col-span-2">
-                                        <label class="text-xs text-secondary">Qty</label>
-                                        <input type="number" step="1" min="1" wire:model.live="items.{{ $index }}.quantity"
-                                            class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
-                                    </div>
+                                <div class="md:col-span-2">
+                                    <label class="text-xs text-secondary">Qty</label>
+                                    <input type="number" step="1" min="1" wire:model.live="items.{{ $index }}.quantity"
+                                        class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
+                                </div>
 
-                                    <div class="md:col-span-2">
-                                        <label class="text-xs text-secondary">Unit Price</label>
-                                        <input type="number" step="0.1" min="1" wire:model.live="items.{{ $index }}.unit_price"
-                                            class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
-                                    </div>
+                                <div class="md:col-span-2">
+                                    <label class="text-xs text-secondary">Unit Price</label>
+                                    <input type="number" step="0.1" min="0" wire:model.live="items.{{ $index }}.unit_price"
+                                        class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
+                                </div>
 
-                                    <div class="flex items-end justify-end md:col-span-1">
-                                        <button type="button" wire:click="removeItem({{ $index }})"
-                                            class="text-red-500 cursor-pointer">
-                                            <span class="material-symbols-outlined">delete</span>
-                                        </button>
-                                    </div>
+                                <div class="flex items-end justify-end md:col-span-1">
+                                    <button type="button" wire:click="removeItem({{ $index }})"
+                                        class="text-red-500 cursor-pointer">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
                                 </div>
                             </div>
+                        </div>
                         @empty
-                            <div
-                                class="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-secondary">
-                                No items added yet.
-                            </div>
+                        <div
+                            class="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-secondary">
+                            No items added yet.
+                        </div>
                         @endforelse
                     </div>
                 </div>
@@ -757,7 +1166,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Proposal')] class extends Compo
                             Discard Changes
                         </button>
 
-                        <button type="submit" wire:loading.attr="disabled"
+                        <button type="submit" x-data x-on:click="$store.phoneInputs.syncAll()" wire:loading.attr="disabled"
                             class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer">
                             <span wire:loading.remove wire:target="update">Update Proposal</span>
 

@@ -4,6 +4,7 @@ use App\Mail\ProposalInvoiceMail;
 use App\Models\Proposal;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -14,6 +15,18 @@ new #[Layout('layouts.admin-app')] #[Title('Proposals')] class extends Component
     public string $search = '';
     public string $status = 'all';
     public int $perPage = 10;
+
+    public int $refreshKey = 0;
+
+    #[On('echo-private:admin.proposals,.proposal.comment.added')]
+    public function refreshProposalsFromBroadcast(array $payload = []): void
+    {
+        $this->refreshKey++;
+
+        $subject = $payload['subject'] ?? 'a proposal';
+
+        $this->dispatch('toast', message: "A client added a comment on \"{$subject}\".", type: 'info');
+    }
 
     public function updatedSearch(): void
     {
@@ -35,7 +48,7 @@ new #[Layout('layouts.admin-app')] #[Title('Proposals')] class extends Component
         $search = trim($this->search);
 
         return Proposal::query()
-            ->with('items')
+            ->with(['items', 'comments'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('proposal_no', 'like', '%' . $search . '%')
@@ -85,7 +98,22 @@ new #[Layout('layouts.admin-app')] #[Title('Proposals')] class extends Component
 };
 ?>
 
-<div>
+<div x-data="{ downloading: false }">
+    <div x-cloak x-show="downloading" x-transition.opacity.duration.200ms @click="downloading = false"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-900/50 backdrop-blur-sm">
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-xl">
+            <svg class="h-8 w-8 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+        </div>
+
+        <p class="text-sm font-semibold text-white">Preparing your PDF…</p>
+    </div>
+
     <div class="mx-auto w-full max-w-7xl space-y-stack-lg">
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
@@ -135,7 +163,8 @@ new #[Layout('layouts.admin-app')] #[Title('Proposals')] class extends Component
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div wire:key="admin-proposals-index-{{ $refreshKey }}"
+            class="overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse text-left">
                     <thead>
@@ -193,6 +222,14 @@ new #[Layout('layouts.admin-app')] #[Title('Proposals')] class extends Component
                                             {{ $proposal->customer_email }}
                                         </span>
                                     @endif
+
+                                    @if ($proposal->comments->last()?->body)
+                                        <span
+                                            class="mt-2 flex items-start gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs italic text-amber-700">
+                                            <span class="material-symbols-outlined text-sm">comment</span>
+                                            {{ \Illuminate\Support\Str::limit($proposal->comments->last()->body, 70) }}
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td class="px-6 py-4 font-mono text-body-sm text-secondary">
@@ -224,10 +261,23 @@ new #[Layout('layouts.admin-app')] #[Title('Proposals')] class extends Component
 
                                         <div x-cloak x-show="open" @click.outside="open = false" x-transition
                                             class="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                                            <a href="{{ route('admin.proposals.view', $proposal) }}" wire:navigate
+                                                class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                                                <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                                View
+                                            </a>
+
                                             <a href="{{ route('admin.proposals.edit', $proposal) }}" wire:navigate
                                                 class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
                                                 <span class="material-symbols-outlined text-[18px]">edit</span>
                                                 Edit
+                                            </a>
+
+                                            <a href="{{ route('admin.proposals.pdf', $proposal) }}"
+                                                @click="downloading = true; setTimeout(() => downloading = false, 8000)"
+                                                class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                                                <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                                Download PDF
                                             </a>
 
                                             <button type="button" wire:click="markAsSent({{ $proposal->id }})"

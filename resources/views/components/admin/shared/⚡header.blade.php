@@ -2,7 +2,10 @@
 
 use App\Models\Booking;
 use App\Models\ContactMessage;
+use App\Models\Proposal;
+use App\Models\ProposalComment;
 use App\Models\SupportTicket;
+use App\Services\AdminNotificationService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
@@ -44,6 +47,28 @@ new class extends Component {
         $this->dispatch('toast', message: 'New booking request received.', type: 'info');
     }
 
+    #[On('echo-private:admin.proposals,.proposal.comment.added')]
+    public function refreshProposalCommentNotifications(array $event = []): void
+    {
+        if (($event['author'] ?? null) === 'admin') {
+            return;
+        }
+
+        $this->notificationRefreshKey++;
+
+        $this->dispatch('admin-proposal-notification-received');
+        $this->dispatch('toast', message: 'New proposal comment received.', type: 'info');
+    }
+
+    #[On('echo-private:admin.proposals,.proposal.status.changed')]
+    public function refreshProposalStatusNotifications(array $event = []): void
+    {
+        $this->notificationRefreshKey++;
+
+        $this->dispatch('admin-proposal-status-received');
+        $this->dispatch('toast', message: 'New proposal status update received.', type: 'info');
+    }
+
     public function unreadTicketCount(): int
     {
         return SupportTicket::query()->whereNull('admin_read_at')->count();
@@ -59,83 +84,27 @@ new class extends Component {
         return Booking::query()->whereNull('admin_read_at')->count();
     }
 
-    public function totalUnreadCount(): int
+    public function unreadProposalCommentCount(): int
     {
-        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount();
+        return ProposalComment::query()->whereNull('admin_read_at')->count();
     }
 
-    public function bookingTitle($booking): string
+    public function unreadProposalStatusCount(): int
     {
-        if ($booking->booking_type === 'pricing_plan') {
-            return $booking->pricingPlan?->title ?? ($booking->plan_name ?? 'Pricing Plan');
-        }
+        return Proposal::query()
+            ->whereIn('status', ['accepted', 'rejected'])
+            ->whereNull('admin_read_at')
+            ->count();
+    }
 
-        return $booking->service?->card_title ?? ($booking->servicePlan?->name ?? ($booking->plan_name ?? 'Service'));
+    public function totalUnreadCount(): int
+    {
+        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount() + $this->unreadProposalCommentCount() + $this->unreadProposalStatusCount();
     }
 
     public function latestNotifications()
     {
-        $tickets = SupportTicket::query()
-            ->with('user')
-            ->whereNull('admin_read_at')
-            ->latest('last_reply_at')
-            ->latest()
-            ->limit(5)
-            ->get()
-            ->toBase()
-            ->map(function ($ticket) {
-                return [
-                    'type' => 'ticket',
-                    'id' => $ticket->id,
-                    'title' => 'New ticket update',
-                    'subject' => $ticket->subject,
-                    'from' => $ticket->customer_name ?? ($ticket->user?->name ?? 'Customer'),
-                    'priority' => $ticket->priority,
-                    'time' => $ticket->last_reply_at ?? $ticket->created_at,
-                    'url' => Route::has('admin.tickets.show') ? route('admin.tickets.show', $ticket) : '#',
-                ];
-            });
-
-        $contacts = ContactMessage::query()
-            ->whereNull('admin_read_at')
-            ->latest()
-            ->limit(5)
-            ->get()
-            ->toBase()
-            ->map(function ($message) {
-                return [
-                    'type' => 'contact',
-                    'id' => $message->id,
-                    'title' => 'New contact message',
-                    'subject' => $message->subject,
-                    'from' => $message->name,
-                    'priority' => 'new',
-                    'time' => $message->created_at,
-                    'url' => Route::has('admin.contact-messages.index') ? route('admin.contact-messages.index') : '#',
-                ];
-            });
-
-        $bookings = Booking::query()
-            ->with(['user', 'service', 'servicePlan', 'pricingPlan'])
-            ->whereNull('admin_read_at')
-            ->latest()
-            ->limit(5)
-            ->get()
-            ->toBase()
-            ->map(function ($booking) {
-                return [
-                    'type' => 'booking',
-                    'id' => $booking->id,
-                    'title' => $booking->booking_type === 'pricing_plan' ? 'New plan booking' : 'New service booking',
-                    'subject' => ($booking->booking_no ?? 'Booking') . ' · ' . $this->bookingTitle($booking),
-                    'from' => $booking->full_name ?? ($booking->user?->name ?? 'Customer'),
-                    'priority' => $booking->status ?? 'pending',
-                    'time' => $booking->created_at,
-                    'url' => Route::has('admin.bookings.quote') ? route('admin.bookings.quote', $booking) : (Route::has('admin.bookings.index') ? route('admin.bookings.index') : '#'),
-                ];
-            });
-
-        return $tickets->merge($contacts)->merge($bookings)->sortByDesc('time')->take(10)->values();
+        return AdminNotificationService::notifications(limit: 10, unreadOnly: true);
     }
 
     public function markAllNotificationsRead(): void
@@ -158,6 +127,19 @@ new class extends Component {
                 'admin_read_at' => now(),
             ]);
 
+        ProposalComment::query()
+            ->whereNull('admin_read_at')
+            ->update([
+                'admin_read_at' => now(),
+            ]);
+
+        Proposal::query()
+            ->whereIn('status', ['accepted', 'rejected'])
+            ->whereNull('admin_read_at')
+            ->update([
+                'admin_read_at' => now(),
+            ]);
+
         $this->notificationRefreshKey++;
 
         $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
@@ -169,6 +151,7 @@ new class extends Component {
             'ticket' => 'confirmation_number',
             'contact' => 'mail',
             'booking' => 'event_note',
+            'proposal' => 'rate_review',
             default => 'notifications',
         };
     }
@@ -179,6 +162,7 @@ new class extends Component {
             'ticket' => 'bg-blue-100 text-blue-700',
             'contact' => 'bg-emerald-100 text-emerald-700',
             'booking' => 'bg-amber-100 text-amber-700',
+            'proposal' => 'bg-violet-100 text-violet-700',
             default => 'bg-slate-100 text-slate-700',
         };
     }
@@ -189,6 +173,7 @@ new class extends Component {
             'ticket' => 'bg-blue-50 text-blue-700',
             'contact' => 'bg-emerald-50 text-emerald-700',
             'booking' => 'bg-amber-50 text-amber-700',
+            'proposal' => 'bg-violet-50 text-violet-700',
             default => 'bg-slate-50 text-slate-700',
         };
     }
@@ -246,12 +231,16 @@ new class extends Component {
         <div x-data="{ notificationOpen: false }" class="relative"
             x-on:admin-ticket-notification-received.window="$nextTick(() => {})"
             x-on:admin-contact-notification-received.window="$nextTick(() => {})"
-            x-on:admin-booking-notification-received.window="$nextTick(() => {})">
+            x-on:admin-booking-notification-received.window="$nextTick(() => {})"
+            x-on:admin-proposal-notification-received.window="$nextTick(() => {})"
+            x-on:admin-proposal-status-received.window="$nextTick(() => {})">
 
             @php
             $unreadTicketCount = $this->unreadTicketCount();
             $unreadContactCount = $this->unreadContactMessageCount();
             $unreadBookingCount = $this->unreadBookingCount();
+            $unreadProposalCommentCount = $this->unreadProposalCommentCount();
+            $unreadProposalStatusCount = $this->unreadProposalStatusCount();
             $totalUnreadCount = $this->totalUnreadCount();
             $notifications = $this->latestNotifications();
             @endphp
@@ -284,7 +273,9 @@ new class extends Component {
                         <p class="mt-1 text-[11px] text-slate-400">
                             {{ $unreadTicketCount }} ticket{{ $unreadTicketCount === 1 ? '' : 's' }},
                             {{ $unreadContactCount }} contact{{ $unreadContactCount === 1 ? '' : 's' }},
-                            {{ $unreadBookingCount }} booking{{ $unreadBookingCount === 1 ? '' : 's' }}
+                            {{ $unreadBookingCount }} booking{{ $unreadBookingCount === 1 ? '' : 's' }},
+                            {{ $unreadProposalCommentCount }} proposal comment{{ $unreadProposalCommentCount === 1 ? '' : 's' }},
+                            {{ $unreadProposalStatusCount }} proposal update{{ $unreadProposalStatusCount === 1 ? '' : 's' }}
                         </p>
                         @endif
                     </div>
@@ -345,44 +336,23 @@ new class extends Component {
                         </h4>
 
                         <p class="mt-1 text-xs text-slate-500">
-                            New tickets, contacts, and bookings will appear here.
+                            New tickets, contacts, bookings, and proposal comments will appear here.
                         </p>
                     </div>
                     @endforelse
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50 p-3">
-                    <a href="{{ Route::has('admin.tickets.index') ? route('admin.tickets.index') : '#' }}"
-                        wire:navigate @click="notificationOpen = false"
-                        class="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 border border-slate-200 transition hover:bg-slate-100">
-                        <span class="material-symbols-outlined text-[17px]">confirmation_number</span>
-                        Tickets
-                    </a>
-
-                    <a href="{{ Route::has('admin.contact-messages.index') ? route('admin.contact-messages.index') : '#' }}"
-                        wire:navigate @click="notificationOpen = false"
-                        class="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 border border-slate-200 transition hover:bg-slate-100">
-                        <span class="material-symbols-outlined text-[17px]">mail</span>
-                        Contacts
-                    </a>
-
-                    <a href="{{ Route::has('admin.bookings.index') ? route('admin.bookings.index') : '#' }}"
+                <div class="space-y-2 border-t border-slate-100 bg-slate-50 p-3">
+                    <a href="{{ Route::has('admin.notifications.index') ? route('admin.notifications.index') : '#' }}"
                         wire:navigate @click="notificationOpen = false"
                         class="flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-xs font-semibold text-white transition hover:opacity-90">
-                        <span class="material-symbols-outlined text-[17px]">event_note</span>
-                        Bookings
-                    </a>
-
-                    <a href="{{ Route::has('admin.orders.index') ? route('admin.orders.index') : '#' }}" wire:navigate
-                        @click="notificationOpen = false"
-                        class="flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-xs font-semibold text-white transition hover:opacity-90">
-                        <span class="material-symbols-outlined text-[17px]">shopping_cart</span>
-                        Orders
+                        <span class="material-symbols-outlined text-[17px]">notifications_active</span>
+                        View All Notifications
                     </a>
 
                     @if ($totalUnreadCount > 0)
                     <button type="button" wire:click="markAllNotificationsRead"
-                        class="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                         <span class="material-symbols-outlined text-[17px]">done_all</span>
                         Mark all as read
                     </button>

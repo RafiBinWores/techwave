@@ -15,9 +15,11 @@ use Illuminate\Database\Eloquent\Model;
     'company_name',
     'subject',
     'note',
+    'terms',
     'discount_type',
     'discount_value',
     'status',
+    'admin_read_at',
     'valid_until',
     'sent_at',
 ])]
@@ -42,6 +44,11 @@ class Proposal extends Model
     public function items()
     {
         return $this->hasMany(ProposalItem::class)->oldest();
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(ProposalComment::class)->oldest();
     }
 
     public function subtotal(): float

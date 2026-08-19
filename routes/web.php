@@ -4,6 +4,7 @@ use App\Http\Controllers\BgRemovedImageController;
 use App\Http\Controllers\CompressedImageController;
 use App\Http\Controllers\PlanOrderInvoiceController;
 use App\Http\Controllers\PricingCheckoutController;
+use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
 use App\Models\User;
@@ -129,6 +130,9 @@ Route::livewire('/live-tv', 'pages::client.live-tv')->name('client.live-tv');
 
 // Pricing and orders
 Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
+
+// Public proposal response (signed link from email)
+Route::livewire('/proposal/{proposal}/respond', 'pages::client.proposals.respond')->middleware('signed')->name('client.proposals.respond');
 
 // Legal Pages
 Route::livewire('/terms-and-conditions', 'pages::client.legal-pages.terms-conditions')->name('client.terms-conditions');
@@ -294,6 +298,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/proposals', 'pages::admin.proposals.index')->name('proposals.index');
     Route::livewire('/proposals/create', 'pages::admin.proposals.create')->name('proposals.create');
     Route::livewire('/proposals/{proposal}/edit', 'pages::admin.proposals.edit')->name('proposals.edit');
+    Route::livewire('/proposals/{proposal}/view', 'pages::admin.proposals.view')->name('proposals.view');
+    Route::get('/proposals/{proposal}/pdf', [ProposalPdfController::class, 'download'])->name('proposals.pdf');
 
     // Settings
     Route::livewire('/site-settings', 'pages::admin.settings.site-setting')->name('settings.site-setting');
@@ -365,6 +371,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Services Page Settings
     Route::livewire('/services-settings', 'pages::admin.pages.services-settings')->name('pages.services-settings');
+
+    // Notification page
+    Route::livewire('/notifications', 'pages::admin.notifications.index')->name('notifications.index');
 
     // Profile & Password
     Route::livewire('/profile', 'pages::admin.profile')->name('profile');

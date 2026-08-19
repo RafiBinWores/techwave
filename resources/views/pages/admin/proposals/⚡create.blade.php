@@ -1,32 +1,41 @@
 <?php
 
-use App\Models\InvoiceTemplate;
+use App\Enums\UserRole;
 use App\Models\Proposal;
+use App\Models\ProposalTemplate;
 use App\Models\Service;
 use App\Models\ServicePlan;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Propaganistas\LaravelPhone\Rules\Phone;
 
 new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Component {
     public ?int $user_id = null;
     public ?int $company_id = null;
 
-    public InvoiceTemplate $invoiceTemplate;
+    public ProposalTemplate $proposalTemplate;
 
     public string $customer_search = '';
     public bool $customer_dropdown_open = false;
 
+    public bool $show_customer_modal = false;
+    public string $modal_name = '';
+    public string $modal_email = '';
+    public string $modal_phone = '';
+    public string $modal_country = 'BD';
+
     public string $customer_name = '';
     public string $customer_email = '';
     public string $customer_phone = '';
+    public string $customer_country = 'BD';
     public string $company_name = '';
 
     public string $subject = '';
     public string $note = '';
+    public string $terms = '';
 
     public string $discount_type = 'none';
     public string $discount_value = '0';
@@ -35,7 +44,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public ?int $selected_service_id = null;
     public ?int $selected_service_plan_id = null;
-    public ?int $selected_pricing_plan_id = null;
+    public ?int $selected_service_option_id = null;
+    public ?string $selected_billing_cycle = null;
 
     public string $custom_title = '';
     public string $custom_description = '';
@@ -46,9 +56,9 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public function mount(): void
     {
-        $this->invoiceTemplate = InvoiceTemplate::activeTemplate();
+        $this->proposalTemplate = ProposalTemplate::activeTemplate();
 
-        $this->subject = $this->invoiceTemplate->subject_prefix . ' - ';
+        $this->subject = $this->proposalTemplate->subject_prefix . ' - ';
     }
 
     protected function rules(): array
@@ -59,11 +69,13 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['nullable', 'email', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:255'],
+            'customer_phone' => ['nullable', 'string', 'max:255', (new Phone)->country($this->customer_country)],
+            'customer_country' => ['required', 'string', 'size:2'],
             'company_name' => ['nullable', 'string', 'max:255'],
 
             'subject' => ['required', 'string', 'max:255'],
             'note' => ['nullable', 'string'],
+            'terms' => ['nullable', 'string'],
 
             'discount_type' => ['required', 'in:none,fixed,percentage'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
@@ -71,7 +83,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             'valid_until' => ['nullable', 'date'],
 
             'items' => ['required', 'array', 'min:1'],
-            'items.*.item_type' => ['required', 'in:service,service_plan,pricing_plan,custom'],
+            'items.*.item_type' => ['required', 'in:service,service_plan,service_option,pricing_plan,custom'],
             'items.*.item_id' => ['nullable', 'integer'],
             'items.*.title' => ['required', 'string', 'max:255'],
             'items.*.description' => ['nullable', 'string'],
@@ -83,8 +95,66 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
     protected function messages(): array
     {
         return [
-            'items.required' => 'Please add at least one service, plan, pricing, or custom item.',
-            'items.min' => 'Please add at least one service, plan, pricing, or custom item.',
+            'items.required' => 'Please add at least one service, plan, option, or custom item.',
+            'items.min' => 'Please add at least one service, plan, option, or custom item.',
+            'customer_phone.phone' => 'The phone number must be a valid ' . ($this->countries()[strtoupper($this->customer_country)] ?? '') . ' phone number.',
+            'modal_phone.phone' => 'The phone number must be a valid ' . ($this->countries()[strtoupper($this->modal_country)] ?? '') . ' phone number.',
+        ];
+    }
+
+    public function countries(): array
+    {
+        return [
+            'AF' => 'Afghanistan', 'AL' => 'Albania', 'DZ' => 'Algeria', 'AD' => 'Andorra',
+            'AO' => 'Angola', 'AG' => 'Antigua and Barbuda', 'AR' => 'Argentina', 'AM' => 'Armenia',
+            'AU' => 'Australia', 'AT' => 'Austria', 'AZ' => 'Azerbaijan', 'BS' => 'Bahamas',
+            'BH' => 'Bahrain', 'BD' => 'Bangladesh', 'BB' => 'Barbados', 'BY' => 'Belarus',
+            'BE' => 'Belgium', 'BZ' => 'Belize', 'BJ' => 'Benin', 'BT' => 'Bhutan',
+            'BO' => 'Bolivia', 'BA' => 'Bosnia and Herzegovina', 'BW' => 'Botswana', 'BR' => 'Brazil',
+            'BN' => 'Brunei', 'BG' => 'Bulgaria', 'BF' => 'Burkina Faso', 'BI' => 'Burundi',
+            'KH' => 'Cambodia', 'CM' => 'Cameroon', 'CA' => 'Canada', 'CV' => 'Cape Verde',
+            'CF' => 'Central African Republic', 'TD' => 'Chad', 'CL' => 'Chile', 'CN' => 'China',
+            'CO' => 'Colombia', 'KM' => 'Comoros', 'CG' => 'Congo', 'CR' => 'Costa Rica',
+            'CI' => 'Côte d’Ivoire', 'HR' => 'Croatia', 'CU' => 'Cuba', 'CY' => 'Cyprus',
+            'CZ' => 'Czech Republic', 'DK' => 'Denmark', 'DJ' => 'Djibouti', 'DM' => 'Dominica',
+            'DO' => 'Dominican Republic', 'EC' => 'Ecuador', 'EG' => 'Egypt', 'SV' => 'El Salvador',
+            'GQ' => 'Equatorial Guinea', 'ER' => 'Eritrea', 'EE' => 'Estonia', 'SZ' => 'Eswatini',
+            'ET' => 'Ethiopia', 'FJ' => 'Fiji', 'FI' => 'Finland', 'FR' => 'France',
+            'GA' => 'Gabon', 'GM' => 'Gambia', 'GE' => 'Georgia', 'DE' => 'Germany',
+            'GH' => 'Ghana', 'GR' => 'Greece', 'GD' => 'Grenada', 'GT' => 'Guatemala',
+            'GN' => 'Guinea', 'GW' => 'Guinea-Bissau', 'GY' => 'Guyana', 'HT' => 'Haiti',
+            'HN' => 'Honduras', 'HU' => 'Hungary', 'IS' => 'Iceland', 'IN' => 'India',
+            'ID' => 'Indonesia', 'IR' => 'Iran', 'IQ' => 'Iraq', 'IE' => 'Ireland',
+            'IL' => 'Israel', 'IT' => 'Italy', 'JM' => 'Jamaica', 'JP' => 'Japan',
+            'JO' => 'Jordan', 'KZ' => 'Kazakhstan', 'KE' => 'Kenya', 'KI' => 'Kiribati',
+            'KP' => 'North Korea', 'KR' => 'South Korea', 'KW' => 'Kuwait', 'KG' => 'Kyrgyzstan',
+            'LA' => 'Laos', 'LV' => 'Latvia', 'LB' => 'Lebanon', 'LS' => 'Lesotho',
+            'LR' => 'Liberia', 'LY' => 'Libya', 'LI' => 'Liechtenstein', 'LT' => 'Lithuania',
+            'LU' => 'Luxembourg', 'MG' => 'Madagascar', 'MW' => 'Malawi', 'MY' => 'Malaysia',
+            'MV' => 'Maldives', 'ML' => 'Mali', 'MT' => 'Malta', 'MH' => 'Marshall Islands',
+            'MR' => 'Mauritania', 'MU' => 'Mauritius', 'MX' => 'Mexico', 'FM' => 'Micronesia',
+            'MD' => 'Moldova', 'MC' => 'Monaco', 'MN' => 'Mongolia', 'ME' => 'Montenegro',
+            'MA' => 'Morocco', 'MZ' => 'Mozambique', 'MM' => 'Myanmar', 'NA' => 'Namibia',
+            'NR' => 'Nauru', 'NP' => 'Nepal', 'NL' => 'Netherlands', 'NZ' => 'New Zealand',
+            'NI' => 'Nicaragua', 'NE' => 'Niger', 'NG' => 'Nigeria', 'MK' => 'North Macedonia',
+            'NO' => 'Norway', 'OM' => 'Oman', 'PK' => 'Pakistan', 'PW' => 'Palau',
+            'PS' => 'Palestine', 'PA' => 'Panama', 'PG' => 'Papua New Guinea', 'PY' => 'Paraguay',
+            'PE' => 'Peru', 'PH' => 'Philippines', 'PL' => 'Poland', 'PT' => 'Portugal',
+            'QA' => 'Qatar', 'RO' => 'Romania', 'RU' => 'Russia', 'RW' => 'Rwanda',
+            'KN' => 'Saint Kitts and Nevis', 'LC' => 'Saint Lucia', 'VC' => 'Saint Vincent and the Grenadines',
+            'WS' => 'Samoa', 'SM' => 'San Marino', 'ST' => 'São Tomé and Príncipe', 'SA' => 'Saudi Arabia',
+            'SN' => 'Senegal', 'RS' => 'Serbia', 'SC' => 'Seychelles', 'SL' => 'Sierra Leone',
+            'SG' => 'Singapore', 'SK' => 'Slovakia', 'SI' => 'Slovenia', 'SB' => 'Solomon Islands',
+            'SO' => 'Somalia', 'ZA' => 'South Africa', 'SS' => 'South Sudan', 'ES' => 'Spain',
+            'LK' => 'Sri Lanka', 'SD' => 'Sudan', 'SR' => 'Suriname', 'SE' => 'Sweden',
+            'CH' => 'Switzerland', 'SY' => 'Syria', 'TW' => 'Taiwan', 'TJ' => 'Tajikistan',
+            'TZ' => 'Tanzania', 'TH' => 'Thailand', 'TL' => 'Timor-Leste', 'TG' => 'Togo',
+            'TO' => 'Tonga', 'TT' => 'Trinidad and Tobago', 'TN' => 'Tunisia', 'TR' => 'Turkey',
+            'TM' => 'Turkmenistan', 'TV' => 'Tuvalu', 'UG' => 'Uganda', 'UA' => 'Ukraine',
+            'AE' => 'United Arab Emirates', 'GB' => 'United Kingdom', 'US' => 'United States',
+            'UY' => 'Uruguay', 'UZ' => 'Uzbekistan', 'VU' => 'Vanuatu', 'VA' => 'Vatican City',
+            'VE' => 'Venezuela', 'VN' => 'Vietnam', 'YE' => 'Yemen', 'ZM' => 'Zambia',
+            'ZW' => 'Zimbabwe',
         ];
     }
 
@@ -122,7 +192,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
         $this->customer_name = $user->name ?? '';
         $this->customer_email = $user->email ?? '';
-        $this->customer_phone = $company?->phone ?? '';
+        $this->customer_phone = $user->phone ?: ($company?->phone ?? '');
+        $this->customer_country = $user->country ?: 'BD';
         $this->company_name = $company?->company_name ?? '';
 
         $this->customer_search = trim(($user->name ?? '') . ' - ' . ($user->email ?? ''));
@@ -140,9 +211,69 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
         $this->customer_name = '';
         $this->customer_email = '';
         $this->customer_phone = '';
+        $this->customer_country = 'BD';
         $this->company_name = '';
 
         $this->customer_dropdown_open = false;
+    }
+
+    public function openCustomerModal(): void
+    {
+        $this->modal_name = $this->customer_name;
+        $this->modal_email = $this->customer_email;
+        $this->modal_phone = $this->customer_phone;
+        $this->modal_country = $this->customer_country;
+        $this->show_customer_modal = true;
+
+        $this->resetValidation(['modal_name', 'modal_email', 'modal_phone', 'modal_country']);
+    }
+
+    public function closeCustomerModal(): void
+    {
+        $this->show_customer_modal = false;
+
+        $this->resetValidation(['modal_name', 'modal_email', 'modal_phone', 'modal_country']);
+    }
+
+    public function createCustomer(): void
+    {
+        $validated = $this->validate([
+            'modal_name' => ['required', 'string', 'max:255'],
+            'modal_email' => ['required', 'email', 'max:255'],
+            'modal_country' => ['required', 'string', 'size:2'],
+            'modal_phone' => ['required', 'string', 'max:255', (new Phone)->country($this->modal_country)],
+        ]);
+
+        $user = User::query()->where('email', $validated['modal_email'])->first();
+
+        $created = false;
+
+        if (! $user) {
+            $user = User::query()->create([
+                'name' => $validated['modal_name'],
+                'email' => $validated['modal_email'],
+                'phone' => $validated['modal_phone'],
+                'country' => strtoupper($validated['modal_country']),
+                'password' => $validated['modal_phone'],
+                'type' => 'personal',
+                'role' => UserRole::CLIENT,
+                'is_active' => true,
+            ]);
+
+            $created = true;
+        } else {
+            $user->phone = $validated['modal_phone'];
+            $user->country = strtoupper($validated['modal_country']);
+            $user->password = $validated['modal_phone'];
+            $user->save();
+        }
+
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        $this->selectCustomer($user->id);
+        $this->show_customer_modal = false;
+
+        $this->dispatch('toast', message: $created ? 'Client account created and selected.' : 'Existing client account selected.', type: 'success');
     }
 
     public function services()
@@ -152,30 +283,175 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public function servicePlans()
     {
-        return ServicePlan::query()->with('service')->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
-    }
-
-    public function pricingPlans()
-    {
-        if (!class_exists(\App\Models\PricingPlan::class)) {
+        if (!$this->selected_service_id) {
             return collect();
         }
 
-        return \App\Models\PricingPlan::query()->orderBy('title')->get();
+        return ServicePlan::query()
+            ->where('service_id', $this->selected_service_id)
+            ->where('is_active', true)
+            ->when(
+                $this->selected_service_option_id,
+                fn ($q) => $q->where('service_option_id', $this->selected_service_option_id),
+                fn ($q) => $q->whereNull('service_option_id'),
+            )
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function serviceOptions()
+    {
+        if (!$this->selected_service_id) {
+            return collect();
+        }
+
+        return \App\Models\ServiceOption::query()
+            ->where('service_id', $this->selected_service_id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('card_title')
+            ->get();
+    }
+
+    public function selectedServiceHasOptions(): bool
+    {
+        if (!$this->selected_service_id) {
+            return false;
+        }
+
+        return \App\Models\ServiceOption::query()
+            ->where('service_id', $this->selected_service_id)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function selectedOptionHasPlans(): bool
+    {
+        if (!$this->selected_service_option_id) {
+            return false;
+        }
+
+        return ServicePlan::query()
+            ->where('service_option_id', $this->selected_service_option_id)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function updatedSelectedServiceId(): void
+    {
+        $this->selected_service_plan_id = null;
+        $this->selected_service_option_id = null;
+        $this->selected_billing_cycle = null;
+    }
+
+    public function updatedSelectedServiceOptionId(): void
+    {
+        $this->selected_service_plan_id = null;
+        $this->selected_billing_cycle = null;
+    }
+
+    public function selectedServicePlan()
+    {
+        if (!$this->selected_service_plan_id) {
+            return null;
+        }
+
+        return ServicePlan::query()->find($this->selected_service_plan_id);
+    }
+
+    public function updatedSelectedServicePlanId(): void
+    {
+        $plan = $this->selectedServicePlan();
+
+        $this->selected_billing_cycle = $plan?->has_monthly_price && $plan->monthly_price
+            ? 'monthly'
+            : ($plan?->has_yearly_price && $plan->yearly_price
+                ? 'yearly'
+                : ($plan?->has_one_time_price && $plan->price ? 'one_time' : null));
+    }
+
+    public function planBillingCycles(): array
+    {
+        $plan = $this->selectedServicePlan();
+
+        if (!$plan) {
+            return [];
+        }
+
+        $cycles = [];
+
+        if ($plan->has_monthly_price && $plan->monthly_price > 0) {
+            $cycles[] = ['value' => 'monthly', 'label' => 'Monthly'];
+        }
+
+        if ($plan->has_yearly_price && $plan->yearly_price > 0) {
+            $cycles[] = ['value' => 'yearly', 'label' => 'Yearly'];
+        }
+
+        if ($plan->has_one_time_price && $plan->price > 0) {
+            $cycles[] = ['value' => 'one_time', 'label' => 'One-time'];
+        }
+
+        return $cycles;
+    }
+
+    public function selectedPlanPrice(): ?float
+    {
+        $plan = $this->selectedServicePlan();
+
+        if (!$plan) {
+            return null;
+        }
+
+        return match ($this->selected_billing_cycle) {
+            'monthly' => $this->finalPlanPrice($plan->monthly_price, $plan->monthly_discount_price),
+            'yearly' => $this->finalPlanPrice($plan->yearly_price, $plan->yearly_discount_price),
+            'one_time' => $this->finalPlanPrice($plan->price, $plan->discount_price),
+            default => null,
+        };
+    }
+
+    private function finalPlanPrice($regular, $discount): ?float
+    {
+        if (empty($regular) || (float) $regular <= 0) {
+            return null;
+        }
+
+        if (!empty($discount) && (float) $discount > 0 && (float) $discount < (float) $regular) {
+            return (float) $discount;
+        }
+
+        return (float) $regular;
+    }
+
+    public function nextProposalNumber(): string
+    {
+        $datePrefix = 'PROP-'.now()->format('Ymd');
+
+        $lastNumber = (int) Proposal::query()
+            ->where('proposal_no', 'like', $datePrefix.'-%')
+            ->count();
+
+        do {
+            $lastNumber++;
+
+            $number = str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
+
+            $candidate = $datePrefix.'-'.$number;
+        } while (Proposal::query()->where('proposal_no', $candidate)->exists());
+
+        return $number;
     }
 
     public function proposalNo(): string
     {
-        do {
-            $proposalNo = 'PROP-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5));
-        } while (Proposal::query()->where('proposal_no', $proposalNo)->exists());
-
-        return $proposalNo;
+        return 'PROP-'.now()->format('Ymd').'-'.$this->nextProposalNumber();
     }
 
     public function previewProposalNo(): string
     {
-        return 'PROP-' . now()->format('Ymd') . '-XXXXX';
+        return $this->proposalNo();
     }
 
     public function addService(): void
@@ -207,42 +483,62 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             return;
         }
 
+        $billingCycle = $this->selected_billing_cycle;
+
+        if (!$billingCycle) {
+            $this->dispatch('toast', message: 'This plan has no available pricing.', type: 'warning');
+            return;
+        }
+
         $plan = ServicePlan::query()->with('service')->findOrFail($this->selected_service_plan_id);
+
+        $price = $this->finalPlanPrice(
+            match ($billingCycle) {
+                'monthly' => $plan->monthly_price,
+                'yearly' => $plan->yearly_price,
+                default => $plan->price,
+            },
+            match ($billingCycle) {
+                'monthly' => $plan->monthly_discount_price,
+                'yearly' => $plan->yearly_discount_price,
+                default => $plan->discount_price,
+            },
+        );
 
         $this->items[] = [
             'item_type' => 'service_plan',
             'item_id' => $plan->id,
-            'title' => ($plan->service?->card_title ? $plan->service->card_title . ' - ' : '') . $plan->name,
+            'title' => ($plan->service?->card_title ? $plan->service->card_title . ' - ' : '') . $plan->name . ' (' . ucwords(str_replace('_', ' ', $billingCycle)) . ')',
             'description' => $plan->description ?? '',
             'quantity' => 1,
-            'unit_price' => $plan->price ?? 0,
+            'unit_price' => $price ?? 0,
         ];
 
         $this->selected_service_plan_id = null;
+        $this->selected_service_option_id = null;
+        $this->selected_billing_cycle = null;
         $this->resetValidation('items');
     }
 
-    public function addPricingPlan(): void
+    public function addServiceOption(): void
     {
-        if (!$this->selected_pricing_plan_id || !class_exists(\App\Models\PricingPlan::class)) {
-            $this->dispatch('toast', message: 'Please select a pricing plan first.', type: 'warning');
+        if (!$this->selected_service_option_id) {
+            $this->dispatch('toast', message: 'Please select a service option first.', type: 'warning');
             return;
         }
 
-        $plan = \App\Models\PricingPlan::query()->findOrFail($this->selected_pricing_plan_id);
-
-        $price = $plan->yearly_price ?? ($plan->monthly_price ?? ($plan->price ?? 0));
+        $option = \App\Models\ServiceOption::query()->findOrFail($this->selected_service_option_id);
 
         $this->items[] = [
-            'item_type' => 'pricing_plan',
-            'item_id' => $plan->id,
-            'title' => $plan->title ?? ($plan->name ?? 'Pricing Plan'),
-            'description' => $plan->description ?? '',
+            'item_type' => 'service_option',
+            'item_id' => $option->id,
+            'title' => $option->card_title ?? ($option->detail_title ?? 'Service Option'),
+            'description' => $option->short_description ?? '',
             'quantity' => 1,
-            'unit_price' => $price,
+            'unit_price' => 0,
         ];
 
-        $this->selected_pricing_plan_id = null;
+        $this->selected_service_option_id = null;
         $this->resetValidation('items');
     }
 
@@ -308,19 +604,30 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
     {
         $validated = $this->validate();
 
-        DB::transaction(function () use ($validated) {
+        $proposalNo = $this->proposalNo();
+
+        $subject = trim($validated['subject']);
+
+        $subjectPrefix = trim($this->proposalTemplate->subject_prefix . ' - ');
+
+        if ($subject === '' || $subject === $subjectPrefix) {
+            $subject = $this->proposalTemplate->subject_prefix . ' - ' . substr($proposalNo, strlen('PROP-'));
+        }
+
+        DB::transaction(function () use ($validated, $proposalNo, $subject) {
             $proposal = Proposal::query()->create([
                 'user_id' => $validated['user_id'] ?: null,
                 'company_id' => $validated['company_id'] ?: null,
-                'proposal_no' => $this->proposalNo(),
+                'proposal_no' => $proposalNo,
 
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'] ?: null,
                 'customer_phone' => $validated['customer_phone'] ?: null,
                 'company_name' => $validated['company_name'] ?: null,
 
-                'subject' => $validated['subject'],
+                'subject' => $subject,
                 'note' => $validated['note'] ?: null,
+                'terms' => $validated['terms'] ?: null,
 
                 'discount_type' => $validated['discount_type'],
                 'discount_value' => $validated['discount_value'] ?: 0,
@@ -352,12 +659,14 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public function discard(): void
     {
-        $this->reset(['user_id', 'company_id', 'customer_search', 'customer_name', 'customer_email', 'customer_phone', 'company_name', 'subject', 'note', 'discount_type', 'discount_value', 'valid_until', 'selected_service_id', 'selected_service_plan_id', 'selected_pricing_plan_id', 'custom_title', 'custom_description', 'custom_quantity', 'custom_unit_price', 'items', 'customer_dropdown_open']);
+        $this->reset(['user_id', 'company_id', 'customer_search', 'customer_name', 'customer_email', 'customer_phone', 'customer_country', 'company_name', 'subject', 'note', 'terms', 'discount_type', 'discount_value', 'valid_until', 'selected_service_id', 'selected_service_plan_id', 'selected_service_option_id', 'selected_billing_cycle', 'custom_title', 'custom_description', 'custom_quantity', 'custom_unit_price', 'items', 'customer_dropdown_open', 'show_customer_modal', 'modal_name', 'modal_email', 'modal_phone', 'modal_country']);
 
         $this->discount_type = 'none';
         $this->discount_value = '0';
         $this->custom_quantity = '1';
-        $this->subject = $this->invoiceTemplate->subject_prefix . ' - ';
+        $this->customer_country = 'BD';
+        $this->modal_country = 'BD';
+        $this->subject = $this->proposalTemplate->subject_prefix . ' - ';
 
         $this->resetValidation();
 
@@ -398,21 +707,32 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                             </label>
 
                             <div class="relative" x-data @click.outside="$wire.set('customer_dropdown_open', false)">
-                                <div class="relative">
-                                    <span
-                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
-                                        search
-                                    </span>
+                                <div class="flex items-center gap-2">
+                                    <div class="relative flex-1">
+                                        <span
+                                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
+                                            search
+                                        </span>
 
-                                    <input type="search" wire:model.live.debounce.300ms="customer_search"
-                                        wire:focus="$set('customer_dropdown_open', true)"
-                                        placeholder="Search by name, email, company..."
-                                        class="w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-10 pr-12 text-label-md font-label-md text-on-surface transition-colors placeholder:text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                                        <input type="search" wire:model.live.debounce.300ms="customer_search"
+                                            wire:focus="$set('customer_dropdown_open', true)"
+                                            placeholder="Search by name, email, company..."
+                                            class="w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-10 pr-12 text-label-md font-label-md text-on-surface transition-colors placeholder:text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10" />
 
-                                    @if ($user_id)
-                                        <button type="button" wire:click="clearCustomer"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-red-500">
-                                            <span class="material-symbols-outlined text-lg">close</span>
+                                        @if ($user_id)
+                                            <button type="button" wire:click="clearCustomer"
+                                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-red-500">
+                                                <span class="material-symbols-outlined text-lg">close</span>
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    @if (! $user_id)
+                                        <button type="button" x-data
+                                            x-on:click="$store.phoneInputs.sync('customer_phone'); $wire.openCustomerModal()"
+                                            class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-dashed border-primary bg-primary/5 px-4 py-2.5 text-label-md font-label-md text-primary transition-colors hover:bg-primary/10 cursor-pointer">
+                                            <span class="material-symbols-outlined text-lg">person_add</span>
+                                            Create New Customer
                                         </button>
                                     @endif
                                 </div>
@@ -478,7 +798,8 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                                 </p>
                             @else
                                 <p class="text-xs text-secondary">
-                                    Search and select an existing user, or fill customer details manually.
+                                    Search and select an existing user, or click "Create New Customer" to add a new
+                                    client account.
                                 </p>
                             @endif
                         </div>
@@ -514,9 +835,15 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                             <div class="space-y-2">
                                 <label class="block font-label-md text-on-surface">Customer Phone</label>
 
-                                <input type="text" wire:model.live="customer_phone"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
-                                    placeholder="+880..." />
+                                <div wire:ignore
+                                    x-data="phoneInput('customer_phone', 'customer_country')">
+                                    <input type="tel" x-ref="input" autocomplete="off"
+                                        class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
+                                        placeholder="Phone number" />
+
+                                    <input type="hidden" x-ref="phone" value="{{ $customer_phone }}" />
+                                    <input type="hidden" x-ref="country" value="{{ $customer_country }}" />
+                                </div>
 
                                 @error('customer_phone')
                                     <p class="text-sm text-red-500">{{ $message }}</p>
@@ -544,7 +871,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                         Add Services / Plans
                     </h3>
 
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div class="grid grid-cols-1 gap-6 {{ $this->selectedServiceHasOptions() ? 'md:grid-cols-3' : 'md:grid-cols-2' }}">
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Select Service</label>
                             <select wire:model.live="selected_service_id"
@@ -555,43 +882,77 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                                 @endforeach
                             </select>
 
-                            <button type="button" wire:click="addService"
-                                class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
-                                Add Service
-                            </button>
+                            @unless ($this->selectedServiceHasOptions())
+                                <button type="button" wire:click="addService"
+                                    class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
+                                    Add Service
+                                </button>
+                            @endunless
                         </div>
+
+                        @if ($this->selectedServiceHasOptions())
+                            <div class="space-y-2">
+                                <label class="block font-label-md text-on-surface">Select Service Option</label>
+                                <select wire:model.live="selected_service_option_id"
+                                    class="w-full rounded border border-outline-variant px-4 py-2.5">
+                                    <option value="">Select service option</option>
+                                    @foreach ($this->serviceOptions() as $option)
+                                        <option value="{{ $option->id }}">{{ $option->card_title }}</option>
+                                    @endforeach
+                                </select>
+
+                                @unless ($this->selectedOptionHasPlans())
+                                    <button type="button" wire:click="addServiceOption"
+                                        class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
+                                        Add Service Option
+                                    </button>
+                                @endunless
+                            </div>
+                        @endif
 
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Select Service Plan</label>
                             <select wire:model.live="selected_service_plan_id"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5">
-                                <option value="">Select service plan</option>
-                                @foreach ($this->servicePlans() as $plan)
-                                    <option value="{{ $plan->id }}">
-                                        {{ $plan->service?->card_title }} - {{ $plan->name }}
-                                    </option>
-                                @endforeach
+                                <option value="">
+                                    {{ $selected_service_id ? 'Select service plan' : 'Select a service first' }}
+                                </option>
+                                @forelse ($this->servicePlans() as $plan)
+                                    <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                                @empty
+                                    @if ($selected_service_id)
+                                        <option value="" disabled>
+                                            {{ $selected_service_option_id ? 'No plans available for this option' : 'No plans available for this service' }}
+                                        </option>
+                                    @endif
+                                @endforelse
                             </select>
+
+                            @if ($this->selected_service_plan_id && $this->planBillingCycles())
+                                <div class="mt-3 space-y-1.5">
+                                    <label class="block text-xs font-semibold text-secondary">Billing Cycle</label>
+
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach ($this->planBillingCycles() as $cycle)
+                                            <button type="button" wire:click="$set('selected_billing_cycle', '{{ $cycle['value'] }}')"
+                                                class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer {{ $selected_billing_cycle === $cycle['value'] ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant text-on-surface hover:bg-slate-50' }}">
+                                                {{ $cycle['label'] }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+
+                                    @if ($this->selectedPlanPrice() !== null)
+                                        <p class="text-xs text-emerald-600">
+                                            Price: ৳{{ number_format($this->selectedPlanPrice(), 2) }}
+                                            per {{ $selected_billing_cycle === 'one_time' ? 'service' : $selected_billing_cycle }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @endif
 
                             <button type="button" wire:click="addServicePlan"
                                 class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
                                 Add Plan
-                            </button>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block font-label-md text-on-surface">Select Pricing</label>
-                            <select wire:model.live="selected_pricing_plan_id"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5">
-                                <option value="">Select pricing plan</option>
-                                @foreach ($this->pricingPlans() as $plan)
-                                    <option value="{{ $plan->id }}">{{ $plan->title }}</option>
-                                @endforeach
-                            </select>
-
-                            <button type="button" wire:click="addPricingPlan"
-                                class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
-                                Add Pricing
                             </button>
                         </div>
                     </div>
@@ -682,7 +1043,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                             Discard Changes
                         </button>
 
-                        <button type="submit" wire:loading.attr="disabled"
+                        <button type="submit" x-data x-on:click="$store.phoneInputs.syncAll()" wire:loading.attr="disabled"
                             class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer">
                             <span wire:loading.remove wire:target="save">Save Proposal</span>
 
@@ -727,6 +1088,21 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
                                 placeholder="Example: Special discount valid for 7 days. Free initial setup included."></textarea>
 
                             @error('note')
+                                <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">
+                                Terms & Conditions
+                                <span class="text-xs font-normal text-secondary">(optional)</span>
+                            </label>
+
+                            <textarea wire:model.live="terms" rows="4"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:ring-2 focus:ring-primary/10"
+                                placeholder="Example: Payment is due within 7 days. Prices are valid for 30 days."></textarea>
+
+                            @error('terms')
                                 <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
@@ -776,4 +1152,98 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
             </div>
         </div>
     </form>
+
+    {{-- Create Customer Modal --}}
+    @if ($show_customer_modal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" wire:click="closeCustomerModal"></div>
+
+            <div
+                class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                <div class="mb-5 flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-h3 font-h2">Create Client Account</h3>
+
+                        <p class="mt-1 text-xs text-secondary">
+                            A verified client account will be created. The phone number will be the login password.
+                        </p>
+                    </div>
+
+                    <button type="button" wire:click="closeCustomerModal"
+                        class="text-slate-400 transition hover:text-slate-600 cursor-pointer">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="block font-label-md text-on-surface">Full Name</label>
+
+                        <input type="text" wire:model.live="modal_name" autofocus
+                            class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
+                            placeholder="Customer full name" />
+
+                        @error('modal_name')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block font-label-md text-on-surface">Email</label>
+
+                        <input type="email" wire:model.live="modal_email"
+                            class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
+                            placeholder="customer@email.com" />
+
+                        @error('modal_email')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block font-label-md text-on-surface">Phone</label>
+
+                        <div wire:ignore
+                            x-data="phoneInput('modal_phone', 'modal_country')">
+                            <input type="tel" x-ref="input" autocomplete="off"
+                                class="w-full rounded-lg border border-outline-variant px-4 py-2.5 font-body-md outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10"
+                                placeholder="Phone number" />
+
+                            <input type="hidden" x-ref="phone" value="{{ $modal_phone }}" />
+                            <input type="hidden" x-ref="country" value="{{ $modal_country }}" />
+                        </div>
+
+                        <p class="text-xs text-secondary">Used as the account login password.</p>
+
+                        @error('modal_phone')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+
+                        @error('modal_country')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" wire:click="closeCustomerModal"
+                        class="rounded-lg border border-outline-variant px-5 py-2 text-label-md font-label-md text-on-surface transition-colors hover:bg-slate-50 cursor-pointer">
+                        Cancel
+                    </button>
+
+                    <button type="button" x-data
+                        x-on:click="$store.phoneInputs.sync('modal_phone'); $wire.createCustomer()"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-label-md font-label-md text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer">
+                        <span wire:loading.remove wire:target="createCustomer">Create Account</span>
+
+                        <span wire:loading wire:target="createCustomer" class="inline-flex items-center gap-2">
+                            <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                            Creating...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

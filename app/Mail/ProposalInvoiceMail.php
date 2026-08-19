@@ -5,6 +5,8 @@ namespace App\Mail;
 use App\Models\Proposal;
 use App\Models\ProposalTemplate;
 use App\Models\SiteSetting;
+use App\Support\PdfFonts;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -12,6 +14,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\URL;
 
 class ProposalInvoiceMail extends Mailable implements ShouldQueue
 {
@@ -54,6 +57,7 @@ class ProposalInvoiceMail extends Mailable implements ShouldQueue
                 'proposal' => $this->proposal,
                 'template' => $this->template,
                 'settings' => $this->settings,
+                'respondUrl' => URL::signedRoute('client.proposals.respond', ['proposal' => $this->proposal->id]),
             ],
         );
     }
@@ -65,6 +69,25 @@ class ProposalInvoiceMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        return [];
+        PdfFonts::register();
+
+        $pdf = Pdf::loadView('pdf.proposal-invoice', [
+            'proposal' => $this->proposal,
+            'template' => $this->template,
+            'settings' => $this->settings,
+        ])
+            ->setPaper('a4')
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'chroot' => base_path(),
+            ]);
+
+        return [
+            Attachment::fromData(
+                fn () => $pdf->output(),
+                ($this->proposal->proposal_no ?? 'proposal').'.pdf',
+            )->withMime('application/pdf'),
+        ];
     }
 }

@@ -1,8 +1,27 @@
 @php
-    use Illuminate\Support\Facades\Storage;
-
     $brandColor = $template->brand_color ?? '#0F52BA';
-    $logoUrl = $settings?->logo ? asset(Storage::url($settings->logo)) : null;
+
+    $logoSrc = null;
+    $logoValue = $settings?->logo;
+
+    if (filled($logoValue)) {
+        if (str_starts_with($logoValue, 'http://') || str_starts_with($logoValue, 'https://')) {
+            $logoSrc = $logoValue;
+        } else {
+            $cleanLogo = ltrim($logoValue, '/');
+            $possiblePath = str_starts_with($cleanLogo, 'storage/')
+                ? public_path($cleanLogo)
+                : public_path('storage/'.$cleanLogo);
+
+            if (! file_exists($possiblePath)) {
+                $possiblePath = storage_path('app/public/'.str_replace('storage/', '', $cleanLogo));
+            }
+
+            if (file_exists($possiblePath)) {
+                $logoSrc = $message->embed($possiblePath);
+            }
+        }
+    }
 
     $subtotal = $proposal->subtotal();
     $discountAmount = $proposal->discountAmount();
@@ -39,8 +58,8 @@
                                                 <td valign="middle" style="padding-right:14px;">
                                                     <div
                                                         style="width:52px; height:52px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid #dbe4ff;">
-                                                        @if ($logoUrl)
-                                                            <img src="{{ $logoUrl }}"
+                                                        @if ($logoSrc)
+                                                            <img src="{{ $logoSrc }}"
                                                                 alt="{{ $settings?->site_name }}" width="42"
                                                                 style="max-width:42px; max-height:42px; display:block;">
                                                         @else
@@ -128,83 +147,40 @@
                         </td>
                     </tr>
 
-                    {{-- Customer Info --}}
-                    <tr>
-                        <td style="padding:24px 30px 6px;">
-                            <table width="100%" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td valign="top" style="width:50%; padding-right:10px;">
-                                        <div
-                                            style="border:1px solid #e5e7eb; border-radius:14px; padding:16px; background:#ffffff;">
-                                            <p
-                                                style="margin:0 0 8px; font-size:11px; font-weight:700; text-transform:uppercase; color:#94a3b8; letter-spacing:.08em;">
-                                                Customer Details
-                                            </p>
+                    {{-- Respond CTA --}}
+                    @if ($proposal->status === 'sent')
+                        <tr>
+                            <td style="padding:24px 30px 0;">
+                                <table width="100%" cellpadding="0" cellspacing="0"
+                                    style="border:1px solid #e5e7eb; border-radius:14px; background:#f8fafc;">
+                                    <tr>
+                                        <td style="padding:18px 22px;">
+                                            <table width="100%" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                    <td valign="middle" style="width:60%; padding-right:16px;">
+                                                        <p style="margin:0; font-size:14px; font-weight:700; color:#111827;">
+                                                            {{ $template->greeting ?: 'Dear valued customer,' }}
+                                                        </p>
 
-                                            <div style="font-size:14px; line-height:1.8; color:#334155;">
-                                                <strong
-                                                    style="font-size:15px; color:#111827;">{{ $proposal->customer_name }}</strong><br>
+                                                        <p style="margin:6px 0 0; font-size:13px; line-height:1.7; color:#64748b;">
+                                                            {{ $template->intro_text ?: 'We have prepared a proposal for you. Review it and accept it, add a comment, or decline it from the link below.' }}
+                                                        </p>
+                                                    </td>
 
-                                                @if ($proposal->customer_email)
-                                                    {{ $proposal->customer_email }}<br>
-                                                @endif
-
-                                                @if ($proposal->customer_phone)
-                                                    {{ $proposal->customer_phone }}<br>
-                                                @endif
-
-                                                @if ($proposal->company_name)
-                                                    <span
-                                                        style="display:inline-block; margin-top:6px; font-weight:700; color:{{ $brandColor }};">
-                                                        {{ $proposal->company_name }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td valign="top" style="width:50%; padding-left:10px;">
-                                        <div
-                                            style="border:1px solid #e5e7eb; border-radius:14px; padding:16px; background:#ffffff;">
-                                            <p
-                                                style="margin:0 0 8px; font-size:11px; font-weight:700; text-transform:uppercase; color:#94a3b8; letter-spacing:.08em;">
-                                                Proposal Details
-                                            </p>
-
-                                            <div style="font-size:14px; line-height:1.8; color:#334155;">
-                                                <strong>Subject:</strong> {{ $proposal->subject }}<br>
-                                                <strong>Status:</strong> {{ ucfirst($proposal->status) }}<br>
-
-                                                @if ($proposal->note)
-                                                    <div
-                                                        style="margin-top:10px; padding:10px 12px; background:#f8fafc; border-left:3px solid {{ $brandColor }}; border-radius:8px; font-size:12px; line-height:1.6; color:#475569;">
-                                                        <strong>Note:</strong><br>
-                                                        {{ $proposal->note }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    {{-- Dynamic intro --}}
-                    <tr>
-                        <td style="padding:24px 30px 0;">
-                            <div
-                                style="border:1px solid #e5e7eb; border-radius:14px; padding:16px; background:#f8fafc;">
-                                <p style="margin:0; font-size:14px; font-weight:700; color:#111827;">
-                                    {{ $template->greeting ?: 'Dear valued customer,' }}
-                                </p>
-
-                                <p style="margin:10px 0 0; font-size:13px; line-height:1.7; color:#64748b;">
-                                    {{ $template->intro_text ?: 'Thank you for your interest in our services. Please review the proposal details below.' }}
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
+                                                    <td valign="middle" align="right" style="width:40%;">
+                                                        <a href="{{ $respondUrl }}"
+                                                            style="display:inline-block; padding:12px 20px; border-radius:10px; background:{{ $brandColor }}; color:#ffffff; font-size:13px; font-weight:700; text-decoration:none;">
+                                                            View & Respond
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    @endif
 
                     {{-- Table --}}
                     <tr>
@@ -212,13 +188,9 @@
                             <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
                                 <thead>
                                     <tr style="background:{{ $brandColor }}; color:#ffffff;">
-                                        <th align="left"
-                                            style="padding:13px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; border-top-left-radius:8px;">
-                                            Service
-                                        </th>
-                                        <th align="left"
+<th align="left"
                                             style="padding:13px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.08em;">
-                                            Description
+                                            Service
                                         </th>
                                         <th align="center"
                                             style="padding:13px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.08em;">
@@ -248,11 +220,13 @@
                                                 <strong style="font-size:14px; color:#111827;">
                                                     {{ $item->title }}
                                                 </strong>
-                                            </td>
 
-                                            <td valign="top"
-                                                style="padding:15px 14px; border-top:1px solid #e5e7eb; font-size:12px; line-height:1.6; color:#64748b; max-width:230px;">
-                                                {{ $item->description ?: '—' }}
+                                                @if ($item->description)
+                                                    <div
+                                                        style="margin-top:6px; font-size:12px; line-height:1.6; color:#64748b; font-weight:400; max-width:300px;">
+                                                        {{ $item->description }}
+                                                    </div>
+                                                @endif
                                             </td>
 
                                             <td align="center" valign="top"
@@ -342,7 +316,7 @@
                                         </p>
 
                                         <p style="margin:0; font-size:12px; line-height:1.7; color:#64748b;">
-                                            {{ $template->terms_text ?: 'Please contact us if you have any questions regarding this invoice or proposal.' }}
+                                            {{ $proposal->terms ?: $template->terms_text ?: 'Please contact us if you have any questions regarding this invoice or proposal.' }}
                                         </p>
                                     </td>
 
