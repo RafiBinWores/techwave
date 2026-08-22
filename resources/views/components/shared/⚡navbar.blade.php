@@ -80,25 +80,25 @@ new class extends Component {
             ->orderBy('card_title')
             ->get(['id', 'card_title', 'short_description', 'slug', 'icon', 'category_id']);
 
-        $this->serviceCategories = $services->groupBy('category_id')
-            ->map(function ($items, $categoryId) {
-                $category = Category::find($categoryId);
-                return [
-                    'name' => $category?->name ?? 'Other',
-                    'icon' => $category?->icon ?? 'category',
-                    'services' => $items->map(fn($s) => [
+        $servicesByCategory = $services->groupBy('category_id');
+
+        $this->serviceCategories = Category::query()
+            ->whereIn('id', $servicesByCategory->keys()->filter()->all())
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn($category) => [
+                'name' => $category->name,
+                'icon' => $category->icon ?? 'category',
+                'services' => $servicesByCategory->get($category->id)
+                    ->map(fn($s) => [
                         'name' => $s->card_title,
                         'description' => $s->short_description,
                         'slug' => $s->slug,
                         'icon' => $s->icon ?? 'design_services',
                         'has_options' => $s->serviceOptions->isNotEmpty(),
-                        'options' => $s->serviceOptions->map(fn($o) => [
-                            'name' => $o->card_title,
-                            'slug' => $o->slug,
-                        ])->take(4)->values()->toArray(),
                     ])->take(5)->values()->toArray(),
-                ];
-            })
+            ])
             ->values()
             ->toArray();
     }
@@ -191,8 +191,8 @@ new class extends Component {
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-3">
                 @if ($siteLogo)
-                <img src="{{ $siteLogo }}" alt="{{ $siteName }}" width="140" height="40"
-                    class="h-10 rounded-xl object-contain">
+                <img src="{{ $siteLogo }}" alt="{{ $siteName }}"
+                    class="h-10 w-auto rounded-xl object-contain flex items-start">
                 @else
                 <div
                     class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-r from-blue-500 to-sky-400 text-sm font-bold text-white shadow-lg shadow-blue-500/25">
@@ -300,18 +300,6 @@ new class extends Component {
                                                     <span class="h-1 w-1 shrink-0 rounded-full bg-white/20 group-hover:bg-cyan-400"></span>
                                                     {{ $service['name'] }}
                                                 </a>
-                                                @if (!empty($service['options']))
-                                                <div class="ml-5 flex flex-col gap-0.5">
-                                                    @foreach ($service['options'] as $option)
-                                                    <a href="{{ route('client.services.details', ['slug' => $service['slug'], 'option' => $option['slug']]) }}" wire:navigate
-                                                        @click="servicesMega = false"
-                                                        class="group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-blue-100/55 transition hover:bg-white/5 hover:text-blue-100/80">
-                                                        <span class="h-0.5 w-0.5 shrink-0 rounded-full bg-white/15 group-hover:bg-cyan-400/60"></span>
-                                                        {{ $option['name'] }}
-                                                    </a>
-                                                    @endforeach
-                                                </div>
-                                                @endif
                                             </div>
                                             @endforeach
                                         </div>
