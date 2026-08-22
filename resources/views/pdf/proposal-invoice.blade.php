@@ -30,6 +30,8 @@ $subtotal = $proposal->subtotal();
 $discountAmount = $proposal->discountAmount();
 $grandTotal = $proposal->total();
 $currency = '৳';
+
+$fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
 @endphp
 
 <!DOCTYPE html>
@@ -45,6 +47,41 @@ $currency = '৳';
         rel="stylesheet">
 
     <style>
+        @font-face {
+            font-family: 'Hind Siliguri';
+            font-weight: normal;
+            font-style: normal;
+            src: url('{{ $fontBaseUrl }}/HindSiliguri-Regular.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'Hind Siliguri';
+            font-weight: bold;
+            font-style: normal;
+            src: url('{{ $fontBaseUrl }}/HindSiliguri-Bold.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'Hind Siliguri';
+            font-weight: 600;
+            font-style: normal;
+            src: url('{{ $fontBaseUrl }}/HindSiliguri-Bold.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'Hind Siliguri';
+            font-weight: 800;
+            font-style: normal;
+            src: url('{{ $fontBaseUrl }}/HindSiliguri-Bold.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'Hind Siliguri';
+            font-weight: 900;
+            font-style: normal;
+            src: url('{{ $fontBaseUrl }}/HindSiliguri-Bold.ttf') format('truetype');
+        }
+
         @page {
             margin: 24px;
         }
@@ -59,7 +96,7 @@ $currency = '৳';
         }
 
         .taka {
-            font-family: 'Hind Siliguri', DejaVu Sans, Arial, Helvetica, sans-serif;
+            font-family: 'Hind Siliguri', 'DejaVu Sans', sans-serif;
             font-size: 1.18em;
             margin-right: 4px;
         }
