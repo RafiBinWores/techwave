@@ -1606,3 +1606,14 @@
         transform: translateX(0);
     }
 }
+
+
+/* Hidden scrollbar (chat input, chips) */
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}

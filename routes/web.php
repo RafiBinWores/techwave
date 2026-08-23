@@ -378,4 +378,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // Profile & Password
     Route::livewire('/profile', 'pages::admin.profile')->name('profile');
     Route::livewire('/change-password', 'pages::admin.change-password')->name('change-password');
+
+    // Internal chat
+    Route::livewire('/chats', 'pages::admin.chats.index')->name('chats.index');
 });

@@ -53,3 +53,9 @@ Broadcast::channel('admin.contact-messages', function ($user) use ($adminRoles) 
 Broadcast::channel('admin.bookings', function ($user) use ($adminRoles) {
     return $user && in_array($user->role ?? null, $adminRoles, true);
 });
+
+Broadcast::channel('user.{userId}.chat', function ($user, $userId) use ($adminRoles) {
+    return $user
+        && in_array($user->role ?? null, $adminRoles, true)
+        && (int) $user->id === (int) $userId;
+});

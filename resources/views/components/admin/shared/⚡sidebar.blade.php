@@ -1,9 +1,51 @@
 <?php
 
+use App\Models\AdminChatMessage;
 use App\Models\SiteSetting;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 new class extends Component {
+
+    public int $unreadChatCount = 0;
+
+    public function mount(): void
+    {
+        $this->unreadChatCount = $this->countUnreadChats();
+    }
+
+    public function getListeners(): array
+    {
+        $authId = Auth::id();
+
+        if (! $authId) {
+            return [];
+        }
+
+        return [
+            "echo-private:user.{$authId}.chat,.chat.message" => 'refreshUnreadChats',
+            'admin-chat-unread-changed' => 'refreshUnreadChats',
+        ];
+    }
+
+    public function refreshUnreadChats(): void
+    {
+        $this->unreadChatCount = $this->countUnreadChats();
+    }
+
+    private function countUnreadChats(): int
+    {
+        $authId = Auth::id();
+
+        if (! $authId) {
+            return 0;
+        }
+
+        return AdminChatMessage::query()
+            ->where('receiver_id', $authId)
+            ->whereNull('read_at')
+            ->count();
+    }
 
     public function getSiteSettingProperty()
     {
@@ -23,13 +65,13 @@ new class extends Component {
     class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 transition-all duration-300 lg:translate-x-0">
     <!-- Logo -->
     <div class="h-16 shrink-0 border-b border-slate-200 px-4 flex items-center justify-between">
-        <div class="flex items-center gap-3 overflow-hidden">
+        <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex items-center gap-3 overflow-hidden">
             <div class="h-12 w-12 rounded-xl text-white flex items-center justify-center shrink-0">
 
                 @php
-                    $logo = $this->siteSetting->logo
-                        ? asset('storage/' . $this->siteSetting->logo)
-                        : asset('assets/images/logo/logo.png');
+                $logo = $this->siteSetting->logo
+                ? asset('storage/' . $this->siteSetting->logo)
+                : asset('assets/images/logo/logo.png');
                 @endphp
                 <img src="{{ $logo }}" alt="Logo" class="">
             </div>
@@ -43,22 +85,22 @@ new class extends Component {
                     Infrastructure Management
                 </p>
             </div>
-        </div>
+        </a>
 
         {{-- <div class="h-16 shrink-0 border-b border-slate-200 px-4 flex items-center justify-between">
             <div class="flex items-center gap-3 overflow-hidden">
                 <img src="{{ asset('assets/images/logo/logo.png') }}" alt="Logo"
-                    class="p-1 w-full object-contain lg:h-14">
-            </div>
+        class="p-1 w-full object-contain lg:h-14">
+    </div>
 
-            <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div> --}}
+    <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+        <span class="material-symbols-outlined">close</span>
+    </button>
+    </div> --}}
 
-        <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
-            <span class="material-symbols-outlined">close</span>
-        </button>
+    <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+        <span class="material-symbols-outlined">close</span>
+    </button>
     </div>
 
 
@@ -316,10 +358,10 @@ new class extends Component {
                     </a>
 
                     {{-- <a href="{{ route('admin.bg-removed-images.index') }}" wire:navigate
-                        wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                        class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                        <span class="material-symbols-outlined shrink-0 text-[20px]">photo_library</span>
-                        <span class="font-manrope text-sm font-medium">BG Removed Images</span>
+                    wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                    <span class="material-symbols-outlined shrink-0 text-[20px]">photo_library</span>
+                    <span class="font-manrope text-sm font-medium">BG Removed Images</span>
                     </a>
 
                     <a href="{{ route('admin.resized-images.index') }}" wire:navigate
@@ -333,12 +375,12 @@ new class extends Component {
 
             {{-- PDF Tools --}}
             {{-- <a href="{{ route('admin.tools.pdf-tools') }}" wire:navigate
-                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                <span class="material-symbols-outlined shrink-0">picture_as_pdf</span>
-                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                    PDF Tools
-                </span>
+            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+            <span class="material-symbols-outlined shrink-0">picture_as_pdf</span>
+            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                PDF Tools
+            </span>
             </a> --}}
         </div>
 
@@ -418,6 +460,24 @@ new class extends Component {
                 <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
                     Tickets
                 </span>
+            </a>
+
+            <a href="{{ route('admin.chats.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">forum</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Team Chat
+                </span>
+                @if ($this->unreadChatCount > 0)
+                    <span x-show="!sidebarCollapsed"
+                        class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 font-manrope text-[11px] font-semibold text-white">
+                        {{ $this->unreadChatCount > 99 ? '99+' : $this->unreadChatCount }}
+                    </span>
+                    <span x-show="sidebarCollapsed"
+                        class="absolute right-2.5 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500">
+                    </span>
+                @endif
             </a>
         </div>
 
@@ -613,23 +673,23 @@ new class extends Component {
             </div>
 
             {{-- <a href="{{ route('admin.live-tv-channels.index') }}" wire:navigate
-                    wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                    <span class="material-symbols-outlined shrink-0">live_tv</span>
-                    <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                        Live TV
-                    </span>
-                </a> --}}
+            wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+            <span class="material-symbols-outlined shrink-0">live_tv</span>
+            <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                Live TV
+            </span>
+            </a> --}}
 
-                {{-- icons --}}
-                <a href="{{ route('admin.icons.material-icons') }}" wire:navigate
-                    wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                    <span class="material-symbols-outlined shrink-0">insert_emoticon</span>
-                    <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
-                        Icons
-                    </span>
-                </a>
+            {{-- icons --}}
+            <a href="{{ route('admin.icons.material-icons') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">insert_emoticon</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    Icons
+                </span>
+            </a>
         </div>
     </nav>
 </aside>
