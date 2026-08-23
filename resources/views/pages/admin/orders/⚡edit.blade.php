@@ -141,7 +141,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
 ?>
 
 <div>
-    <div class="mx-auto w-full max-w-7xl space-y-8">
+    <div class="mx-auto w-full space-y-8">
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
                 <div class="mb-2 flex flex-wrap items-center gap-2">

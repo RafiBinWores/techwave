@@ -114,7 +114,7 @@ new #[Layout('layouts.admin-app')] #[Title('Proposals')] class extends Component
         <p class="text-sm font-semibold text-white">Preparing your PDF…</p>
     </div>
 
-    <div class="mx-auto w-full max-w-7xl space-y-stack-lg">
+    <div class="mx-auto w-full space-y-stack-lg">
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
                 <h2 class="text-xl font-semibold text-on-surface md:text-h1 md:font-h1">

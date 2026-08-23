@@ -71,7 +71,7 @@ new #[Layout('layouts.admin-app')] #[Title('Proposal Template')] class extends C
 ?>
 
 <div>
-    <div class="mx-auto w-full max-w-7xl space-y-8">
+    <div class="mx-auto w-full space-y-8">
         <div>
             <h1 class="text-h1 font-h1 text-on-surface">Proposal Template</h1>
             <p class="mt-1 text-body-md text-secondary">

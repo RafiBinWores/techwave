@@ -115,7 +115,7 @@ new #[Layout('layouts.admin-app')] #[Title('Proposal Details')] class extends Co
 };
 ?>
 
-<div class="mx-auto w-full max-w-7xl space-y-stack-lg">
+<div class="mx-auto w-full space-y-stack-lg">
     <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div class="flex items-center gap-4">
             <div>

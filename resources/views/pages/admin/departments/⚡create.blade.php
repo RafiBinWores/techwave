@@ -54,7 +54,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Department')] class extends C
         </p>
     </div>
 
-    <form wire:submit.prevent="save" class="max-w-7xl">
+    <form wire:submit.prevent="save">
         <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div class="mb-8 flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary">business</span>

@@ -186,7 +186,7 @@ new #[Layout('layouts.admin-app')] #[Title('Support Ticket Chat')] class extends
     }
 }" x-init="scrollToBottom()"
     x-on:ticket-replied.window="scrollToBottom()">
-    <div class="mx-auto grid h-[calc(100vh-120px)] w-full max-w-7xl grid-cols-12 gap-5">
+    <div class="mx-auto grid h-[calc(100vh-120px)] w-full grid-cols-12 gap-5">
 
         {{-- Chat App Main --}}
         <div

@@ -355,7 +355,7 @@ new #[Layout('layouts.admin-app')] #[Title('Team Chat')] class extends Component
     }" x-init="scrollToBottom();
         window.addEventListener('popstate', (e) => { this.listVisible = ! (e.state && e.state.chatListClosed); })"
     x-on:chat-thread-loaded.window="scrollToBottom()">
-    <div class="mx-auto grid h-[calc(100vh-120px)] w-full max-w-7xl grid-cols-12 gap-5">
+    <div class="mx-auto grid h-[calc(100vh-120px)] w-full grid-cols-12 gap-5">
 
         {{-- Employees Sidebar --}}
         <div x-bind:class="listVisible ? 'flex' : 'hidden'"
