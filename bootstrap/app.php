@@ -9,19 +9,21 @@ use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
+        channels: __DIR__ . '/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: env('TRUSTED_PROXIES'));
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
 
         $middleware->web(append: [TrackVisit::class]);
 
-        $middleware->redirectGuestsTo(fn (Request $request) => route('home'));
+        $middleware->redirectGuestsTo(fn(Request $request) => route('home'));
 
         $middleware->validateCsrfTokens(except: [
             'sslcommerz/success',
