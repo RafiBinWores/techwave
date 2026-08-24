@@ -236,7 +236,12 @@ Route::middleware('guest')->group(function () {
 */
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,staff,admin_manager'])->group(function () {
 
+    // dashboard
     Route::livewire('/dashboard', 'pages::admin.dashboard')->name('dashboard');
+
+    // Visitor analytics
+    Route::livewire('/visitors', 'pages::admin.visitors.index')->name('visitors.index');
+    Route::livewire('/visitors/logs', 'pages::admin.visitors.logs')->name('visitors.logs');
 
     // User management
     Route::livewire('/users', 'pages::admin.users.index')->name('users.index');

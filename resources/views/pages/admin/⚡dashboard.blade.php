@@ -1,15 +1,29 @@
 <?php
 
+use App\Models\Visit;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new 
-#[Layout('layouts.admin-app')] 
+new
+#[Layout('layouts.admin-app')]
 #[Title('Admin Dashboard')]
 class extends Component {
-    //
+    public function getVisitsProperty(): int
+    {
+        return Visit::count();
+    }
+
+    public function getUniqueVisitorsProperty(): int
+    {
+        return Visit::distinct('session_id')->count('session_id');
+    }
+
+    public function getVisitsTodayProperty(): int
+    {
+        return Visit::whereDate('created_at', today())->count();
+    }
 };
 ?>
 
@@ -94,6 +108,38 @@ class extends Component {
                 <div class="flex items-center text-slate-500 text-xs font-semibold">
                     <span class="material-symbols-outlined text-sm">schedule</span>
                     <span>3 Near Deadline</span>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="bg-surface-container-lowest p-stack-md shadow rounded-xl flex flex-col justify-between h-32 transition-all hover:border-primary">
+            <div class="flex justify-between items-start">
+                <p class="font-label-sm text-secondary uppercase tracking-wider">Total Visits</p>
+                <span class="material-symbols-outlined text-primary-container">visibility</span>
+            </div>
+
+            <div class="flex items-end justify-between">
+                <h3 class="font-h1 text-h1 text-on-surface">{{ number_format($this->visits) }}</h3>
+                <div class="flex items-center text-xs font-semibold text-emerald-600">
+                    <span class="material-symbols-outlined text-sm">trending_up</span>
+                    <span>{{ number_format($this->visitsToday) }} today</span>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="bg-surface-container-lowest p-stack-md shadow rounded-xl flex flex-col justify-between h-32 transition-all hover:border-primary">
+            <div class="flex justify-between items-start">
+                <p class="font-label-sm text-secondary uppercase tracking-wider">Unique Visitors</p>
+                <span class="material-symbols-outlined text-primary-container">group</span>
+            </div>
+
+            <div class="flex items-end justify-between">
+                <h3 class="font-h1 text-h1 text-on-surface">{{ number_format($this->uniqueVisitors) }}</h3>
+                <div class="flex items-center text-xs font-semibold text-slate-500">
+                    <span class="material-symbols-outlined text-sm">ads_click</span>
+                    <span>all time</span>
                 </div>
             </div>
         </div>

@@ -26,13 +26,15 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        $siteSetting = SiteSetting::current();
+        View::composer('*', function ($view) {
+            $siteSetting = SiteSetting::current();
 
-        View::share([
-            'siteSetting' => $siteSetting,
-            'siteName' => $siteSetting->site_name ?: config('app.name'),
-            'favicon' => $siteSetting->favicon_url,
-            'siteLogo' => $siteSetting->logo_url,
-        ]);
+            $view->with([
+                'siteSetting' => $siteSetting,
+                'siteName' => $siteSetting->site_name ?: config('app.name'),
+                'favicon' => $siteSetting->favicon_url,
+                'siteLogo' => $siteSetting->logo_url,
+            ]);
+        });
     }
 }

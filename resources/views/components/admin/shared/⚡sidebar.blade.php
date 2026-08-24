@@ -132,6 +132,43 @@ new class extends Component {
                     Dashboard
                 </span>
             </a>
+
+            {{-- Visitors Dropdown --}}
+            <div x-data="{ open: {{ request()->routeIs('admin.visitors.*') ? 'true' : 'false' }} }" class="space-y-1">
+                <button type="button" @click="open = !open"
+                    class="flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined shrink-0">visibility</span>
+
+                        <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                            Visitors
+                        </span>
+                    </div>
+
+                    <span x-show="!sidebarCollapsed"
+                        class="material-symbols-outlined text-lg transition-transform duration-200"
+                        :class="open ? 'rotate-180' : ''">
+                        expand_more
+                    </span>
+                </button>
+
+                <div x-show="open && !sidebarCollapsed" x-collapse
+                    class="ml-4 space-y-1 border-l border-slate-200 pl-3">
+                    <a href="{{ route('admin.visitors.index') }}" wire:navigate
+                        wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                        class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">analytics</span>
+                        <span class="font-manrope text-sm font-medium">Page Analytics</span>
+                    </a>
+
+                    <a href="{{ route('admin.visitors.logs') }}" wire:navigate
+                        wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                        class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">list_alt</span>
+                        <span class="font-manrope text-sm font-medium">Visitor List</span>
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Order Management -->
@@ -470,13 +507,13 @@ new class extends Component {
                     Team Chat
                 </span>
                 @if ($this->unreadChatCount > 0)
-                    <span x-show="!sidebarCollapsed"
-                        class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 font-manrope text-[11px] font-semibold text-white">
-                        {{ $this->unreadChatCount > 99 ? '99+' : $this->unreadChatCount }}
-                    </span>
-                    <span x-show="sidebarCollapsed"
-                        class="absolute right-2.5 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500">
-                    </span>
+                <span x-show="!sidebarCollapsed"
+                    class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 font-manrope text-[11px] font-semibold text-white">
+                    {{ $this->unreadChatCount > 99 ? '99+' : $this->unreadChatCount }}
+                </span>
+                <span x-show="sidebarCollapsed"
+                    class="absolute right-2.5 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500">
+                </span>
                 @endif
             </a>
         </div>

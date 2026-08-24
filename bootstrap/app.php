@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\TrackVisit;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
+
+        $middleware->web(append: [TrackVisit::class]);
+
         $middleware->redirectGuestsTo(fn (Request $request) => route('home'));
 
         $middleware->validateCsrfTokens(except: [
