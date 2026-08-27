@@ -155,7 +155,9 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
         Route::livewire('account/link-whmcs', 'pages::client.account.whmcs.link-whmcs')->name('account.link-whmcs');
     Route::livewire('account/billing-invoices', 'pages::client.account.whmcs.billing-invoices')->name('account.billing-invoices');
     Route::get('account/invoices/{invoiceId}/download', [WhmcsInvoiceController::class, 'download'])->name('account.invoice.download');
-    Route::livewire('account/delete-account', 'pages::client.account.whmcs.delete-account')->name('account.delete-account');
+
+    // Delete account
+    Route::livewire('account/delete-account', 'pages::client.account.delete-account')->name('account.delete-account');
 
     // Checkout function for monthly
     Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');
