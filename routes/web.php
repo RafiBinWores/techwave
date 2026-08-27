@@ -11,7 +11,23 @@ use App\Http\Controllers\WhmcsInvoiceController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/test-whmcs-api', function () {
+    $response = Http::asForm()->post(
+        config('services.whmcs.url').'/includes/api.php',
+        [
+            'identifier' => config('services.whmcs.identifier'),
+            'secret' => config('services.whmcs.secret'),
+            'action' => 'GetUsers',
+            'search' => 'azapparels.net@gmail.com',
+            'responsetype' => 'json',
+        ]
+    );
+
+    dd($response->json());
+});
 
 /*
 |--------------------------------------------------------------------------
