@@ -7,6 +7,7 @@ use App\Http\Controllers\PricingCheckoutController;
 use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
+use App\Http\Controllers\WhmcsInvoiceController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
@@ -149,6 +150,12 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::livewire('account/services', 'pages::client.account.services')->name('account.services');
     Route::livewire('account/profile', 'pages::client.account.profile')->name('account.profile');
     Route::livewire('account/change-password', 'pages::client.account.change-password')->name('account.change-password');
+
+    // WHMCS Integration
+        Route::livewire('account/link-whmcs', 'pages::client.account.whmcs.link-whmcs')->name('account.link-whmcs');
+    Route::livewire('account/billing-invoices', 'pages::client.account.whmcs.billing-invoices')->name('account.billing-invoices');
+    Route::get('account/invoices/{invoiceId}/download', [WhmcsInvoiceController::class, 'download'])->name('account.invoice.download');
+    Route::livewire('account/delete-account', 'pages::client.account.whmcs.delete-account')->name('account.delete-account');
 
     // Checkout function for monthly
     Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');

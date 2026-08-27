@@ -41,4 +41,10 @@ return [
         'sandbox' => env('SSLCOMMERZ_SANDBOX', true),
     ],
 
+    'whmcs' => [
+        'url' => env('WHMCS_URL'),
+        'identifier' => env('WHMCS_API_IDENTIFIER'),
+        'secret' => env('WHMCS_API_SECRET'),
+    ],
+
 ];

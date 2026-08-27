@@ -134,4 +134,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Customer::class);
     }
+
+    public function whmcsAccount()
+    {
+        return $this->hasOne(WhmcsAccount::class);
+    }
 }
