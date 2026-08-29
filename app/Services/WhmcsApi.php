@@ -214,6 +214,48 @@ class WhmcsApi
         return data_get($data, 'invoices.invoice', []);
     }
 
+    /**
+     * Get a Single Sign-On token for a WHMCS client.
+     *
+     * @throws WhmcsApiException
+     */
+    public function getSsoToken(int|string $clientId): string
+    {
+        $data = $this->request('CreateSsoToken', [
+            'client_id' => (int) $clientId,
+        ]);
+
+        return (string) data_get($data, 'token', '');
+    }
+
+    /**
+     * Build the full SSO redirect URL for a WHMCS client.
+     *
+     * @throws WhmcsApiException
+     */
+    public function getSsoUrl(int|string $clientId): string
+    {
+        $data = $this->request('CreateSsoToken', [
+            'client_id' => (int) $clientId,
+        ]);
+
+        $redirectUrl = (string) data_get($data, 'redirect_url', '');
+
+        if ($redirectUrl !== '') {
+            return $redirectUrl;
+        }
+
+        $token = (string) data_get($data, 'token', '');
+
+        if ($token === '') {
+            throw new WhmcsApiException('Could not obtain a single sign-on token.');
+        }
+
+        $whmcsUrl = rtrim((string) config('services.whmcs.url'), '/');
+
+        return $whmcsUrl.'/index.php?rp=/clientarea/sso&token='.$token;
+    }
+
     private function endpoint(): string
     {
         return rtrim((string) config('services.whmcs.url'), '/').'/includes/api.php';

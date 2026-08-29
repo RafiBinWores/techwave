@@ -1083,6 +1083,26 @@ new class extends Component
 
                             </a>
 
+                            @if ($whmcsAccount)
+                            <a
+                                href="{{ route('account.whmcs.sso') }}"
+                                class="inline-flex items-center justify-center gap-2
+                                       rounded-2xl
+                                       bg-linear-to-r from-emerald-500 to-green-600
+                                       px-5 py-3 text-sm font-semibold text-white
+                                       shadow-lg shadow-emerald-500/20
+                                       transition hover:-translate-y-0.5" target="_blank">
+
+                                <span
+                                    class="material-symbols-outlined text-base">
+                                    account_balance
+                                </span>
+
+                                Billing Center
+
+                            </a>
+                            @endif
+
                         </div>
 
                     </div>

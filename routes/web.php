@@ -8,26 +8,11 @@ use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
 use App\Http\Controllers\WhmcsInvoiceController;
+use App\Http\Controllers\WhmcsSsoController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/test-whmcs-api', function () {
-    $response = Http::asForm()->post(
-        config('services.whmcs.url').'/includes/api.php',
-        [
-            'identifier' => config('services.whmcs.identifier'),
-            'secret' => config('services.whmcs.secret'),
-            'action' => 'GetUsers',
-            'search' => 'azapparels.net@gmail.com',
-            'responsetype' => 'json',
-        ]
-    );
-
-    dd($response->json());
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -171,6 +156,7 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
         Route::livewire('account/link-whmcs', 'pages::client.account.whmcs.link-whmcs')->name('account.link-whmcs');
     Route::livewire('account/billing-invoices', 'pages::client.account.whmcs.billing-invoices')->name('account.billing-invoices');
     Route::get('account/invoices/{invoiceId}/download', [WhmcsInvoiceController::class, 'download'])->name('account.invoice.download');
+    Route::get('account/whmcs/sso', [WhmcsSsoController::class, 'redirect'])->name('account.whmcs.sso');
 
     // Delete account
     Route::livewire('account/delete-account', 'pages::client.account.delete-account')->name('account.delete-account');
@@ -411,4 +397,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Internal chat
     Route::livewire('/chats', 'pages::admin.chats.index')->name('chats.index');
+
+    // WHMCS billing accounts
+    Route::livewire('/whmcs-accounts', 'pages::admin.whmcs-accounts.index')->name('whmcs-accounts.index');
 });

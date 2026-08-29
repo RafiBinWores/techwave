@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 new class extends Component {
-
     public int $unreadChatCount = 0;
 
     public function mount(): void
@@ -18,7 +17,7 @@ new class extends Component {
     {
         $authId = Auth::id();
 
-        if (! $authId) {
+        if (!$authId) {
             return [];
         }
 
@@ -37,14 +36,11 @@ new class extends Component {
     {
         $authId = Auth::id();
 
-        if (! $authId) {
+        if (!$authId) {
             return 0;
         }
 
-        return AdminChatMessage::query()
-            ->where('receiver_id', $authId)
-            ->whereNull('read_at')
-            ->count();
+        return AdminChatMessage::query()->where('receiver_id', $authId)->whereNull('read_at')->count();
     }
 
     public function getSiteSettingProperty()
@@ -69,9 +65,9 @@ new class extends Component {
             <div class="h-12 w-12 rounded-xl text-white flex items-center justify-center shrink-0">
 
                 @php
-                $logo = $this->siteSetting->logo
-                ? asset('storage/' . $this->siteSetting->logo)
-                : asset('assets/images/logo/logo.png');
+                    $logo = $this->siteSetting->logo
+                        ? asset('storage/' . $this->siteSetting->logo)
+                        : asset('assets/images/logo/logo.png');
                 @endphp
                 <img src="{{ $logo }}" alt="Logo" class="">
             </div>
@@ -98,9 +94,9 @@ new class extends Component {
     </button>
     </div> --}}
 
-    <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
-        <span class="material-symbols-outlined">close</span>
-    </button>
+        <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+            <span class="material-symbols-outlined">close</span>
+        </button>
     </div>
 
 
@@ -507,13 +503,13 @@ new class extends Component {
                     Team Chat
                 </span>
                 @if ($this->unreadChatCount > 0)
-                <span x-show="!sidebarCollapsed"
-                    class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 font-manrope text-[11px] font-semibold text-white">
-                    {{ $this->unreadChatCount > 99 ? '99+' : $this->unreadChatCount }}
-                </span>
-                <span x-show="sidebarCollapsed"
-                    class="absolute right-2.5 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500">
-                </span>
+                    <span x-show="!sidebarCollapsed"
+                        class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 font-manrope text-[11px] font-semibold text-white">
+                        {{ $this->unreadChatCount > 99 ? '99+' : $this->unreadChatCount }}
+                    </span>
+                    <span x-show="sidebarCollapsed"
+                        class="absolute right-2.5 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500">
+                    </span>
                 @endif
             </a>
         </div>
@@ -540,6 +536,15 @@ new class extends Component {
                 <span class="material-symbols-outlined shrink-0">group</span>
                 <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
                     Users
+                </span>
+            </a>
+
+            <a href="{{ route('admin.whmcs-accounts.index') }}" wire:navigate
+                wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                <span class="material-symbols-outlined shrink-0">account_balance</span>
+                <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                    WHMCS Accounts
                 </span>
             </a>
 
