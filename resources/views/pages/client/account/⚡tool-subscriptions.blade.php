@@ -30,7 +30,7 @@ new #[Title('My Subscriptions')] class extends Component {
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 translate-y-3 scale-95"
-            class="fixed right-5 top-5 z-100 max-w-md rounded-3xl border border-emerald-300/20 bg-emerald-500/15 p-4 text-emerald-50 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+            class="fixed right-5 top-5 z-100 max-w-md rounded-2xl border border-emerald-300/20 bg-emerald-500/15 p-4 text-emerald-50 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
             <div class="flex items-start gap-3">
                 <div
                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/15 text-emerald-200">
@@ -54,7 +54,7 @@ new #[Title('My Subscriptions')] class extends Component {
 
     <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
         <div
-            class="rounded-[34px] border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+            class="rounded-2xl border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
             <div class="flex min-h-[calc(100vh-3rem)]">
 
                 <div x-show="sidebarOpen" x-transition.opacity

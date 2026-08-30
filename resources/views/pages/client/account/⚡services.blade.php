@@ -259,7 +259,7 @@ new #[Title('My Services')] class extends Component {
 <div x-data="{
     sidebarOpen: false,
     showToast: {{ session('success') ? 'true' : 'false' }}
-}" class="relative min-h-screen text-white">
+    }" class="relative min-h-screen text-white">
     @if (session('success'))
         <div x-show="showToast" x-init="setTimeout(() => showToast = false, 4500)" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 translate-y-3 scale-95"
@@ -291,7 +291,7 @@ new #[Title('My Services')] class extends Component {
 
     <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
         <div
-            class="rounded-[34px] border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+            class="rounded-2xl border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
             <div class="flex min-h-[calc(100vh-3rem)]">
 
                 <div x-show="sidebarOpen" x-transition.opacity

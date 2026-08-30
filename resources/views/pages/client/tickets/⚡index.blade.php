@@ -266,7 +266,7 @@ new class extends Component {
 
     <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
         <div
-            class="rounded-[34px] border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+            class="rounded-2xl border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
             <div class="flex min-h-[calc(100vh-3rem)]">
                 <div x-show="sidebarOpen" x-transition.opacity
                     class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden" @click="sidebarOpen = false"

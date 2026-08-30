@@ -105,7 +105,7 @@ new #[Title('Billing Invoices')] class extends Component {
 <div x-data="{ sidebarOpen: false }" class="relative min-h-screen text-white">
     <livewire:shared.font-toast-notification />
     <div class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
-        <div class="rounded-3xl border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+        <div class="rounded-2xl border border-white/10 bg-white/6 shadow-[0_20px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
             <div class="flex min-h-[calc(100vh-3rem)]">
 
                 {{-- Mobile Overlay --}}
@@ -134,7 +134,7 @@ new #[Title('Billing Invoices')] class extends Component {
                             </div>
                         </div>
 
-                        <div
+                        {{-- <div
                             class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 backdrop-blur-xl">
                             <span
                                 class="material-symbols-outlined {{ $isLinked ? 'text-emerald-300' : 'text-cyan-300' }}">
@@ -146,7 +146,7 @@ new #[Title('Billing Invoices')] class extends Component {
                                     {{ $isLinked ? 'Linked' : 'Not linked' }}
                                 </p>
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
 
                     @if (! $isLinked)
@@ -169,7 +169,7 @@ new #[Title('Billing Invoices')] class extends Component {
                     @else
                     {{-- Invoices table --}}
                     <div
-                        class="overflow-hidden rounded-[28px] border border-white/10 bg-white/8 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                        class="overflow-hidden rounded-2xl border border-white/10 bg-white/8 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                         <div class="flex items-center justify-between p-6 pb-4">
                             <div>
                                 <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">

@@ -967,7 +967,7 @@ new class extends Component
         class="mx-auto max-w-350 px-4 py-6 sm:px-6 lg:px-8">
 
         <div
-            class="rounded-3xl border border-white/10 bg-white/6
+            class="rounded-2xl border border-white/10 bg-white/6
                    shadow-[0_20px_80px_rgba(0,0,0,0.22)]
                    backdrop-blur-2xl">
 

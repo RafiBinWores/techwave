@@ -153,10 +153,14 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::livewire('account/change-password', 'pages::client.account.change-password')->name('account.change-password');
 
     // WHMCS Integration
-        Route::livewire('account/link-whmcs', 'pages::client.account.whmcs.link-whmcs')->name('account.link-whmcs');
+    Route::livewire('account/link-whmcs', 'pages::client.account.whmcs.link-whmcs')->name('account.link-whmcs');
     Route::livewire('account/billing-invoices', 'pages::client.account.whmcs.billing-invoices')->name('account.billing-invoices');
+    Route::livewire('account/billing-services', 'pages::client.account.whmcs.billing-services')->name('account.billing-services');
+    Route::livewire('account/domains', 'pages::client.account.whmcs.domains')->name('account.domains');
     Route::get('account/invoices/{invoiceId}/download', [WhmcsInvoiceController::class, 'download'])->name('account.invoice.download');
     Route::get('account/whmcs/sso', [WhmcsSsoController::class, 'redirect'])->name('account.whmcs.sso');
+    Route::get('account/whmcs/domain/{domainId}', [WhmcsSsoController::class, 'domainRedirect'])->name('account.whmcs.domain-detail');
+    Route::get('account/whmcs/service/{serviceId}', [WhmcsSsoController::class, 'serviceRedirect'])->name('account.whmcs.service-detail');
 
     // Delete account
     Route::livewire('account/delete-account', 'pages::client.account.delete-account')->name('account.delete-account');

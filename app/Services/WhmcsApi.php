@@ -215,6 +215,29 @@ class WhmcsApi
     }
 
     /**
+     * Fetch domains owned by a client.
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @throws WhmcsApiException
+     */
+    public function getClientDomains(int|string $clientId): array
+    {
+        $data = $this->request('GetClientsDomains', [
+            'clientid' => $clientId,
+        ]);
+
+        $domains = data_get($data, 'domains.domain', []);
+
+        if (is_array($domains) && ! array_is_list($domains)) {
+            $domains = [$domains];
+        }
+
+        /** @var array<int, array<string, mixed>> */
+        return $domains;
+    }
+
+    /**
      * Get a Single Sign-On token for a WHMCS client.
      *
      * @throws WhmcsApiException
@@ -231,13 +254,24 @@ class WhmcsApi
     /**
      * Build the full SSO redirect URL for a WHMCS client.
      *
+     * @param  string|null  $destination  A WHMCS SSO destination scope (e.g. "clientarea:domain_details").
+     * @param  int|string|null  $domainId  The domain id when using the "clientarea:domain_details" destination.
+     *
      * @throws WhmcsApiException
      */
-    public function getSsoUrl(int|string $clientId): string
+    public function getSsoUrl(int|string $clientId, ?string $destination = null, int|string|null $domainId = null): string
     {
-        $data = $this->request('CreateSsoToken', [
-            'client_id' => (int) $clientId,
-        ]);
+        $payload = ['client_id' => (int) $clientId];
+
+        if ($destination !== null) {
+            $payload['destination'] = $destination;
+        }
+
+        if ($domainId !== null) {
+            $payload['domain_id'] = (int) $domainId;
+        }
+
+        $data = $this->request('CreateSsoToken', $payload);
 
         $redirectUrl = (string) data_get($data, 'redirect_url', '');
 
