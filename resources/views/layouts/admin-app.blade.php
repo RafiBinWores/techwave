@@ -41,6 +41,9 @@
         .font-manrope {
             font-family: 'Manrope', sans-serif;
         }
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -124,6 +124,14 @@ new #[Layout('layouts.admin-app')] #[Title('Visitor List')] class extends Compon
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Device
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Browser
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                                 Referer
                             </th>
 
@@ -177,6 +185,42 @@ new #[Layout('layouts.admin-app')] #[Title('Visitor List')] class extends Compon
                                     </span>
                                 </td>
 
+                                {{-- Device --}}
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                                        @switch($visit->device)
+                                            @case('Mobile')
+                                                <span class="material-symbols-outlined text-[15px] text-primary">smartphone</span>
+                                                @break
+                                            @case('Tablet')
+                                                <span class="material-symbols-outlined text-[15px] text-primary">tablet</span>
+                                                @break
+                                            @case('Laptop')
+                                                <span class="material-symbols-outlined text-[15px] text-primary">laptop_mac</span>
+                                                @break
+                                            @default
+                                                <span class="material-symbols-outlined text-[15px] text-primary">desktop_windows</span>
+                                        @endswitch
+                                        {{ $visit->device }}
+                                    </span>
+                                </td>
+
+                                {{-- Browser --}}
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-semibold text-slate-700">
+                                            {{ $visit->browser }}
+                                        </span>
+
+                                        @if ($visit->os)
+                                            <span class="text-xs text-slate-400">
+                                                {{ $visit->os }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+
                                 {{-- Referer --}}
                                 <td class="max-w-[220px] px-6 py-4">
                                     @if ($visit->referer)
@@ -201,7 +245,7 @@ new #[Layout('layouts.admin-app')] #[Title('Visitor List')] class extends Compon
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-14 text-center">
+                                <td colspan="7" class="px-6 py-14 text-center">
                                     <div class="mx-auto flex max-w-sm flex-col items-center">
                                         <div
                                             class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">

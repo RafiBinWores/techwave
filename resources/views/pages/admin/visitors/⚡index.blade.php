@@ -44,7 +44,7 @@ new #[Layout('layouts.admin-app')] #[Title('Visitor Analytics')] class extends C
 
         return $this->scopedVisits()
             ->when($search !== '', fn ($query) => $query->where('url', 'like', '%'.$search.'%'))
-            ->selectRaw("url, count(*) as visits_count, count(distinct session_id) as unique_visitors, max(created_at) as last_visited_at")
+            ->selectRaw("url, count(*) as visits_count, count(distinct ip_address) as unique_visitors, max(created_at) as last_visited_at")
             ->groupBy('url')
             ->orderByDesc('visits_count')
             ->paginate($this->perPage);
@@ -57,12 +57,34 @@ new #[Layout('layouts.admin-app')] #[Title('Visitor Analytics')] class extends C
 
     public function uniqueVisitors(): int
     {
-        return (int) $this->scopedVisits()->distinct('session_id')->count('session_id');
+        return (int) $this->scopedVisits()->whereNotNull('ip_address')->distinct()->count('ip_address');
     }
 
     public function visitsToday(): int
     {
         return (int) Visit::query()->whereDate('created_at', today())->count();
+    }
+
+    public function deviceBreakdown(): array
+    {
+        return $this->scopedVisits()
+            ->selectRaw("coalesce(nullif(device, ''), 'Other') as device, count(*) as total")
+            ->groupBy('device')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => ['device' => $row->device, 'total' => (int) $row->total])
+            ->toArray();
+    }
+
+    public function browserBreakdown(): array
+    {
+        return $this->scopedVisits()
+            ->selectRaw("coalesce(nullif(browser, ''), 'Other') as browser, count(*) as total")
+            ->groupBy('browser')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => ['browser' => $row->browser, 'total' => (int) $row->total])
+            ->toArray();
     }
 };
 ?>
@@ -125,6 +147,71 @@ new #[Layout('layouts.admin-app')] #[Title('Visitor Analytics')] class extends C
                 <p class="mt-2 text-2xl font-bold text-slate-900">
                     {{ number_format($this->visitsToday()) }}
                 </p>
+            </div>
+        </div>
+
+        {{-- Device & Browser Breakdown --}}
+        <div class="grid grid-cols-1 gap-gutter lg:grid-cols-2">
+            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">devices</span>
+                    <h3 class="text-base font-semibold text-on-surface">Visits by Device</h3>
+                </div>
+
+                @php($devices = $this->deviceBreakdown())
+                @php($deviceTotal = array_sum(array_column($devices, 'total')))
+
+                @if ($devices === [] || $deviceTotal === 0)
+                    <p class="text-sm text-secondary">No device data available.</p>
+                @else
+                    <div class="space-y-4">
+                        @foreach ($devices as $row)
+                            <div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="font-medium text-slate-700">{{ $row['device'] }}</span>
+                                    <span class="font-semibold text-slate-500">{{ number_format($row['total']) }}</span>
+                                </div>
+
+                                <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-full rounded-full bg-primary"
+                                        style="width: {{ round(($row['total'] / $deviceTotal) * 100) }}%">
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">language</span>
+                    <h3 class="text-base font-semibold text-on-surface">Visits by Browser</h3>
+                </div>
+
+                @php($browsers = $this->browserBreakdown())
+                @php($browserTotal = array_sum(array_column($browsers, 'total')))
+
+                @if ($browsers === [] || $browserTotal === 0)
+                    <p class="text-sm text-secondary">No browser data available.</p>
+                @else
+                    <div class="space-y-4">
+                        @foreach ($browsers as $row)
+                            <div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="font-medium text-slate-700">{{ $row['browser'] }}</span>
+                                    <span class="font-semibold text-slate-500">{{ number_format($row['total']) }}</span>
+                                </div>
+
+                                <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-full rounded-full bg-emerald-500"
+                                        style="width: {{ round(($row['total'] / $browserTotal) * 100) }}%">
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
 
