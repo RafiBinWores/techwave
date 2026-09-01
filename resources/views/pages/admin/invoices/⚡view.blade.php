@@ -74,15 +74,13 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Details')] class extends Com
         </div>
 
         <div class="flex items-center gap-3">
-            <span @class([
-                'inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider',
-                'bg-slate-100 text-slate-600' => $invoice->status === 'draft',
+            <span @class([ 'inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider' , 'bg-slate-100 text-slate-600'=> $invoice->status === 'draft',
                 'bg-blue-100 text-blue-700' => $invoice->status === 'sent',
                 'bg-emerald-100 text-emerald-700' => $invoice->status === 'paid',
                 'bg-amber-100 text-amber-700' => $invoice->status === 'partially_paid',
                 'bg-red-100 text-red-700' => $invoice->status === 'overdue',
                 'bg-slate-200 text-slate-500' => $invoice->status === 'cancelled',
-            ])>
+                ])>
                 {{ str_replace('_', ' ', ucfirst($invoice->status)) }}
             </span>
 
@@ -214,33 +212,6 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Details')] class extends Com
                             {{ $invoice->company_name ?: 'N/A' }}
                         </span>
                     </div>
-                </div>
-            </div>
-
-            {{-- Item list --}}
-            <div class="rounded-xl border border-slate-200 bg-white p-6">
-                <h3 class="text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                    Items ({{ $invoice->items->count() }})
-                </h3>
-
-                <div class="mt-4 space-y-3">
-                    @foreach ($invoice->items as $item)
-                        <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3 last:border-0 last:pb-0">
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold text-on-surface">{{ $item->title }}</p>
-                                @if ($item->description)
-                                    <p class="mt-0.5 text-xs text-secondary">{{ $item->description }}</p>
-                                @endif
-                                <p class="mt-1 text-xs text-slate-400">
-                                    {{ number_format((float) $item->quantity, 1) }} × ৳{{ number_format((float) $item->unit_price, 2) }}
-                                </p>
-                            </div>
-
-                            <span class="shrink-0 font-mono text-sm font-semibold text-on-surface">
-                                ৳{{ number_format((float) $item->quantity * (float) $item->unit_price, 2) }}
-                            </span>
-                        </div>
-                    @endforeach
                 </div>
             </div>
         </div>
