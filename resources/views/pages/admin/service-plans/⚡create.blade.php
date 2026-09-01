@@ -329,7 +329,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
             'message' => 'Service plan created successfully.',
         ]);
 
-        $this->redirectRoute('admin.service-plans.edit', ['servicePlan' => $plan], navigate: true);
+        $this->redirectRoute('admin.service-plans.index', navigate: true);
     }
 
     private function resolveBuyUrl(array $validated, string $cycle): ?string
@@ -956,16 +956,19 @@ new #[Layout('layouts.admin-app')] #[Title('Create Service Plan')] class extends
                             Add
                         </button>
                     </div>
-                    <div class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                    <div class="flex min-h-[60px] flex-col gap-2 rounded-lg border border-slate-100 bg-surface p-4">
                         @forelse ($features as $index => $item)
                             <div wire:key="feature-{{ $index }}"
-                                class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
-                                <span class="text-sm font-body-md">{{ $item }}</span>
+                                class="flex items-center gap-2 rounded-lg border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
+                                <input type="text" wire:model.live="features.{{ $index }}"
+                                    class="w-full flex-1 bg-transparent text-sm font-body-md outline-none" />
 
-                                <button type="button" wire:click="removeFeature({{ $index }})"
-                                    class="material-symbols-outlined cursor-pointer text-sm text-outline hover:text-error">
-                                    close
-                                </button>
+                                @if (count($features) > 1)
+                                    <button type="button" wire:click="removeFeature({{ $index }})"
+                                        class="material-symbols-outlined cursor-pointer text-sm text-outline hover:text-error shrink-0">
+                                        close
+                                    </button>
+                                @endif
                             </div>
                         @empty
                             <p class="text-sm text-secondary">No features added yet.</p>
