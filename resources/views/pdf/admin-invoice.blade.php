@@ -365,7 +365,7 @@ $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
         }
 
         .footer {
-            padding: 30px 24px 22px;
+            padding: 16px 24px 22px;
         }
 
         .footer-table {
@@ -385,6 +385,33 @@ $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
             font-size: 10px;
             line-height: 16px;
             color: #64748b;
+        }
+
+        .note-wrap {
+            padding: 14px 24px 0;
+        }
+
+        .note-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .note-label {
+            margin: 0 0 5px;
+            font-size: 9px;
+            line-height: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+        }
+
+        .note-text {
+            font-size: 10px;
+            line-height: 16px;
+            color: #475569;
+            white-space: pre-line;
         }
 
         .thanks {
@@ -615,6 +642,16 @@ $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
                 </tr>
             </table>
         </div>
+
+        {{-- Note --}}
+        @if ($invoice->note)
+        <div class="note-wrap">
+            <div class="note-box">
+                <p class="note-label">Note</p>
+                <div class="note-text">{{ $invoice->note }}</div>
+            </div>
+        </div>
+        @endif
 
         {{-- Footer --}}
         <div class="footer">
