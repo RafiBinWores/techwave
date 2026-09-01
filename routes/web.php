@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminInvoicePdfController;
 use App\Http\Controllers\BgRemovedImageController;
 use App\Http\Controllers\CompressedImageController;
 use App\Http\Controllers\PlanOrderInvoiceController;
@@ -320,6 +321,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/proposals/{proposal}/edit', 'pages::admin.proposals.edit')->name('proposals.edit');
     Route::livewire('/proposals/{proposal}/view', 'pages::admin.proposals.view')->name('proposals.view');
     Route::get('/proposals/{proposal}/pdf', [ProposalPdfController::class, 'download'])->name('proposals.pdf');
+
+    // Invoice management (admin-created customer invoices)
+    Route::livewire('/invoices', 'pages::admin.invoices.index')->name('invoices.index');
+    Route::livewire('/invoices/create', 'pages::admin.invoices.create')->name('invoices.create');
+    Route::livewire('/invoices/{invoice}/edit', 'pages::admin.invoices.edit')->name('invoices.edit');
+    Route::livewire('/invoices/{invoice}/view', 'pages::admin.invoices.view')->name('invoices.view');
+    Route::get('/invoices/{invoice}/pdf', [AdminInvoicePdfController::class, 'download'])->name('invoices.pdf');
 
     // Settings
     Route::livewire('/site-settings', 'pages::admin.settings.site-setting')->name('settings.site-setting');
