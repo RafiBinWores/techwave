@@ -88,7 +88,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
                 'item_id' => $item->item_id,
                 'title' => $item->title,
                 'description' => $item->description ?? '',
-                'quantity' => (float) $item->quantity,
+                'features' => $item->features ?? [],
+                'new_feature' => '',
+                'quantity' => (int) $item->quantity,
                 'unit_price' => (float) $item->unit_price,
             ])
             ->toArray();
@@ -121,7 +123,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
             'items.*.item_id' => ['nullable', 'integer'],
             'items.*.title' => ['required', 'string', 'max:255'],
             'items.*.description' => ['nullable', 'string'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'items.*.features' => ['nullable', 'array'],
+            'items.*.features.*' => ['nullable', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ];
     }
@@ -312,6 +316,23 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
             ->exists();
     }
 
+    public function selectedServiceHasPlans(): bool
+    {
+        if (!$this->selected_service_id) {
+            return false;
+        }
+
+        return ServicePlan::query()
+            ->where('service_id', $this->selected_service_id)
+            ->when(
+                $this->selected_service_option_id,
+                fn ($q) => $q->where('service_option_id', $this->selected_service_option_id),
+                fn ($q) => $q->whereNull('service_option_id'),
+            )
+            ->where('is_active', true)
+            ->exists();
+    }
+
     public function updatedSelectedServiceId(): void
     {
         $this->selected_service_plan_id = null;
@@ -414,6 +435,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
             'item_id' => $service->id,
             'title' => $service->card_title ?? ($service->title ?? 'Service'),
             'description' => $service->short_description ?? ($service->description ?? ''),
+            'features' => [],
+            'new_feature' => '',
             'quantity' => 1,
             'unit_price' => 0,
         ];
@@ -458,6 +481,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
             'item_id' => $plan->id,
             'title' => ($plan->service?->card_title ? $plan->service->card_title . ' - ' : '') . $plan->name . ' (' . ucwords(str_replace('_', ' ', $billingCycle)) . ')',
             'description' => $plan->description ?? '',
+            'features' => $plan->features ?? [],
+            'new_feature' => '',
             'quantity' => 1,
             'unit_price' => $price ?? 0,
         ];
@@ -483,6 +508,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
             'item_id' => $option->id,
             'title' => $option->card_title ?? ($option->detail_title ?? 'Service Option'),
             'description' => $option->short_description ?? '',
+            'features' => [],
+            'new_feature' => '',
             'quantity' => 1,
             'unit_price' => 0,
         ];
@@ -506,7 +533,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
             'item_id' => null,
             'title' => $title,
             'description' => trim($this->custom_description),
-            'quantity' => (float) ($this->custom_quantity ?: 1),
+            'features' => [],
+            'new_feature' => '',
+            'quantity' => (int) ($this->custom_quantity ?: 1),
             'unit_price' => (float) ($this->custom_unit_price ?: 0),
         ];
 
@@ -516,6 +545,24 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
         $this->custom_unit_price = '';
 
         $this->resetValidation('items');
+    }
+
+    public function addFeature(int $index): void
+    {
+        $feature = trim($this->items[$index]['new_feature'] ?? '');
+
+        if ($feature === '') {
+            return;
+        }
+
+        $this->items[$index]['features'][] = $feature;
+        $this->items[$index]['new_feature'] = '';
+    }
+
+    public function removeFeature(int $index, int $featureIndex): void
+    {
+        unset($this->items[$index]['features'][$featureIndex]);
+        $this->items[$index]['features'] = array_values($this->items[$index]['features']);
     }
 
     public function removeItem(int $index): void
@@ -583,6 +630,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
                     'item_id' => $item['item_id'] ?? null,
                     'title' => $item['title'],
                     'description' => $item['description'] ?: null,
+                    'features' => ! empty($item['features']) ? $item['features'] : null,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                 ]);
@@ -816,7 +864,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
                                 @endforeach
                             </select>
 
-                            @unless ($this->selectedServiceHasOptions())
+                            @unless ($this->selectedServiceHasOptions() || $this->selectedServiceHasPlans())
                                 <button type="button" wire:click="addService"
                                     class="mt-2 w-full rounded-lg border border-dashed border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 cursor-pointer">
                                     Add Service
@@ -929,15 +977,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
                             <div wire:key="invoice-item-{{ $index }}"
                                 class="rounded-xl border border-slate-100 bg-slate-50 p-4">
                                 <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                                    <div class="md:col-span-4">
+                                    <div class="md:col-span-6">
                                         <label class="text-xs text-secondary">Title</label>
                                         <input wire:model.live="items.{{ $index }}.title"
-                                            class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
-                                    </div>
-
-                                    <div class="md:col-span-3">
-                                        <label class="text-xs text-secondary">Description</label>
-                                        <input wire:model.live="items.{{ $index }}.description"
                                             class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
                                     </div>
 
@@ -947,7 +989,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
                                             class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
                                     </div>
 
-                                    <div class="md:col-span-2">
+                                    <div class="md:col-span-3">
                                         <label class="text-xs text-secondary">Unit Price</label>
                                         <input type="number" step="0.1" min="0" wire:model.live="items.{{ $index }}.unit_price"
                                             class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
@@ -960,6 +1002,44 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
                                         </button>
                                     </div>
                                 </div>
+
+                                @if (in_array($item['item_type'] ?? '', ['service', 'service_plan', 'service_option']))
+                                    <div class="mt-4">
+                                        <label class="text-xs text-secondary">Plan Features</label>
+
+                                        @if (! empty($item['features']))
+                                            <div class="mt-2 space-y-1">
+                                                @foreach ($item['features'] as $fi => $feature)
+                                                    <div class="flex items-center gap-2 rounded bg-white px-3 py-1.5">
+                                                        <span class="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
+                                                        <span class="flex-1 text-xs text-on-surface">{{ $feature }}</span>
+                                                        <button type="button" wire:click="removeFeature({{ $index }}, {{ $fi }})"
+                                                            class="text-red-400 hover:text-red-600 cursor-pointer">
+                                                            <span class="material-symbols-outlined text-[15px]">close</span>
+                                                        </button>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @endif
+
+                                        <div class="mt-2 flex gap-1.5">
+                                            <input type="text" wire:model.live="items.{{ $index }}.new_feature"
+                                                wire:keydown.enter.prevent="addFeature({{ $index }})"
+                                                placeholder="Add custom feature..."
+                                                class="w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm" />
+                                            <button type="button" wire:click="addFeature({{ $index }})"
+                                                class="shrink-0 rounded bg-emerald-500 px-3 text-white hover:bg-emerald-600 cursor-pointer">
+                                                <span class="material-symbols-outlined text-sm">add</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="mt-4">
+                                        <label class="text-xs text-secondary">Description</label>
+                                        <textarea wire:model.live="items.{{ $index }}.description" rows="2"
+                                            class="mt-2 w-full rounded border border-outline-variant bg-white px-3 py-2 text-sm"></textarea>
+                                    </div>
+                                @endif
                             </div>
                         @empty
                             <div

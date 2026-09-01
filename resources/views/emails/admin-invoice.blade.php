@@ -82,8 +82,19 @@
                                     <p style="margin:0; font-size:14px; font-weight:600; color:{{ $head }};">
                                         {{ $item->title }}
                                     </p>
+                                    @if (! empty($item->features))
+                                        @foreach ($item->features as $feature)
+                                            <p style="margin:2px 0 0; font-size:12px; color:{{ $muted }};">
+                                                &bull; {{ $feature }}
+                                            </p>
+                                        @endforeach
+                                    @elseif ($item->description)
+                                        <p style="margin:3px 0 0; font-size:12px; color:{{ $muted }};">
+                                            {{ $item->description }}
+                                        </p>
+                                    @endif
                                     <p style="margin:3px 0 0; font-size:12px; color:{{ $muted }};">
-                                        Qty {{ number_format((float) $item->quantity, 1) }}
+                                        Qty {{ number_format((int) $item->quantity) }}
                                         @if ($item->unit_price)
                                             &times; {{ $formatMoney($item->unit_price) }}
                                         @endif

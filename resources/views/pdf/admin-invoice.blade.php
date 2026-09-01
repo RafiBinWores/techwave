@@ -303,6 +303,19 @@ $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
             color: #64748b;
         }
 
+        .items .feature-list {
+            margin: 6px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .items .feature-list li {
+            margin: 0 0 2px;
+            font-size: 9px;
+            line-height: 13px;
+            color: #475569;
+        }
+
         .summary-wrap {
             padding: 22px 24px 0;
             text-align: right;
@@ -538,13 +551,19 @@ $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
                     <tr>
                         <td>
                             <span class="plan-name">{{ $item->title }}</span>
-                            @if ($item->description)
+                            @if (! empty($item->features))
+                            <ul class="feature-list">
+                                @foreach ($item->features as $feature)
+                                <li>{{ $feature }}</li>
+                                @endforeach
+                            </ul>
+                            @elseif ($item->description)
                             <div class="description">{{ $item->description }}</div>
                             @endif
                         </td>
 
                         <td class="center">
-                            {{ number_format((float) $item->quantity, 1) }}
+                            {{ number_format((int) $item->quantity) }}
                         </td>
 
                         <td class="right">

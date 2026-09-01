@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
     'item_id',
     'title',
     'description',
+    'features',
     'quantity',
     'unit_price',
 ])]
@@ -20,8 +21,9 @@ class InvoiceItem extends Model
     use HasFactory;
 
     protected $casts = [
-        'quantity' => 'decimal:2',
+        'quantity' => 'integer',
         'unit_price' => 'decimal:2',
+        'features' => 'array',
     ];
 
     public function invoice()
