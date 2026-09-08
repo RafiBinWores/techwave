@@ -1617,3 +1617,463 @@
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
+
+
+
+/* =========================
+   Workspace Project Editor
+   ========================= */
+
+.linear-project-editor .tiptap {
+    min-height: 170px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 18px 20px 26px;
+    color: rgb(30 41 59);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    outline: none;
+}
+
+.linear-project-editor .tiptap>*+* {
+    margin-top: .7rem;
+}
+
+
+/* =========================
+   Headings
+   ========================= */
+
+.linear-project-editor .tiptap h1 {
+    margin-top: 1.5rem;
+    font-size: 1.55rem;
+    line-height: 1.25;
+    font-weight: 700;
+}
+
+.linear-project-editor .tiptap h2 {
+    margin-top: 1.35rem;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 700;
+}
+
+.linear-project-editor .tiptap h3 {
+    margin-top: 1.15rem;
+    font-size: 1.05rem;
+    line-height: 1.35;
+    font-weight: 650;
+}
+
+
+/* =========================
+   Paragraph
+   ========================= */
+
+.linear-project-editor .tiptap p {
+    min-height: 1.2em;
+    margin: 0;
+}
+
+
+/* =========================
+   Bullet / Numbered Lists
+   ========================= */
+
+.linear-project-editor .tiptap ul:not([data-type="taskList"]) {
+    list-style: disc;
+    padding-left: 1.4rem;
+}
+
+.linear-project-editor .tiptap ol {
+    list-style: decimal;
+    padding-left: 1.4rem;
+}
+
+.linear-project-editor .tiptap li>p {
+    margin: 0;
+}
+
+
+/* =========================
+   Checklist
+   ========================= */
+
+.linear-project-editor .tiptap ul[data-type="taskList"] {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* each checklist row */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+
+    margin: .3rem 0;
+    padding: 0;
+}
+
+/* checkbox wrapper */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li>label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 1rem;
+    height: 1.5rem;
+
+    margin: 0;
+    padding: 0;
+
+    user-select: none;
+}
+
+/* actual checkbox */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li>label input {
+    display: block;
+
+    width: 1rem;
+    height: 1rem;
+
+    margin: 0;
+    padding: 0;
+
+    flex: 0 0 auto;
+
+    cursor: pointer;
+    border-radius: .25rem;
+    accent-color: rgb(37 99 235);
+}
+
+/* Tiptap may add span inside label */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li>label span {
+    display: none;
+}
+
+/* task text wrapper */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li>div {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    margin: 0;
+    padding: 0;
+}
+
+/* task text */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li>div>p {
+    min-height: 0;
+
+    margin: 0 !important;
+    padding: 0;
+
+    line-height: 1.5rem;
+}
+
+/* completed task */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li[data-checked="true"]>div {
+    color: rgb(148 163 184);
+    text-decoration: line-through;
+}
+
+/* nested task lists */
+.linear-project-editor .tiptap ul[data-type="taskList"]>li>div>ul[data-type="taskList"] {
+    margin-top: .35rem;
+}
+
+
+/* =========================
+   Blockquote
+   ========================= */
+
+.linear-project-editor .tiptap blockquote {
+    margin: 1rem 0;
+    border-left: 3px solid rgb(203 213 225);
+    padding-left: 1rem;
+    color: rgb(100 116 139);
+}
+
+
+/* =========================
+   Divider
+   ========================= */
+
+.linear-project-editor .tiptap hr {
+    margin: 1.4rem 0;
+    border: 0;
+    border-top: 1px solid rgb(226 232 240);
+}
+
+
+/* =========================
+   Links
+   ========================= */
+
+.linear-project-editor .tiptap a {
+    color: rgb(37 99 235);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+
+/* =========================
+   Inline Code
+   ========================= */
+
+.linear-project-editor .tiptap code:not(pre code) {
+    border-radius: .35rem;
+    background: rgb(241 245 249);
+    padding: .12rem .32rem;
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        monospace;
+
+    font-size: .82em;
+    color: rgb(51 65 85);
+}
+
+
+/* =========================
+   Code Block
+   ========================= */
+
+.linear-project-editor .tiptap pre {
+    overflow-x: auto;
+
+    margin: 1rem 0;
+    border: 1px solid rgb(226 232 240);
+    border-radius: .65rem;
+
+    background: rgb(15 23 42);
+    padding: 1rem;
+
+    color: rgb(226 232 240);
+}
+
+.linear-project-editor .tiptap pre code {
+    background: transparent;
+    padding: 0;
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        monospace;
+
+    font-size: .8rem;
+    line-height: 1.65;
+
+    color: inherit;
+}
+
+
+/* =========================
+   Images
+   ========================= */
+
+.linear-project-editor .tiptap img {
+    display: block;
+
+    max-width: 100%;
+    max-height: 520px;
+
+    margin: .75rem 0;
+
+    border: 1px solid rgb(226 232 240);
+    border-radius: .75rem;
+
+    object-fit: contain;
+}
+
+.linear-project-editor .tiptap img.ProseMirror-selectednode {
+    outline: 3px solid rgb(59 130 246 / .2);
+}
+
+/* Resizable images (TipTap Image.resize node view) */
+
+.linear-project-editor [data-resize-container] {
+    max-width: 100%;
+}
+
+.linear-project-editor [data-resize-container] img {
+    max-height: none;
+}
+
+.linear-project-editor [data-resize-handle] {
+    position: absolute;
+    z-index: 20;
+
+    width: 12px;
+    height: 12px;
+
+    border: 2px solid white;
+    border-radius: 100%;
+    background: rgb(59 130 246);
+
+    box-shadow: 0 1px 4px rgb(15 23 42 / .35);
+
+    opacity: 0;
+    transition: opacity .15s ease;
+
+    touch-action: none;
+}
+
+.linear-project-editor [data-resize-container]:hover [data-resize-handle],
+.linear-project-editor [data-resize-container][data-resize-state="true"] [data-resize-handle] {
+    opacity: 1;
+}
+
+.linear-project-editor [data-resize-handle="top-left"] {
+    transform: translate(-50%, -50%);
+}
+
+.linear-project-editor [data-resize-handle="top-right"] {
+    transform: translate(50%, -50%);
+}
+
+.linear-project-editor [data-resize-handle="bottom-left"] {
+    transform: translate(-50%, 50%);
+}
+
+.linear-project-editor [data-resize-handle="bottom-right"] {
+    transform: translate(50%, 50%);
+}
+
+
+/* =========================
+   File Attachments
+   ========================= */
+
+.linear-project-editor .tiptap a[data-file-attachment="true"] {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+
+    width: 100%;
+
+    border: 1px solid rgb(226 232 240);
+    border-radius: .65rem;
+
+    background: rgb(248 250 252);
+    padding: .75rem .9rem;
+
+    color: rgb(51 65 85);
+    font-weight: 600;
+    text-decoration: none;
+
+    transition:
+        border-color .2s ease,
+        background-color .2s ease;
+}
+
+.linear-project-editor .tiptap a[data-file-attachment="true"]:hover {
+    border-color: rgb(148 163 184);
+    background: white;
+}
+
+
+/* =========================
+   Placeholder
+   ========================= */
+
+.linear-project-editor .tiptap p.is-editor-empty:first-child::before {
+    float: left;
+
+    height: 0;
+
+    pointer-events: none;
+
+    color: rgb(148 163 184);
+
+    content: attr(data-placeholder);
+}
+
+
+/* =========================
+   Monospace
+   ========================= */
+
+.linear-project-editor .tiptap [style*="monospace"],
+.linear-project-editor .tiptap .font-mono {
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        monospace;
+}
+
+
+/* =========================
+   Selected Node
+   ========================= */
+
+.linear-project-editor .tiptap .ProseMirror-selectednode {
+    border-radius: .35rem;
+}
+
+
+/* =========================
+   Code Syntax Highlighting
+   ========================= */
+
+.linear-project-editor .hljs-keyword,
+.linear-project-editor .hljs-selector-tag,
+.linear-project-editor .hljs-literal {
+    color: #c792ea;
+}
+
+.linear-project-editor .hljs-string,
+.linear-project-editor .hljs-title,
+.linear-project-editor .hljs-section {
+    color: #c3e88d;
+}
+
+.linear-project-editor .hljs-number,
+.linear-project-editor .hljs-symbol {
+    color: #f78c6c;
+}
+
+.linear-project-editor .hljs-comment {
+    color: #64748b;
+}
+
+.linear-project-editor .hljs-variable,
+.linear-project-editor .hljs-attr {
+    color: #82aaff;
+}
+
+
+/* =========================
+   Editor Scrollbar
+   ========================= */
+
+.linear-project-editor .tiptap::-webkit-scrollbar {
+    width: 6px;
+}
+
+.linear-project-editor .tiptap::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.linear-project-editor .tiptap::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgb(203 213 225);
+}
+
+.linear-project-editor .tiptap::-webkit-scrollbar-thumb:hover {
+    background: rgb(148 163 184);
+}

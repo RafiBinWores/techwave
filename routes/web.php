@@ -412,4 +412,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // WHMCS billing accounts
     Route::livewire('/whmcs-accounts', 'pages::admin.whmcs-accounts.index')->name('whmcs-accounts.index');
+
+    // Workspace - Project & Task Management
+    Route::livewire('/workspace/projects', 'pages::admin.workspace.projects.index')->name('workspace.projects.index');
+    Route::livewire('/workspace/projects/{project}/overview', 'pages::admin.workspace.projects.overview.show')->name('workspace.projects.show.overview');
+    Route::livewire('/workspace/projects/{project}/issues', 'pages::admin.workspace.projects.issues.show')->name('workspace.projects.show.issues');
+    Route::livewire('/workspace/projects/{project}/activity', 'pages::admin.workspace.projects.activity.show')->name('workspace.projects.show.activity');
+    Route::livewire('/workspace/projects/{project}/list', 'pages::admin.workspace.projects.list.show')->name('workspace.projects.show.list');
+    Route::livewire('/workspace/tasks/{task}', 'pages::admin.workspace.tasks.show')->name('workspace.tasks.show');
 });
