@@ -5,6 +5,7 @@ use App\Models\ContactMessage;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
+use App\Models\UserNotification;
 use App\Services\AdminNotificationService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -27,6 +28,33 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             unreadOnly: $this->tab === 'unread',
             type: in_array($this->tab, ['ticket', 'contact', 'booking', 'proposal'], true) ? $this->tab : null,
         );
+
+        $userItems = collect();
+
+        if ($this->tab === 'all' || $this->tab === 'unread' || $this->tab === 'workspace') {
+            $userItems = UserNotification::query()
+                ->forUser(auth()->id())
+                ->when($this->tab === 'unread', fn ($query) => $query->unread())
+                ->when($this->tab === 'workspace', fn ($query) => $query->unread())
+                ->with('user')
+                ->latest()
+                ->limit(500)
+                ->get()
+                ->toBase()
+                ->map(fn ($n) => [
+                    'type' => $n->type,
+                    'id' => 'user-'.$n->id,
+                    'title' => $n->title,
+                    'subject' => $n->subject,
+                    'from' => $n->from ?? $n->user?->name ?? 'System',
+                    'priority' => 'new',
+                    'time' => $n->created_at,
+                    'read' => $n->isRead(),
+                    'url' => $n->url ?? '#',
+                ]);
+        }
+
+        $items = $userItems->merge($items)->sortByDesc('time')->values();
 
         $page = Paginator::resolveCurrentPage();
 
@@ -51,7 +79,12 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
 
     public function unreadCount(): int
     {
-        return AdminNotificationService::notifications(limit: 500, unreadOnly: true)->count();
+        $workspaceUnread = UserNotification::query()
+            ->forUser(auth()->id())
+            ->unread()
+            ->count();
+
+        return AdminNotificationService::notifications(limit: 500, unreadOnly: true)->count() + $workspaceUnread;
     }
 
     public function markAllNotificationsRead(): void
@@ -64,8 +97,24 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             ->whereIn('status', ['accepted', 'rejected'])
             ->whereNull('admin_read_at')
             ->update(['admin_read_at' => now()]);
+        UserNotification::query()->forUser(auth()->id())->unread()->update(['read_at' => now()]);
 
         $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
+    }
+
+    public function openNotification(string $id, ?string $url = null): void
+    {
+        $target = $url ?: route('admin.workspace.projects.index');
+
+        if (str_starts_with($id, 'user-')) {
+            UserNotification::query()
+                ->forUser(auth()->id())
+                ->whereKey((int) substr($id, 5))
+                ->unread()
+                ->update(['read_at' => now()]);
+        }
+
+        $this->redirect($target, navigate: true);
     }
 
     public function notificationIcon(string $type): string
@@ -75,6 +124,8 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'contact' => 'mail',
             'booking' => 'event_note',
             'proposal' => 'rate_review',
+            'project' => 'space_dashboard',
+            'issue' => 'rule',
             default => 'notifications',
         };
     }
@@ -86,6 +137,8 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'contact' => 'bg-emerald-100 text-emerald-700',
             'booking' => 'bg-amber-100 text-amber-700',
             'proposal' => 'bg-violet-100 text-violet-700',
+            'project' => 'bg-cyan-100 text-cyan-700',
+            'issue' => 'bg-rose-100 text-rose-700',
             default => 'bg-slate-100 text-slate-700',
         };
     }
@@ -97,6 +150,8 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'contact' => 'bg-emerald-50 text-emerald-700',
             'booking' => 'bg-amber-50 text-amber-700',
             'proposal' => 'bg-violet-50 text-violet-700',
+            'project' => 'bg-cyan-50 text-cyan-700',
+            'issue' => 'bg-rose-50 text-rose-700',
             default => 'bg-slate-50 text-slate-700',
         };
     }
@@ -125,6 +180,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
                     'contact' => 'Contacts',
                     'booking' => 'Bookings',
                     'proposal' => 'Proposals',
+                    'workspace' => 'Workspace',
                 ] as $key => $label)
                     <button type="button" wire:click="$set('tab', '{{ $key }}')"
                         @class([
@@ -149,12 +205,22 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
 
     <div class="space-y-3">
         @forelse ($this->notifications() as $notification)
+            @if (str_starts_with($notification['id'], 'user-'))
+            <button type="button"
+                wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
+                @class([
+                    'block w-full cursor-pointer rounded-xl border bg-white p-4 text-left transition hover:shadow-md',
+                    'border-slate-200' => $notification['read'],
+                    'border-primary/30 bg-primary/5' => ! $notification['read'],
+                ])>
+            @else
             <a href="{{ $notification['url'] }}" wire:navigate
                 @class([
                     'block rounded-xl border bg-white p-4 transition hover:shadow-md',
                     'border-slate-200' => $notification['read'],
                     'border-primary/30 bg-primary/5' => ! $notification['read'],
                 ])>
+            @endif
                 <div class="flex items-start gap-3">
                     <div
                         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $this->notificationColor($notification['type']) }}">
@@ -197,7 +263,11 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
                         </div>
                     </div>
                 </div>
+            @if (str_starts_with($notification['id'], 'user-'))
+            </button>
+            @else
             </a>
+            @endif
         @empty
             <div class="rounded-xl border border-slate-200 bg-white px-4 py-16 text-center">
                 <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">

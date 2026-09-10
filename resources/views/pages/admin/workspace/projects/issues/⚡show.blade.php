@@ -11,6 +11,7 @@ use App\Models\WorkspaceLabel;
 use App\Models\User;
 use App\Models\WorkspaceProject;
 use App\Models\WorkspaceTask;
+use App\Services\UserNotificationService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -477,7 +478,6 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
         return WorkspaceTask::query()
             ->with(['assignee'])
             ->where('project_id', $this->project->id)
-            ->orderBy('sort_order')
             ->latest()
             ->get();
     }
@@ -614,6 +614,32 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
             'old_value' => null,
             'new_value' => $task->title,
         ]);
+
+        $issueUrl = route('admin.workspace.tasks.show', $task);
+        $creatorName = auth()->user()->name;
+
+        if ($task->assignee_id) {
+            if ((int) $task->assignee_id !== (int) auth()->id()) {
+                UserNotificationService::notifyUser(
+                    $task->assignee_id,
+                    'New issue assigned to you',
+                    $task->title,
+                    $creatorName,
+                    $issueUrl,
+                    'issue'
+                );
+            }
+        } else {
+            UserNotificationService::notifyProjectMembers(
+                $this->project,
+                'New issue created in '.$this->project->name,
+                $task->title,
+                $creatorName,
+                $issueUrl,
+                'issue',
+                includeCreator: false
+            );
+        }
 
         $this->reset(['issueTitle', 'issueSummary', 'issueStatus', 'issuePriority', 'issueAssigneeId', 'issueLabelId', 'issueDueDate', 'issueFiles']);
         $this->resetValidation(['issueTitle', 'issueSummary', 'issueStatus', 'issuePriority', 'issueAssigneeId', 'issueLabelId', 'issueDueDate', 'issueFiles']);

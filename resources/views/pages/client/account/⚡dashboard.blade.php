@@ -10,10 +10,12 @@ use App\Models\ToolSubscription;
 use App\Models\UserBgRemovedImage;
 use App\Models\UserCompressedImage;
 use App\Models\UserResizedImage;
+use App\Models\WorkspaceProject;
 use App\Services\WhmcsApi;
 use App\Services\WhmcsApiException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 new class extends Component
@@ -623,6 +625,22 @@ new class extends Component
 
         /*
         |--------------------------------------------------------------------------
+        | Workspace Projects
+        |--------------------------------------------------------------------------
+        */
+
+        $workspaceProjects =
+            WorkspaceProject::query()
+            ->with('updates.author')
+            ->withCount(['tasks', 'updates'])
+            ->where('client_id', $userId)
+            ->where('is_active', true)
+            ->latest('updated_at')
+            ->take(5)
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
         | WHMCS
         |--------------------------------------------------------------------------
         */
@@ -939,6 +957,9 @@ new class extends Component
 
             'activeBackupCount' =>
             $activeBackupCount,
+
+            'workspaceProjects' =>
+            $workspaceProjects,
 
             'whmcsAccount' =>
             $whmcsAccount,
@@ -2047,6 +2068,117 @@ new class extends Component
                             <p
                                 class="mt-1 text-sm text-blue-100/50">
                                 Your active tool plans will appear here.
+                            </p>
+
+                        </div>
+
+                        @endif
+
+                    </div>
+
+                    {{-- Project Activity --}}
+
+                    <div
+                        class="mt-6 client-card p-6">
+
+                        <div
+                            class="mb-4 flex items-center justify-between gap-4">
+
+                            <h2
+                                class="text-xl font-bold text-white">
+                                Project Activity
+                            </h2>
+
+                            <a
+                                href="{{ route('account.workspace-projects') }}"
+                                wire:navigate
+                                class="text-sm font-semibold
+                                       text-cyan-200 hover:text-white">
+                                View all
+                            </a>
+
+                        </div>
+
+                        @if ($workspaceProjects->isNotEmpty())
+
+                        <div
+                            class="space-y-3">
+
+                            @foreach (
+                            $workspaceProjects
+                            as $project
+                            )
+
+                            <a
+                                wire:key="dashboard-ws-project-{{ $project->id }}"
+                                href="{{ route(
+                                        'account.workspace-project.activity',
+                                        $project
+                                    ) }}"
+                                wire:navigate
+                                class="block rounded-2xl
+                                       border border-white/10
+                                       bg-white/6 p-4
+                                       transition hover:bg-white/10">
+
+                                <div
+                                    class="flex items-start
+                                           justify-between gap-4">
+
+                                    <div
+                                        class="min-w-0">
+
+                                        <p
+                                            class="truncate font-semibold text-white">
+                                            {{ $project->name }}
+                                        </p>
+
+                                        <p
+                                            class="mt-1 text-xs text-blue-100/45">
+                                            {{ $project->status->label() }}
+                                            &middot;
+                                            {{ $project->updates_count }}
+                                            activity
+                                            {{ Str::plural('entry', $project->updates_count) }}
+                                            &middot;
+                                            Updated
+                                            {{ $this->timeAgo(
+                                                    $project->updated_at
+                                                ) }}
+                                        </p>
+
+                                    </div>
+
+                                    <span
+                                        class="material-symbols-outlined
+                                               text-cyan-200">
+                                        history
+                                    </span>
+
+                                </div>
+
+                            </a>
+
+                            @endforeach
+
+                        </div>
+
+                        @else
+
+                        <div
+                            class="rounded-2xl border border-dashed
+                                   border-white/15 bg-white/5
+                                   p-8 text-center">
+
+                            <p
+                                class="font-semibold text-white">
+                                No active projects
+                            </p>
+
+                            <p
+                                class="mt-1 text-sm text-blue-100/50">
+                                When a project is assigned to you,
+                                its activity will appear here.
                             </p>
 
                         </div>

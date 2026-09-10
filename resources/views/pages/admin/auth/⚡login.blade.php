@@ -63,7 +63,7 @@ new #[Layout('layouts.admin-auth')] class extends Component {
                         <img src="{{ $logo }}" alt="">
                     </div>
                     <div>
-                        <p class="text-lg font-semibold tracking-wide text-white">TechWave Admin</p>
+                        <p class="text-lg font-semibold tracking-wide text-white">Techwave Admin</p>
                         <p class="text-sm text-slate-300">Management Portal</p>
                     </div>
                 </a>

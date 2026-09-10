@@ -190,6 +190,10 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::livewire('/account/proposals', 'pages::client.proposals.index')->name('client.proposals.index');
     Route::livewire('/account/proposals/{proposal}', 'pages::client.proposals.show')->name('client.proposals.show');
 
+    // Workspace projects (client view)
+    Route::livewire('/account/projects', 'pages::client.account.workspace.projects')->name('account.workspace-projects');
+    Route::livewire('/account/projects/{project}/activity', 'pages::client.account.workspace.project-activity')->name('account.workspace-project.activity');
+
     // Tool Subscriptions
     Route::livewire('/tools/subscriptions/checkout/{plan}', 'pages::client.tool-subscriptions.checkout')->name('client.tool-subscriptions.checkout');
 

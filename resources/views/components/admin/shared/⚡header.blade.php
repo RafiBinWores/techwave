@@ -5,7 +5,9 @@ use App\Models\ContactMessage;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
+use App\Models\UserNotification;
 use App\Services\AdminNotificationService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
@@ -13,6 +15,27 @@ use Livewire\Component;
 
 new class extends Component {
     public int $notificationRefreshKey = 0;
+
+    public function getListeners(): array
+    {
+        $authId = Auth::id();
+
+        if (! $authId) {
+            return [];
+        }
+
+        return [
+            "echo-private:user.{$authId}.notifications,.user.notification" => 'refreshUserNotifications',
+        ];
+    }
+
+    public function refreshUserNotifications(): void
+    {
+        $this->notificationRefreshKey++;
+
+        $this->dispatch('user-notification-received');
+        $this->dispatch('toast', message: 'You have a new notification.', type: 'info');
+    }
 
     #[On('echo-private:admin.tickets,.ticket.updated')]
     public function refreshAdminTicketNotifications(array $event = []): void
@@ -97,14 +120,65 @@ new class extends Component {
             ->count();
     }
 
+    public function unreadUserNotificationCount(): int
+    {
+        return UserNotification::query()
+            ->forUser(Auth::id())
+            ->unread()
+            ->count();
+    }
+
     public function totalUnreadCount(): int
     {
-        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount() + $this->unreadProposalCommentCount() + $this->unreadProposalStatusCount();
+        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount() + $this->unreadProposalCommentCount() + $this->unreadProposalStatusCount() + $this->unreadUserNotificationCount();
     }
 
     public function latestNotifications()
     {
-        return AdminNotificationService::notifications(limit: 10, unreadOnly: true);
+        $adminNotifications = AdminNotificationService::notifications(limit: 10, unreadOnly: true);
+
+        $userNotifications = UserNotification::query()
+            ->forUser(Auth::id())
+            ->unread()
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(fn ($n) => [
+                'type' => $n->type,
+                'id' => 'user-'.$n->id,
+                'title' => $n->title,
+                'subject' => $n->subject,
+                'from' => $n->from,
+                'priority' => 'new',
+                'time' => $n->created_at,
+                'read' => $n->isRead(),
+                'url' => $n->url ?? '#',
+            ]);
+
+        return $userNotifications
+            ->merge($adminNotifications)
+            ->sortByDesc('time')
+            ->values()
+            ->take(10);
+    }
+
+    public function openNotification(string $id, ?string $url = null): void
+    {
+        $target = $url ?: route('admin.workspace.projects.index');
+
+        if (str_starts_with($id, 'user-')) {
+            UserNotification::query()
+                ->forUser(Auth::id())
+                ->whereKey((int) substr($id, 5))
+                ->unread()
+                ->update(['read_at' => now()]);
+
+            $this->notificationRefreshKey++;
+
+            $this->dispatch('user-notification-received');
+        }
+
+        $this->redirect($target, navigate: true);
     }
 
     public function markAllNotificationsRead(): void
@@ -140,6 +214,13 @@ new class extends Component {
                 'admin_read_at' => now(),
             ]);
 
+        UserNotification::query()
+            ->forUser(Auth::id())
+            ->unread()
+            ->update([
+                'read_at' => now(),
+            ]);
+
         $this->notificationRefreshKey++;
 
         $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
@@ -152,6 +233,8 @@ new class extends Component {
             'contact' => 'mail',
             'booking' => 'event_note',
             'proposal' => 'rate_review',
+            'project' => 'space_dashboard',
+            'issue' => 'rule',
             default => 'notifications',
         };
     }
@@ -163,6 +246,8 @@ new class extends Component {
             'contact' => 'bg-emerald-100 text-emerald-700',
             'booking' => 'bg-amber-100 text-amber-700',
             'proposal' => 'bg-violet-100 text-violet-700',
+            'project' => 'bg-cyan-100 text-cyan-700',
+            'issue' => 'bg-rose-100 text-rose-700',
             default => 'bg-slate-100 text-slate-700',
         };
     }
@@ -174,6 +259,8 @@ new class extends Component {
             'contact' => 'bg-emerald-50 text-emerald-700',
             'booking' => 'bg-amber-50 text-amber-700',
             'proposal' => 'bg-violet-50 text-violet-700',
+            'project' => 'bg-cyan-50 text-cyan-700',
+            'issue' => 'bg-rose-50 text-rose-700',
             default => 'bg-slate-50 text-slate-700',
         };
     }
@@ -233,7 +320,8 @@ new class extends Component {
             x-on:admin-contact-notification-received.window="$nextTick(() => {})"
             x-on:admin-booking-notification-received.window="$nextTick(() => {})"
             x-on:admin-proposal-notification-received.window="$nextTick(() => {})"
-            x-on:admin-proposal-status-received.window="$nextTick(() => {})">
+            x-on:admin-proposal-status-received.window="$nextTick(() => {})"
+            x-on:user-notification-received.window="$nextTick(() => {})">
 
             @php
             $unreadTicketCount = $this->unreadTicketCount();
@@ -241,6 +329,7 @@ new class extends Component {
             $unreadBookingCount = $this->unreadBookingCount();
             $unreadProposalCommentCount = $this->unreadProposalCommentCount();
             $unreadProposalStatusCount = $this->unreadProposalStatusCount();
+            $unreadUserNotificationCount = $this->unreadUserNotificationCount();
             $totalUnreadCount = $this->totalUnreadCount();
             $notifications = $this->latestNotifications();
             @endphp
@@ -275,7 +364,8 @@ new class extends Component {
                             {{ $unreadContactCount }} contact{{ $unreadContactCount === 1 ? '' : 's' }},
                             {{ $unreadBookingCount }} booking{{ $unreadBookingCount === 1 ? '' : 's' }},
                             {{ $unreadProposalCommentCount }} proposal comment{{ $unreadProposalCommentCount === 1 ? '' : 's' }},
-                            {{ $unreadProposalStatusCount }} proposal update{{ $unreadProposalStatusCount === 1 ? '' : 's' }}
+                            {{ $unreadProposalStatusCount }} proposal update{{ $unreadProposalStatusCount === 1 ? '' : 's' }},
+                            {{ $unreadUserNotificationCount }} workspace{{ $unreadUserNotificationCount === 1 ? '' : 's' }}
                         </p>
                         @endif
                     </div>
@@ -289,8 +379,14 @@ new class extends Component {
                 <div wire:key="admin-notification-list-{{ $notificationRefreshKey }}"
                     class="max-h-88 divide-y divide-slate-100 overflow-y-auto">
                     @forelse ($notifications as $notification)
+                    @if (str_starts_with($notification['id'], 'user-'))
+                    <button type="button" @click.stop="notificationOpen = false"
+                        wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
+                        class="flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
+                    @else
                     <a href="{{ $notification['url'] }}" wire:navigate @click="notificationOpen = false"
                         class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
+                    @endif
 
                         <div
                             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $this->notificationColor($notification['type']) }}">
@@ -323,7 +419,11 @@ new class extends Component {
                                 {{ $notification['time']?->diffForHumans() }}
                             </p>
                         </div>
+                    @if (str_starts_with($notification['id'], 'user-'))
+                    </button>
+                    @else
                     </a>
+                    @endif
                     @empty
                     <div class="px-4 py-10 text-center">
                         <div

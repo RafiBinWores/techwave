@@ -59,3 +59,9 @@ Broadcast::channel('user.{userId}.chat', function ($user, $userId) use ($adminRo
         && in_array($user->role ?? null, $adminRoles, true)
         && (int) $user->id === (int) $userId;
 });
+
+Broadcast::channel('user.{userId}.notifications', function ($user, $userId) use ($adminRoles) {
+    return $user
+        && in_array($user->role ?? null, $adminRoles, true)
+        && (int) $user->id === (int) $userId;
+});

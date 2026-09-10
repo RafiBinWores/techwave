@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Models\WorkspaceLabel;
 use App\Models\User;
 use App\Models\WorkspaceProject;
+use App\Services\UserNotificationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -145,6 +146,21 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
         }
 
         $project->ensureLabel($validated['formLabel'] ?? '', $this->formLabelColor);
+
+        $notificationIds = collect($this->formMemberIds)
+            ->push($this->formProjectManagerId)
+            ->filter()
+            ->unique()
+            ->reject(fn($id) => (int) $id === (int) auth()->id());
+
+        UserNotificationService::notifyUsers(
+            $notificationIds,
+            'New project assigned to you',
+            $validated['formName'],
+            auth()->user()->name,
+            route('admin.workspace.projects.show.overview', $project),
+            'project'
+        );
 
         session()->flash('toast', [
             'type' => 'success',
