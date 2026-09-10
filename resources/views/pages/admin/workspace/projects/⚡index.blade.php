@@ -855,7 +855,7 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
                     {{-- Team lead (searchable) --}}
                     <span class="relative" x-data="{ open: false, search: '' }" @click.outside="open = false">
                         <button type="button" @click="open = !open"
-                            class="flex h-7 max-w-[140px] items-center gap-1 rounded-md border border-slate-200 bg-white pl-1.5 pr-5 text-xs font-medium text-on-surface outline-none transition hover:border-primary/40 focus:border-primary">
+                            class="flex h-7 max-w-35 items-center gap-1 rounded-md border border-slate-200 bg-white pl-1.5 pr-5 text-xs font-medium text-on-surface outline-none transition hover:border-primary/40 focus:border-primary">
                             <span class="truncate">
                                 {{ $this->selectedManagerName() ?: 'Team Lead' }}
                             </span>
@@ -904,7 +904,7 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
                     {{-- Client (searchable) --}}
                     <span class="relative" x-data="{ open: false, search: '' }" @click.outside="open = false">
                         <button type="button" @click="open = !open"
-                            class="flex h-7 max-w-[140px] items-center gap-1 rounded-md border border-slate-200 bg-white pl-1.5 pr-5 text-xs font-medium text-on-surface outline-none transition hover:border-primary/40 focus:border-primary">
+                            class="flex h-7 max-w-35 items-center gap-1 rounded-md border border-slate-200 bg-white pl-1.5 pr-5 text-xs font-medium text-on-surface outline-none transition hover:border-primary/40 focus:border-primary">
                             <span class="truncate">
                                 {{ $this->selectedClientName() ?: 'Client' }}
                             </span>
@@ -953,7 +953,7 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
                     {{-- Members (searchable multi-select) --}}
                     <span class="relative" x-data="{ open: false, search: '' }" @click.outside="open = false">
                         <button type="button" @click="open = !open"
-                            class="flex h-7 max-w-[140px] items-center gap-1 rounded-md border border-slate-200 bg-white pl-1.5 pr-5 text-xs font-medium text-on-surface outline-none transition hover:border-primary/40 focus:border-primary">
+                            class="flex h-7 max-w-35 items-center gap-1 rounded-md border border-slate-200 bg-white pl-1.5 pr-5 text-xs font-medium text-on-surface outline-none transition hover:border-primary/40 focus:border-primary">
                             <span class="truncate">
                                 {{ $this->formMemberIds ? count($this->formMemberIds).' member'.(count($this->formMemberIds) > 1 ? 's' : '') : 'Members' }}
                             </span>

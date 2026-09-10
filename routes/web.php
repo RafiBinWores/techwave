@@ -13,6 +13,7 @@ use App\Http\Controllers\WhmcsSsoController;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -43,7 +44,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, string $id, 
 })->middleware('signed')->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
-    if (! auth()->check()) {
+    if (!Auth::check()) {
         return redirect()->route('home')->with('auth_error', 'Please login first to resend the verification email.');
     }
 
