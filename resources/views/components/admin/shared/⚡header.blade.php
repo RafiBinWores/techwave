@@ -20,7 +20,7 @@ new class extends Component {
     {
         $authId = Auth::id();
 
-        if (! $authId) {
+        if (!$authId) {
             return [];
         }
 
@@ -122,10 +122,7 @@ new class extends Component {
 
     public function unreadUserNotificationCount(): int
     {
-        return UserNotification::query()
-            ->forUser(Auth::id())
-            ->unread()
-            ->count();
+        return UserNotification::query()->forUser(Auth::id())->unread()->count();
     }
 
     public function totalUnreadCount(): int
@@ -135,17 +132,12 @@ new class extends Component {
 
     public function latestNotifications()
     {
-        $adminNotifications = AdminNotificationService::notifications(limit: 10, unreadOnly: true);
+        $adminNotifications = collect(AdminNotificationService::notifications(limit: 10, unreadOnly: true));
 
-        $userNotifications = UserNotification::query()
-            ->forUser(Auth::id())
-            ->unread()
-            ->latest()
-            ->limit(10)
-            ->get()
-            ->map(fn ($n) => [
+        $userNotifications = UserNotification::query()->forUser(Auth::id())->unread()->latest()->limit(10)->get()->toBase()->map(
+            fn($n) => [
                 'type' => $n->type,
-                'id' => 'user-'.$n->id,
+                'id' => 'user-' . $n->id,
                 'title' => $n->title,
                 'subject' => $n->subject,
                 'from' => $n->from,
@@ -153,13 +145,10 @@ new class extends Component {
                 'time' => $n->created_at,
                 'read' => $n->isRead(),
                 'url' => $n->url ?? '#',
-            ]);
+            ],
+        );
 
-        return $userNotifications
-            ->merge($adminNotifications)
-            ->sortByDesc('time')
-            ->values()
-            ->take(10);
+        return $userNotifications->merge($adminNotifications)->sortByDesc('time')->values()->take(10);
     }
 
     public function openNotification(string $id, ?string $url = null): void
@@ -324,14 +313,14 @@ new class extends Component {
             x-on:user-notification-received.window="$nextTick(() => {})">
 
             @php
-            $unreadTicketCount = $this->unreadTicketCount();
-            $unreadContactCount = $this->unreadContactMessageCount();
-            $unreadBookingCount = $this->unreadBookingCount();
-            $unreadProposalCommentCount = $this->unreadProposalCommentCount();
-            $unreadProposalStatusCount = $this->unreadProposalStatusCount();
-            $unreadUserNotificationCount = $this->unreadUserNotificationCount();
-            $totalUnreadCount = $this->totalUnreadCount();
-            $notifications = $this->latestNotifications();
+                $unreadTicketCount = $this->unreadTicketCount();
+                $unreadContactCount = $this->unreadContactMessageCount();
+                $unreadBookingCount = $this->unreadBookingCount();
+                $unreadProposalCommentCount = $this->unreadProposalCommentCount();
+                $unreadProposalStatusCount = $this->unreadProposalStatusCount();
+                $unreadUserNotificationCount = $this->unreadUserNotificationCount();
+                $totalUnreadCount = $this->totalUnreadCount();
+                $notifications = $this->latestNotifications();
             @endphp
 
             <button type="button" @click.stop="notificationOpen = !notificationOpen"
@@ -339,10 +328,10 @@ new class extends Component {
                 <span class="material-symbols-outlined">notifications</span>
 
                 @if ($totalUnreadCount > 0)
-                <span wire:key="admin-notification-badge-{{ $notificationRefreshKey }}-{{ $totalUnreadCount }}"
-                    class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                    {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
-                </span>
+                    <span wire:key="admin-notification-badge-{{ $notificationRefreshKey }}-{{ $totalUnreadCount }}"
+                        class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                        {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
+                    </span>
                 @endif
             </button>
 
@@ -359,14 +348,17 @@ new class extends Component {
                         </p>
 
                         @if ($totalUnreadCount > 0)
-                        <p class="mt-1 text-[11px] text-slate-400">
-                            {{ $unreadTicketCount }} ticket{{ $unreadTicketCount === 1 ? '' : 's' }},
-                            {{ $unreadContactCount }} contact{{ $unreadContactCount === 1 ? '' : 's' }},
-                            {{ $unreadBookingCount }} booking{{ $unreadBookingCount === 1 ? '' : 's' }},
-                            {{ $unreadProposalCommentCount }} proposal comment{{ $unreadProposalCommentCount === 1 ? '' : 's' }},
-                            {{ $unreadProposalStatusCount }} proposal update{{ $unreadProposalStatusCount === 1 ? '' : 's' }},
-                            {{ $unreadUserNotificationCount }} workspace{{ $unreadUserNotificationCount === 1 ? '' : 's' }}
-                        </p>
+                            <p class="mt-1 text-[11px] text-slate-400">
+                                {{ $unreadTicketCount }} ticket{{ $unreadTicketCount === 1 ? '' : 's' }},
+                                {{ $unreadContactCount }} contact{{ $unreadContactCount === 1 ? '' : 's' }},
+                                {{ $unreadBookingCount }} booking{{ $unreadBookingCount === 1 ? '' : 's' }},
+                                {{ $unreadProposalCommentCount }} proposal
+                                comment{{ $unreadProposalCommentCount === 1 ? '' : 's' }},
+                                {{ $unreadProposalStatusCount }} proposal
+                                update{{ $unreadProposalStatusCount === 1 ? '' : 's' }},
+                                {{ $unreadUserNotificationCount }}
+                                workspace{{ $unreadUserNotificationCount === 1 ? '' : 's' }}
+                            </p>
                         @endif
                     </div>
 
@@ -379,14 +371,14 @@ new class extends Component {
                 <div wire:key="admin-notification-list-{{ $notificationRefreshKey }}"
                     class="max-h-88 divide-y divide-slate-100 overflow-y-auto">
                     @forelse ($notifications as $notification)
-                    @if (str_starts_with($notification['id'], 'user-'))
-                    <button type="button" @click.stop="notificationOpen = false"
-                        wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
-                        class="flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
-                    @else
-                    <a href="{{ $notification['url'] }}" wire:navigate @click="notificationOpen = false"
-                        class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
-                    @endif
+                        @if (str_starts_with($notification['id'], 'user-'))
+                            <button type="button" @click.stop="notificationOpen = false"
+                                wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
+                                class="flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
+                            @else
+                                <a href="{{ $notification['url'] }}" wire:navigate @click="notificationOpen = false"
+                                    class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
+                        @endif
 
                         <div
                             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $this->notificationColor($notification['type']) }}">
@@ -419,26 +411,26 @@ new class extends Component {
                                 {{ $notification['time']?->diffForHumans() }}
                             </p>
                         </div>
-                    @if (str_starts_with($notification['id'], 'user-'))
-                    </button>
-                    @else
-                    </a>
-                    @endif
+                        @if (str_starts_with($notification['id'], 'user-'))
+                            </button>
+                        @else
+                            </a>
+                        @endif
                     @empty
-                    <div class="px-4 py-10 text-center">
-                        <div
-                            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                            <span class="material-symbols-outlined">notifications_off</span>
+                        <div class="px-4 py-10 text-center">
+                            <div
+                                class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                                <span class="material-symbols-outlined">notifications_off</span>
+                            </div>
+
+                            <h4 class="mt-3 text-sm font-semibold text-slate-900">
+                                No new notifications
+                            </h4>
+
+                            <p class="mt-1 text-xs text-slate-500">
+                                New tickets, contacts, bookings, and proposal comments will appear here.
+                            </p>
                         </div>
-
-                        <h4 class="mt-3 text-sm font-semibold text-slate-900">
-                            No new notifications
-                        </h4>
-
-                        <p class="mt-1 text-xs text-slate-500">
-                            New tickets, contacts, bookings, and proposal comments will appear here.
-                        </p>
-                    </div>
                     @endforelse
                 </div>
 
@@ -451,20 +443,22 @@ new class extends Component {
                     </a>
 
                     @if ($totalUnreadCount > 0)
-                    <button type="button" wire:click="markAllNotificationsRead"
-                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
-                        <span class="material-symbols-outlined text-[17px]">done_all</span>
-                        Mark all as read
-                    </button>
+                        <button type="button" wire:click="markAllNotificationsRead"
+                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                            <span class="material-symbols-outlined text-[17px]">done_all</span>
+                            Mark all as read
+                        </button>
                     @endif
                 </div>
             </div>
         </div>
 
         <!-- Fullscreen Toggle -->
-        <button type="button" @click="if (!document.fullscreenElement) { document.documentElement.requestFullscreen() } else { document.exitFullscreen() }"
+        <button type="button"
+            @click="if (!document.fullscreenElement) { document.documentElement.requestFullscreen() } else { document.exitFullscreen() }"
             class="hidden sm:flex p-2 text-slate-500 hover:bg-slate-100 transition-colors rounded-full cursor-pointer">
-            <span class="material-symbols-outlined" x-text="document.fullscreenElement ? 'fullscreen_exit' : 'fullscreen'">fullscreen</span>
+            <span class="material-symbols-outlined"
+                x-text="document.fullscreenElement ? 'fullscreen_exit' : 'fullscreen'">fullscreen</span>
         </button>
 
         <div class="hidden sm:block h-8 w-px bg-slate-200 mx-1"></div>
@@ -474,13 +468,13 @@ new class extends Component {
             <button type="button" @click="userMenu = !userMenu"
                 class="flex items-center gap-2 cursor-pointer rounded-lg p-1.5 transition hover:bg-slate-100">
                 @if (auth()->user()->avatar)
-                <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
-                    class="h-8 w-8 object-cover rounded-full" />
+                    <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
+                        class="h-8 w-8 object-cover rounded-full" />
                 @else
-                <div
-                    class="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-primary to-sky-600 text-xs font-bold text-white">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                </div>
+                    <div
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-primary to-sky-600 text-xs font-bold text-white">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    </div>
                 @endif
 
                 <div class="text-left">
