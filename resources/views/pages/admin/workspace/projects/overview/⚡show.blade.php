@@ -1,13 +1,13 @@
 <?php
 
 use App\Enums\ProjectMemberRole;
-    use App\Enums\ProjectPriority;
-    use App\Enums\ProjectStatus;
-    use App\Enums\TaskStatus;
-    use App\Enums\UserRole;
-    use App\Models\WorkspaceLabel;
-    use App\Models\User;
-    use App\Models\WorkspaceProject;
+use App\Enums\ProjectPriority;
+use App\Enums\ProjectStatus;
+use App\Enums\TaskStatus;
+use App\Enums\UserRole;
+use App\Models\WorkspaceLabel;
+use App\Models\User;
+use App\Models\WorkspaceProject;
 use App\Models\WorkspaceProjectUpdate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
@@ -100,7 +100,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
             return true;
         }
 
-        if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true)) {
             return true;
         }
 
@@ -195,7 +195,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
             return true;
         }
 
-        if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true)) {
             return true;
         }
 

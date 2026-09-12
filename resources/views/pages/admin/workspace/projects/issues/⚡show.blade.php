@@ -75,7 +75,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
             return true;
         }
 
-        if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true)) {
             return true;
         }
 
@@ -96,7 +96,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
             return true;
         }
 
-        if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true)) {
             return true;
         }
 
@@ -118,7 +118,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
             return true;
         }
 
-        if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true)) {
             return true;
         }
 

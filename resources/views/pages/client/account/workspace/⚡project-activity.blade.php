@@ -100,6 +100,12 @@ new #[Title('Project Activity')] class extends Component {
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3">
+                            <a href="{{ route('account.workspace-project.discussion', $project) }}"
+                                wire:navigate
+                                class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-medium text-blue-100/70 transition hover:bg-white/12">
+                                Discussion
+                            </a>
+
                             <span class="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-medium text-blue-100/70">
                                 {{ $project->status->label() }}
                             </span>
@@ -171,7 +177,7 @@ new #[Title('Project Activity')] class extends Component {
 
                         <div class="py-10 text-center">
                             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-cyan-200">
-                                <span class="material-symbols-outlined text-3xl">updates</span>
+                                <span class="material-symbols-outlined text-3xl">update</span>
                             </div>
 
                             <p class="mt-4 font-semibold text-white">

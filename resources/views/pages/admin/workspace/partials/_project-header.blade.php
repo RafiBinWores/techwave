@@ -39,9 +39,10 @@
         <a
             href="{{ route('admin.workspace.projects.show.overview', $project) }}"
             wire:navigate
-            class="relative flex h-10 shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium transition"
+            class="relative flex h-10 shrink-0 cursor-pointer items-center gap-1.5 text-[11px] font-medium transition sm:text-xs"
             @class([ 'text-slate-900'=> $active === 'overview',
             'text-slate-500 hover:text-slate-900' => $active !== 'overview', ])>
+            <span class="material-symbols-outlined text-[10px] text-slate-700 md:text-[15px]">space_dashboard</span>
             Overview
 
             @if ($active === 'overview')
@@ -52,9 +53,10 @@
         <a
             href="{{ route('admin.workspace.projects.show.issues', $project) }}"
             wire:navigate
-            class="relative flex h-10 shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium transition"
+            class="relative flex h-10 shrink-0 cursor-pointer items-center gap-1.5 text-[11px] font-medium transition sm:text-xs"
             @class([ 'text-slate-900'=> $active === 'issues',
             'text-slate-500 hover:text-slate-900' => $active !== 'issues', ])>
+            <span class="material-symbols-outlined text-[10px] text-slate-700 sm:text-[15px]">task_alt</span>
             Issues
 
             <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px]"
@@ -71,9 +73,10 @@
         <a
             href="{{ route('admin.workspace.projects.show.activity', $project) }}"
             wire:navigate
-            class="relative flex h-10 shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium transition"
+            class="relative flex h-10 shrink-0 cursor-pointer items-center gap-1.5 text-[11px] font-medium transition sm:text-xs"
             @class([ 'text-slate-900'=> $active === 'activity',
             'text-slate-500 hover:text-slate-900' => $active !== 'activity', ])>
+            <span class="material-symbols-outlined text-[10px] text-slate-700 sm:text-[15px]">history</span>
             Activity
 
             <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px]"
@@ -83,6 +86,20 @@
             </span>
 
             @if ($active === 'activity')
+            <span class="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-slate-900"></span>
+            @endif
+        </a>
+
+        <a
+            href="{{ route('admin.workspace.projects.show.discussion', $project) }}"
+            wire:navigate
+            class="relative flex h-10 shrink-0 cursor-pointer items-center gap-1.5 text-[11px] font-medium transition sm:text-xs"
+            @class([ 'text-slate-900'=> $active === 'discussion',
+            'text-slate-500 hover:text-slate-900' => $active !== 'discussion', ])>
+            <span class="material-symbols-outlined text-[10px] text-slate-700 sm:text-[15px]">forum</span>
+            Discussion
+
+            @if ($active === 'discussion')
             <span class="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-slate-900"></span>
             @endif
         </a>

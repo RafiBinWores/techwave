@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Models\SupportTicket;
+use App\Models\WorkspaceProject;
 use Illuminate\Support\Facades\Broadcast;
 
 $adminRoles = [
@@ -60,8 +61,33 @@ Broadcast::channel('user.{userId}.chat', function ($user, $userId) use ($adminRo
         && (int) $user->id === (int) $userId;
 });
 
-Broadcast::channel('user.{userId}.notifications', function ($user, $userId) use ($adminRoles) {
-    return $user
-        && in_array($user->role ?? null, $adminRoles, true)
-        && (int) $user->id === (int) $userId;
+
+Broadcast::channel('user.{userId}.notifications', function ($user, $userId) {
+    return $user && (int) $user->id === (int) $userId;
+});
+
+Broadcast::channel('project.{projectId}.messages', function ($user, $projectId) {
+    if (! $user) {
+        return false;
+    }
+
+    $project = WorkspaceProject::query()->find($projectId);
+
+    if (! $project) {
+        return false;
+    }
+
+    if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        return true;
+    }
+
+    if ((int) $project->client_id === (int) $user->id) {
+        return true;
+    }
+
+    if ((int) $project->creator_id === (int) $user->id) {
+        return true;
+    }
+
+    return $project->members()->where('users.id', $user->id)->exists();
 });

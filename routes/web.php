@@ -194,6 +194,7 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Workspace projects (client view)
     Route::livewire('/account/projects', 'pages::client.account.workspace.projects')->name('account.workspace-projects');
     Route::livewire('/account/projects/{project}/activity', 'pages::client.account.workspace.project-activity')->name('account.workspace-project.activity');
+    Route::livewire('/account/projects/{project}/discussion', 'pages::client.account.workspace.project-discussion')->name('account.workspace-project.discussion');
 
     // Tool Subscriptions
     Route::livewire('/tools/subscriptions/checkout/{plan}', 'pages::client.tool-subscriptions.checkout')->name('client.tool-subscriptions.checkout');
@@ -425,4 +426,5 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/workspace/projects/{project}/activity', 'pages::admin.workspace.projects.activity.show')->name('workspace.projects.show.activity');
     Route::livewire('/workspace/projects/{project}/list', 'pages::admin.workspace.projects.list.show')->name('workspace.projects.show.list');
     Route::livewire('/workspace/tasks/{task}', 'pages::admin.workspace.tasks.show')->name('workspace.tasks.show');
+    Route::livewire('/workspace/projects/{project}/discussion', 'pages::admin.workspace.projects.discussion.show')->name('workspace.projects.show.discussion');
 });

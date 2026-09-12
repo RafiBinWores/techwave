@@ -68,7 +68,7 @@ class WorkspaceProject extends Model
 
     protected function label(): Attribute
     {
-        return Attribute::get(fn () => $this->labels()->value('name'));
+        return Attribute::get(fn() => $this->labels()->value('name'));
     }
 
     public function memberCount(): int
@@ -110,6 +110,12 @@ class WorkspaceProject extends Model
     public function updates()
     {
         return $this->hasMany(WorkspaceProjectUpdate::class)
+            ->latest();
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(WorkspaceProjectMessage::class)
             ->latest();
     }
 }

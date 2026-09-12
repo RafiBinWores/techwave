@@ -102,8 +102,18 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
         }
     }
 
+    public function canCreateProject(): bool
+    {
+        $role = auth()->user()?->role;
+
+        return $role instanceof UserRole
+            && in_array($role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER, UserRole::MANAGER], true);
+    }
+
     public function openCreateModal(): void
     {
+        abort_unless($this->canCreateProject(), 403);
+
         $this->reset(['formName', 'formSlug', 'formDescription', 'formDetails', 'editorUpload', 'formPriority', 'formLabel', 'formLabelColor', 'formIcon', 'formIconColor', 'formStartDate', 'formTargetDate', 'formProjectManagerId', 'formClientId', 'formMemberIds']);
         $this->formStatus = 'backlog';
         $this->resetValidation();
@@ -112,6 +122,8 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
 
     public function createProject(): void
     {
+        abort_unless($this->canCreateProject(), 403);
+
         $validated = $this->validate();
 
         $project = WorkspaceProject::create([
@@ -402,6 +414,8 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
 
     public function delete(int $projectId): void
     {
+        abort_unless($this->canCreateProject(), 403);
+
         $project = WorkspaceProject::findOrFail($projectId);
         $project->delete();
 
@@ -487,6 +501,7 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
                     </div>
                 </div>
 
+                @if ($this->canCreateProject())
                 <button
                     type="button"
                     wire:click="openCreateModal"
@@ -494,6 +509,7 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
                     <span class="material-symbols-outlined text-lg">add</span>
                     New Project
                 </button>
+                @endif
             </div>
         </div>
 
@@ -609,10 +625,12 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
                                         Create your first project to start managing tasks.
                                     </p>
 
+                                    @if ($this->canCreateProject())
                                     <button type="button" wire:click="openCreateModal"
                                         class="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 cursor-pointer">
                                         Create Project
                                     </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

@@ -81,25 +81,30 @@ new #[Title('My Projects')] class extends Component {
 
                     @forelse ($this->projects() as $project)
 
-                    <a
+                    <div
                         wire:key="ws-project-{{ $project->id }}"
-                        href="{{ route('account.workspace-project.activity', $project) }}"
                         wire:navigate
-                        class="mb-4 block rounded-2xl border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition hover:-translate-y-0.5 hover:bg-white/10">
+                        x-on:click="window.location.href = '{{ route('account.workspace-project.activity', $project) }}'"
+                        class="mb-4 block cursor-pointer rounded-2xl border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition hover:-translate-y-0.5 hover:bg-white/10">
 
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex items-center gap-4">
                                 <div
-                                    class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 shadow-inner"
-                                    style="background: {{ $project->icon_color ?: '#4f46e5' }}22;">
-                                    <span class="material-symbols-outlined text-xl" style="color: {{ $project->icon_color ?: '#4f46e5' }}">
+                                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-white/15"
+                                    style="background: {{ $project->icon_color ?: '#4f46e5' }}15;">
+                                    <span class="material-symbols-outlined text-xl leading-none"
+                                        style="color: {{ $project->icon_color ?: '#4f46e5' }}">
                                         {{ $project->icon ?: 'folder' }}
                                     </span>
                                 </div>
 
                                 <div class="min-w-0">
-                                    <h2 class="truncate text-lg font-bold text-white">
-                                        {{ $project->name }}
+                                    <h2 class="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
+                                        <span class="truncate">{{ $project->name }}</span>
+
+                                        <span class="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-none {{ $this->statusBadge($project->status->value) }}">
+                                            {{ $project->status->label() }}
+                                        </span>
                                     </h2>
 
                                     <p class="mt-0.5 text-sm text-blue-100/55">
@@ -108,9 +113,16 @@ new #[Title('My Projects')] class extends Component {
                                 </div>
                             </div>
 
-                            <span class="shrink-0 rounded-full border px-3 py-1 text-xs font-medium {{ $this->statusBadge($project->status->value) }}">
-                                {{ $project->status->label() }}
-                            </span>
+                            <div class="flex shrink-0 items-center gap-2">
+                                <a href="{{ route('account.workspace-project.discussion', $project) }}"
+                                    wire:navigate
+                                    title="Open discussion"
+                                    onclick="event.stopPropagation()"
+                                    class="relative z-10 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-xs font-medium text-cyan-200 shadow-sm transition hover:bg-white/12">
+                                    <span class="material-symbols-outlined text-[15px]">forum</span>
+                                    Discussion
+                                </a>
+                            </div>
                         </div>
 
                         <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/10 pt-4 text-xs text-blue-100/55">
@@ -136,7 +148,7 @@ new #[Title('My Projects')] class extends Component {
                                 Updated {{ $this->formatDate($project->updated_at) }}
                             </span>
                         </div>
-                    </a>
+                    </div>
 
                     @empty
 

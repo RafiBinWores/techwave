@@ -5,6 +5,7 @@ use App\Models\Service;
 use App\Models\SiteSetting;
 use App\Models\SupportTicket;
 use App\Models\ToolCategory;
+use App\Models\UserNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -15,8 +16,10 @@ new class extends Component {
     public bool $liveTvEnabled = false;
 
     public int $unreadCount = 0;
+    public int $unreadNotificationCount = 0;
 
     public array $notifications = [];
+    public array $latestNotifications = [];
 
     public array $serviceCategories = [];
 
@@ -27,6 +30,7 @@ new class extends Component {
     public function mount(): void
     {
         $this->loadClientNotifications();
+        $this->loadUserNotifications();
         $this->liveTvEnabled = SiteSetting::current()->live_tv_enabled ?? false;
         $this->loadServicesForMegaMenu();
         $this->loadToolsForMegaMenu();
@@ -111,12 +115,14 @@ new class extends Component {
 
         return [
             'echo-private:user.' . Auth::id() . '.tickets,.ticket.updated' => 'refreshClientNotifications',
+            'echo-private:user.' . Auth::id() . '.notifications,.user-notification.created' => 'refreshClientNotifications',
         ];
     }
 
     public function refreshClientNotifications(): void
     {
         $this->loadClientNotifications();
+        $this->loadUserNotifications();
         $this->notificationRefreshKey++;
     }
 
@@ -152,6 +158,54 @@ new class extends Component {
             ->toArray();
     }
 
+    private function loadUserNotifications(): void
+    {
+        if (!Auth::check()) {
+            $this->unreadNotificationCount = 0;
+            $this->latestNotifications = [];
+
+            return;
+        }
+
+        $this->unreadNotificationCount = UserNotification::query()
+            ->forUser((int) Auth::id())
+            ->unread()
+            ->count();
+
+        $this->latestNotifications = UserNotification::query()
+            ->forUser((int) Auth::id())
+            ->unread()
+            ->latest()
+            ->limit(8)
+            ->get(['id', 'title', 'subject', 'url', 'created_at'])
+            ->map(
+                fn($notification) => [
+                    'id' => $notification->id,
+                    'title' => $notification->title,
+                    'subject' => $notification->subject,
+                    'url' => $notification->url,
+                    'time' => $notification->created_at->diffForHumans(),
+                ],
+            )
+            ->toArray();
+    }
+
+    public function markNotificationRead(int $id): void
+    {
+        if (!Auth::check()) {
+            return;
+        }
+
+        UserNotification::query()
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first()
+            ?->markAsRead();
+
+        $this->loadUserNotifications();
+        $this->notificationRefreshKey++;
+    }
+
     public function markAllClientNotificationsRead(): void
     {
         if (!Auth::check()) {
@@ -165,7 +219,13 @@ new class extends Component {
                 'client_read_at' => now(),
             ]);
 
+        UserNotification::query()
+            ->where('user_id', Auth::id())
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
         $this->loadClientNotifications();
+        $this->loadUserNotifications();
         $this->notificationRefreshKey++;
 
         $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
@@ -419,41 +479,69 @@ new class extends Component {
             </div>
 
             <div class="hidden items-center gap-3 lg:flex">
-                @auth
-                {{-- Client Notification --}}
-                <div class="relative" wire:key="client-notifications-desktop-{{ $notificationRefreshKey }}">
-                    <button type="button" @click.stop="notificationOpen = !notificationOpen; userMenu = false"
-                        class="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/8 text-white shadow-lg shadow-blue-950/20 backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/14">
+            @auth
+            {{-- Client Notification --}}
+            @php
+                $totalUnread = $this->unreadCount + $this->unreadNotificationCount;
+            @endphp
+            <div class="relative" wire:key="client-notifications-desktop-{{ $notificationRefreshKey }}">
+                <button type="button" @click.stop="notificationOpen = !notificationOpen; userMenu = false"
+                    class="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/8 text-white shadow-lg shadow-blue-950/20 backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/14">
 
-                        <span class="material-symbols-outlined text-[22px]">notifications</span>
+                    <span class="material-symbols-outlined text-[22px]">notifications</span>
 
-                        @if ($unreadCount > 0)
-                        <span
-                            class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white">
-                            {{ $unreadCount > 99 ? '99+' : $unreadCount }}
-                        </span>
-                        @endif
-                    </button>
+                    @if ($totalUnread > 0)
+                    <span
+                        class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white">
+                        {{ $totalUnread > 99 ? '99+' : $totalUnread }}
+                    </span>
+                    @endif
+                </button>
 
-                    <div x-cloak x-show="notificationOpen" @click.outside="notificationOpen = false"
-                        x-transition.origin.top.right style="display: none;"
-                        class="absolute right-0 top-full z-999 mt-3 w-88 max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-blue-950/30 backdrop-blur-2xl">
+                <div x-cloak x-show="notificationOpen" @click.outside="notificationOpen = false"
+                    x-transition.origin.top.right style="display: none;"
+                    class="absolute right-0 top-full z-999 mt-3 w-88 max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-blue-950/30 backdrop-blur-2xl">
 
-                        <div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                            <div>
-                                <h3 class="text-sm font-bold text-white">Notifications</h3>
-                                <p class="text-xs text-blue-100/45">
-                                    {{ $unreadCount }} new ticket {{ Str::plural('update', $unreadCount) }}
-                                </p>
-                            </div>
-
-                            <button type="button" @click="notificationOpen = false"
-                                class="rounded-xl p-1.5 text-blue-100/45 transition hover:bg-white/10 hover:text-white">
-                                <span class="material-symbols-outlined text-[18px]">close</span>
-                            </button>
+                    <div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Notifications</h3>
+                            <p class="text-xs text-blue-100/45">
+                                {{ $totalUnread }} unread {{ Str::plural('notification', $totalUnread) }}
+                            </p>
                         </div>
 
-                        <div class="notification-scroll max-h-88 divide-y divide-white/10 overflow-y-auto">
+                        <button type="button" @click="notificationOpen = false"
+                            class="rounded-xl p-1.5 text-blue-100/45 transition hover:bg-white/10 hover:text-white">
+                            <span class="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                    </div>
+
+                    <div class="notification-scroll max-h-88 divide-y divide-white/10 overflow-y-auto">
+                        @forelse ($latestNotifications as $notification)
+                            <a href="{{ $notification['url'] }}"
+                                wire:click="markNotificationRead({{ $notification['id'] }})"
+                                @click="notificationOpen = false"
+                                class="group flex gap-3 px-4 py-3 transition hover:bg-white/8">
+
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-cyan-400/15 text-cyan-200">
+                                    <span class="material-symbols-outlined text-[20px]">folder</span>
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-semibold text-white">
+                                        {{ $notification['title'] }}
+                                    </p>
+
+                                    <p class="mt-0.5 truncate text-xs text-blue-100/55">
+                                        {{ $notification['subject'] }}
+                                    </p>
+
+                                    <p class="mt-1 text-[11px] text-blue-100/35">
+                                        {{ $notification['time'] }}
+                                    </p>
+                                </div>
+                            </a>
+                        @empty
                             @forelse ($notifications as $ticket)
                             <a href="{{ route('client.tickets.show', $ticket['id']) }}" wire:navigate
                                 @click="notificationOpen = false"
@@ -503,29 +591,30 @@ new class extends Component {
                                 </h4>
 
                                 <p class="mt-1 text-xs text-blue-100/45">
-                                    Ticket replies and status changes will appear here.
+                                    Updates and replies will appear here.
                                 </p>
                             </div>
                             @endforelse
-                        </div>
+                        @endforelse
+                    </div>
 
-                        <div class="flex items-center gap-2 border-t border-white/10 bg-white/5 p-3">
-                            <a href="{{ route('client.tickets.index') }}" wire:navigate
-                                @click="notificationOpen = false"
-                                class="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-500 to-sky-400 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:opacity-90">
-                                View tickets
-                                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-                            </a>
+                    <div class="flex items-center gap-2 border-t border-white/10 bg-white/5 p-3">
+                        <a href="{{ route('client.tickets.index') }}" wire:navigate
+                            @click="notificationOpen = false"
+                            class="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-500 to-sky-400 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:opacity-90">
+                            View tickets
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        </a>
 
-                            @if ($unreadCount > 0)
-                            <button type="button" wire:click="markAllClientNotificationsRead"
-                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-blue-100/60 transition hover:bg-white/12 hover:text-white">
-                                <span class="material-symbols-outlined text-[18px]">done_all</span>
-                            </button>
-                            @endif
-                        </div>
+                        @if ($totalUnread > 0)
+                        <button type="button" wire:click="markAllClientNotificationsRead"
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-blue-100/60 transition hover:bg-white/12 hover:text-white">
+                            <span class="material-symbols-outlined text-[18px]">done_all</span>
+                        </button>
+                        @endif
                     </div>
                 </div>
+            </div>
 
                 {{-- User Menu --}}
                 <div class="relative">
@@ -602,10 +691,10 @@ new class extends Component {
                         class="glass-chip relative flex h-11 w-11 items-center justify-center rounded-xl text-white">
                         <span class="material-symbols-outlined">notifications</span>
 
-                        @if ($unreadCount > 0)
+                        @if ($totalUnread > 0)
                         <span
                             class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white ring-2 ring-slate-950">
-                            {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                            {{ $totalUnread > 99 ? '99+' : $totalUnread }}
                         </span>
                         @endif
                     </button>
@@ -618,7 +707,7 @@ new class extends Component {
                             <div>
                                 <h3 class="text-sm font-bold text-white">Notifications</h3>
                                 <p class="text-xs text-blue-100/45">
-                                    {{ $unreadCount }} new {{ Str::plural('update', $unreadCount) }}
+                                    {{ $totalUnread }} unread {{ Str::plural('notification', $totalUnread) }}
                                 </p>
                             </div>
 
@@ -629,33 +718,59 @@ new class extends Component {
                         </div>
 
                         <div class="notification-scroll max-h-88 divide-y divide-white/10 overflow-y-auto">
-                            @forelse ($notifications as $ticket)
-                            <a href="{{ route('client.tickets.show', $ticket['id']) }}" wire:navigate
-                                @click="notificationOpen = false"
-                                class="flex gap-3 px-4 py-3 transition hover:bg-white/8">
-                                <div
-                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-blue-400/15 text-blue-200">
-                                    <span class="material-symbols-outlined text-[20px]">support_agent</span>
-                                </div>
+                            @forelse ($latestNotifications as $notification)
+                                <a href="{{ $notification['url'] }}"
+                                    wire:click="markNotificationRead({{ $notification['id'] }})"
+                                    @click="notificationOpen = false"
+                                    class="flex gap-3 px-4 py-3 transition hover:bg-white/8">
+                                    <div
+                                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-cyan-400/15 text-cyan-200">
+                                        <span class="material-symbols-outlined text-[20px]">folder</span>
+                                    </div>
 
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-semibold text-white">
-                                        Ticket updated
-                                    </p>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-semibold text-white">
+                                            {{ $notification['title'] }}
+                                        </p>
 
-                                    <p class="mt-0.5 truncate text-xs text-blue-100/55">
-                                        {{ $ticket['subject'] }}
-                                    </p>
+                                        <p class="mt-0.5 truncate text-xs text-blue-100/55">
+                                            {{ $notification['subject'] }}
+                                        </p>
 
-                                    <p class="mt-1 text-[11px] text-blue-100/35">
-                                        {{ $ticket['time'] }}
-                                    </p>
-                                </div>
-                            </a>
+                                        <p class="mt-1 text-[11px] text-blue-100/35">
+                                            {{ $notification['time'] }}
+                                        </p>
+                                    </div>
+                                </a>
                             @empty
-                            <div class="px-4 py-8 text-center text-sm text-blue-100/50">
-                                No new notifications
-                            </div>
+                                @forelse ($notifications as $ticket)
+                                <a href="{{ route('client.tickets.show', $ticket['id']) }}" wire:navigate
+                                    @click="notificationOpen = false"
+                                    class="flex gap-3 px-4 py-3 transition hover:bg-white/8">
+                                    <div
+                                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-blue-400/15 text-blue-200">
+                                        <span class="material-symbols-outlined text-[20px]">support_agent</span>
+                                    </div>
+
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-semibold text-white">
+                                            Ticket updated
+                                        </p>
+
+                                        <p class="mt-0.5 truncate text-xs text-blue-100/55">
+                                            {{ $ticket['subject'] }}
+                                        </p>
+
+                                        <p class="mt-1 text-[11px] text-blue-100/35">
+                                            {{ $ticket['time'] }}
+                                        </p>
+                                    </div>
+                                </a>
+                                @empty
+                                <div class="px-4 py-8 text-center text-sm text-blue-100/50">
+                                    No new notifications
+                                </div>
+                                @endforelse
                             @endforelse
                         </div>
 
@@ -666,7 +781,7 @@ new class extends Component {
                                 View tickets
                             </a>
 
-                            @if ($unreadCount > 0)
+                            @if ($totalUnread > 0)
                             <button type="button" wire:click="markAllClientNotificationsRead"
                                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-blue-100/60">
                                 <span class="material-symbols-outlined text-[18px]">done_all</span>

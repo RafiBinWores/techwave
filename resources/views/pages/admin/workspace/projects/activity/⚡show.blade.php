@@ -8,6 +8,7 @@ use App\Models\WorkspaceLabel;
 use App\Models\User;
 use App\Models\WorkspaceProject;
 use App\Models\WorkspaceProjectUpdate;
+use App\Services\UserNotificationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -68,7 +69,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
             return true;
         }
 
-        if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true)) {
             return true;
         }
 
@@ -89,7 +90,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
             return true;
         }
 
-        if (in_array($user->role, ['admin', 'admin_manager'], true)) {
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true)) {
             return true;
         }
 
@@ -478,6 +479,12 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
             'attachments' => $attachments ?: null,
         ]);
 
+        $this->notifyProjectParticipants(
+            $isUpdate ? 'posted a project update' : 'commented on the project',
+            trim($validated['activityBody']),
+            'account.workspace-project.activity'
+        );
+
         $this->reset(['activityBody', 'activityFiles']);
         $this->resetValidation(['activityType', 'activityHealth', 'activityBody', 'activityFiles']);
         $this->project->refresh();
@@ -529,6 +536,12 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
             'body' => trim($this->replyBody),
         ]);
 
+        $this->notifyProjectParticipants(
+            'replied to a comment',
+            trim($this->replyBody),
+            'account.workspace-project.activity'
+        );
+
         $this->reset(['replyToId', 'replyBody']);
         $this->resetValidation(['replyToId', 'replyBody']);
         $this->project->refresh();
@@ -569,6 +582,50 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
             'off_track' => 'bg-red-50 text-red-700 ring-red-200',
             default => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
         };
+    }
+
+    private function notifyProjectParticipants(string $action, string $body, string $clientRoute): void
+    {
+        $senderId = (int) auth()->id();
+        $sender = auth()->user();
+        $preview = str($body)->limit(60)->toString();
+
+        $recipientIds = collect();
+
+        if ($this->project->client_id) {
+            $recipientIds->push((int) $this->project->client_id);
+        }
+
+        $recipientIds = $recipientIds
+            ->merge($this->project->members()->pluck('users.id'))
+            ->push((int) $this->project->creator_id)
+            ->filter()
+            ->unique()
+            ->reject(fn (int $id) => $id === $senderId)
+            ->values();
+
+        $adminRoles = ['admin', 'admin_manager', 'manager', 'staff'];
+
+        foreach ($recipientIds as $userId) {
+            $user = User::query()->find($userId);
+            $isAdmin = $user && in_array(
+                $user->role instanceof UserRole ? $user->role->value : $user->role,
+                $adminRoles,
+                true
+            );
+
+            $url = $isAdmin
+                ? route('admin.workspace.projects.show.activity', $this->project)
+                : route($clientRoute, $this->project);
+
+            UserNotificationService::notifyUser(
+                $userId,
+                ($sender?->name ?: 'Someone').' '.$action.' in '.$this->project->name,
+                $preview,
+                $sender?->name,
+                $url
+            );
+        }
     }
 };
 ?>
