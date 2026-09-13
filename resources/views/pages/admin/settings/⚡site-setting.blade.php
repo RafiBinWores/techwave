@@ -133,6 +133,13 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
         $this->resetValidation();
     }
 
+    public function previewUrl(mixed $upload): ?string
+    {
+        return $upload instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile
+            ? $upload->temporaryUrl()
+            : null;
+    }
+
     private function captureOriginalState(): void
     {
         $this->originalState = [
@@ -280,7 +287,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                         @foreach ($tabs as $key => $tab)
                             <button type="button" wire:click="setTab('{{ $key }}')"
                                 @class([
-                                    'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition',
+                                    'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition cursor-pointer',
                                     'bg-primary text-white shadow-sm' => $activeTab === $key,
                                     'text-slate-600 hover:bg-slate-50 hover:text-primary' =>
                                         $activeTab !== $key,
@@ -361,7 +368,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                                     </div>
                                     <label class="relative inline-flex cursor-pointer items-center">
                                         <input type="checkbox" wire:model.live="live_tv_enabled" class="peer sr-only" />
-                                        <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                        <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                                     </label>
                                 </div>
                             </div>
@@ -637,8 +644,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
 
                             <label for="logo"
                                 class="flex h-48 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface">
-                                @if ($logo)
-                                    <img src="{{ $logo->temporaryUrl() }}"
+                                @if (($logoPreview = $this->previewUrl($logo)))
+                                    <img src="{{ $logoPreview }}"
                                         class="h-full w-full object-contain p-5" />
                                 @elseif ($setting->logo)
                                     <img src="{{ Storage::url($setting->logo) }}"
@@ -661,8 +668,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
 
                             <label for="favicon"
                                 class="flex h-48 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface">
-                                @if ($favicon)
-                                    <img src="{{ $favicon->temporaryUrl() }}"
+                                @if (($faviconPreview = $this->previewUrl($favicon)))
+                                    <img src="{{ $faviconPreview }}"
                                         class="h-full w-full object-contain p-5" />
                                 @elseif ($setting->favicon)
                                     <img src="{{ Storage::url($setting->favicon) }}"

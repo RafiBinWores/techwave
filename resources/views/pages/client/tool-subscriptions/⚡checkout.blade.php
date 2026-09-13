@@ -1,8 +1,11 @@
 <?php
 
+use App\Events\ToolSubscriptionUpdated;
+use App\Mail\ToolSubscriptionPendingMail;
 use App\Models\SiteSetting;
 use App\Models\ToolPlan;
 use App\Models\ToolSubscription;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -68,7 +71,7 @@ new #[Title('Subscribe')] class extends Component {
     {
         $validated = $this->validate();
 
-        $existingSubscription = auth()
+        $blockedSubscription = auth()
             ->user()
             ->toolSubscriptions()
             ->where('tool_category_id', $this->plan->tool_category_id)
@@ -78,7 +81,7 @@ new #[Title('Subscribe')] class extends Component {
             })
             ->exists();
 
-        if ($existingSubscription) {
+        if ($blockedSubscription) {
             $this->dispatch('toast', message: 'You already have an active or pending subscription for this tool. Please cancel it or wait until it expires before booking again.', type: 'error');
 
             return;
@@ -87,22 +90,63 @@ new #[Title('Subscribe')] class extends Component {
         $now = now();
         $expiresAt = $this->billing === 'monthly' ? $now->copy()->addMonth() : $now->copy()->addYear();
 
-        ToolSubscription::create([
-            'user_id' => auth()->id(),
-            'tool_category_id' => $this->plan->tool_category_id,
-            'tool_plan_id' => $this->plan->id,
-            'billing_cycle' => $this->billing,
-            'amount' => $this->amount,
-            'status' => 'pending',
-            'starts_at' => $now,
-            'expires_at' => $expiresAt,
-            'sender_bkash' => $validated['sender_bkash'],
-            'transaction_id' => $validated['transaction_id'],
-        ]);
+        $subscription = auth()
+            ->user()
+            ->toolSubscriptions()
+            ->where('tool_category_id', $this->plan->tool_category_id)
+            ->renewable()
+            ->latest('id')
+            ->first();
+
+        if ($subscription) {
+            $subscription->update([
+                'tool_plan_id' => $this->plan->id,
+                'billing_cycle' => $this->billing,
+                'amount' => $this->amount,
+                'status' => 'pending',
+                'starts_at' => $now,
+                'expires_at' => $expiresAt,
+                'sender_bkash' => $validated['sender_bkash'],
+                'transaction_id' => $validated['transaction_id'],
+                'verified_at' => null,
+                'admin_note' => null,
+                'admin_read_at' => null,
+            ]);
+        } else {
+            $subscription = ToolSubscription::create([
+                'user_id' => auth()->id(),
+                'tool_category_id' => $this->plan->tool_category_id,
+                'tool_plan_id' => $this->plan->id,
+                'billing_cycle' => $this->billing,
+                'amount' => $this->amount,
+                'status' => 'pending',
+                'starts_at' => $now,
+                'expires_at' => $expiresAt,
+                'sender_bkash' => $validated['sender_bkash'],
+                'transaction_id' => $validated['transaction_id'],
+            ]);
+        }
+
+        ToolSubscriptionUpdated::dispatch($subscription->fresh(), 'user');
+
+        Mail::to($subscription->fresh()->user->email)->send(new ToolSubscriptionPendingMail($subscription->fresh()));
 
         $this->submitted = true;
 
         $this->dispatch('toast', message: 'Payment submitted successfully! We will verify and activate your subscription shortly.', type: 'success');
+    }
+
+    public function isRenewal(): bool
+    {
+        if (! auth()->check()) {
+            return false;
+        }
+
+        return auth()->user()
+            ->toolSubscriptions()
+            ->where('tool_category_id', $this->plan->tool_category_id)
+            ->renewable()
+            ->exists();
     }
 };
 ?>
@@ -122,6 +166,17 @@ new #[Title('Subscribe')] class extends Component {
                 <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">subscription</span>
             </h1>
         </div>
+
+        @if ($this->isRenewal())
+            <div
+                class="mx-auto mb-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-4 text-amber-100 shadow-[0_10px_40px_rgba(245,158,11,0.12)]">
+                <span class="material-symbols-outlined mt-0.5 text-amber-300">autorenew</span>
+                <p class="text-sm leading-6 text-amber-100/90">
+                    You are renewing your existing {{ $this->plan->toolCategory?->name ?? 'tool' }} subscription. Once
+                    verified, your subscription period will be extended instead of creating a new one.
+                </p>
+            </div>
+        @endif
 
         @if ($submitted)
             {{-- Success State --}}

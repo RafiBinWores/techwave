@@ -7,6 +7,7 @@ use App\Models\ContactMessage;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
+use App\Models\ToolSubscription;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
@@ -131,10 +132,34 @@ class AdminNotificationService
             $proposalComments = $proposalComments->merge($proposalStatus);
         }
 
+        $toolSubscriptions = collect();
+
+        if ($type === null || $type === 'tool-subscription') {
+            $toolSubscriptions = ToolSubscription::query()
+                ->with(['user', 'toolCategory', 'toolPlan'])
+                ->when($unreadOnly, fn ($query) => $query->whereNull('admin_read_at'))
+                ->latest()
+                ->limit($limit)
+                ->get()
+                ->toBase()
+                ->map(fn ($subscription) => [
+                    'type' => 'tool-subscription',
+                    'id' => $subscription->id,
+                    'title' => 'New tool subscription',
+                    'subject' => ($subscription->toolCategory?->name ?? 'Tool subscription').' · '.($subscription->toolPlan?->name ?? 'Plan').' · '.ucfirst($subscription->billing_cycle),
+                    'from' => $subscription->user?->name ?? 'Customer',
+                    'priority' => $subscription->status ?? 'pending',
+                    'time' => $subscription->created_at,
+                    'read' => $subscription->admin_read_at !== null,
+                    'url' => Route::has('admin.tool-subscriptions.index') ? route('admin.tool-subscriptions.index') : '#',
+                ]);
+        }
+
         return $tickets
             ->merge($contacts)
             ->merge($bookings)
             ->merge($proposalComments)
+            ->merge($toolSubscriptions)
             ->sortByDesc('time')
             ->values()
             ->take($limit);

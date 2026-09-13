@@ -115,7 +115,7 @@ new class extends Component {
 
         return [
             'echo-private:user.' . Auth::id() . '.tickets,.ticket.updated' => 'refreshClientNotifications',
-            'echo-private:user.' . Auth::id() . '.notifications,.user-notification.created' => 'refreshClientNotifications',
+            'echo-private:user.' . Auth::id() . '.notifications,.user.notification' => 'refreshClientNotifications',
         ];
     }
 

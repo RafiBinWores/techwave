@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'user_id',
     'company_id',
+    'tool_subscription_id',
     'invoice_no',
     'customer_name',
     'customer_email',
@@ -35,19 +38,41 @@ class Invoice extends Model
         'sent_at' => 'datetime',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function company()
+    public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
-    public function items()
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(ToolSubscription::class, 'tool_subscription_id');
+    }
+
+    public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class)->oldest();
+    }
+
+    public static function generateInvoiceNumber(): string
+    {
+        $datePrefix = 'INV-'.now()->format('Ymd');
+
+        $lastNumber = (int) static::query()
+            ->where('invoice_no', 'like', $datePrefix.'-%')
+            ->count();
+
+        do {
+            $lastNumber++;
+            $number = str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
+            $candidate = $datePrefix.'-'.$number;
+        } while (static::query()->where('invoice_no', $candidate)->exists());
+
+        return $candidate;
     }
 
     public function subtotal(): float

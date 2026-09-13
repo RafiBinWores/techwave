@@ -8,6 +8,7 @@ use App\Http\Controllers\PricingCheckoutController;
 use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
+use App\Http\Controllers\SubscriptionInvoiceController;
 use App\Http\Controllers\WhmcsInvoiceController;
 use App\Http\Controllers\WhmcsSsoController;
 use App\Models\User;
@@ -201,6 +202,9 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
 
     // Account subscriptions
     Route::livewire('/account/tool-subscriptions', 'pages::client.account.tool-subscriptions')->name('account.tool-subscriptions');
+    Route::livewire('/account/invoices', 'pages::client.account.invoices')->name('account.invoices');
+    Route::get('/account/tool-subscriptions/invoice/{invoice}/download', [SubscriptionInvoiceController::class, 'download'])
+        ->name('account.tool-subscription.invoice.download');
 
     // BG removed images backup
     Route::livewire('/account/bg-removed-images', 'pages::client.account.backup.bg-removed-images')->name('account.bg-removed-images');

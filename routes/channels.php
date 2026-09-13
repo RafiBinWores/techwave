@@ -55,6 +55,14 @@ Broadcast::channel('admin.bookings', function ($user) use ($adminRoles) {
     return $user && in_array($user->role ?? null, $adminRoles, true);
 });
 
+Broadcast::channel('admin.tool-subscriptions', function ($user) use ($adminRoles) {
+    return $user && in_array($user->role ?? null, $adminRoles, true);
+});
+
+Broadcast::channel('user.{userId}.tool-subscriptions', function ($user, $userId) {
+    return $user && (int) $user->id === (int) $userId;
+});
+
 Broadcast::channel('user.{userId}.chat', function ($user, $userId) use ($adminRoles) {
     return $user
         && in_array($user->role ?? null, $adminRoles, true)

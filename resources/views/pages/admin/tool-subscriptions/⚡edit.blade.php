@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\ToolSubscriptionUpdated;
 use App\Models\ToolCategory;
 use App\Models\ToolPlan;
 use App\Models\ToolSubscription;
@@ -92,6 +93,8 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Subscription')] class extends C
             'starts_at' => $validated['starts_at'],
             'expires_at' => $validated['expires_at'],
         ]);
+
+        ToolSubscriptionUpdated::dispatch($this->toolSubscription->fresh());
 
         $this->dispatch('toast', message: 'Subscription updated successfully.', type: 'success');
 

@@ -5,6 +5,7 @@ use App\Models\ContactMessage;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
+use App\Models\ToolSubscription;
 use App\Models\UserNotification;
 use App\Services\AdminNotificationService;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -26,7 +27,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
         $items = AdminNotificationService::notifications(
             limit: 500,
             unreadOnly: $this->tab === 'unread',
-            type: in_array($this->tab, ['ticket', 'contact', 'booking', 'proposal'], true) ? $this->tab : null,
+            type: in_array($this->tab, ['ticket', 'contact', 'booking', 'proposal', 'tool-subscription'], true) ? $this->tab : null,
         );
 
         $userItems = collect();
@@ -97,6 +98,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             ->whereIn('status', ['accepted', 'rejected'])
             ->whereNull('admin_read_at')
             ->update(['admin_read_at' => now()]);
+        ToolSubscription::query()->whereNull('admin_read_at')->update(['admin_read_at' => now()]);
         UserNotification::query()->forUser(auth()->id())->unread()->update(['read_at' => now()]);
 
         $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
@@ -124,6 +126,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'contact' => 'mail',
             'booking' => 'event_note',
             'proposal' => 'rate_review',
+            'tool-subscription' => 'subscriptions',
             'project' => 'space_dashboard',
             'issue' => 'rule',
             default => 'notifications',
@@ -137,6 +140,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'contact' => 'bg-emerald-100 text-emerald-700',
             'booking' => 'bg-amber-100 text-amber-700',
             'proposal' => 'bg-violet-100 text-violet-700',
+            'tool-subscription' => 'bg-indigo-100 text-indigo-700',
             'project' => 'bg-cyan-100 text-cyan-700',
             'issue' => 'bg-rose-100 text-rose-700',
             default => 'bg-slate-100 text-slate-700',
@@ -150,6 +154,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'contact' => 'bg-emerald-50 text-emerald-700',
             'booking' => 'bg-amber-50 text-amber-700',
             'proposal' => 'bg-violet-50 text-violet-700',
+            'tool-subscription' => 'bg-indigo-50 text-indigo-700',
             'project' => 'bg-cyan-50 text-cyan-700',
             'issue' => 'bg-rose-50 text-rose-700',
             default => 'bg-slate-50 text-slate-700',
@@ -180,6 +185,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
                     'contact' => 'Contacts',
                     'booking' => 'Bookings',
                     'proposal' => 'Proposals',
+                    'tool-subscription' => 'Subscriptions',
                     'workspace' => 'Workspace',
                 ] as $key => $label)
                     <button type="button" wire:click="$set('tab', '{{ $key }}')"

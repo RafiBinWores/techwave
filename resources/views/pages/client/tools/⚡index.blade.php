@@ -8,12 +8,15 @@ new class extends Component {
 
     public array $activeSubscriptions = [];
 
+    public array $renewableSubscriptions = [];
+
     public mixed $checkoutPlan = null;
 
     public function mount(): void
     {
         $this->loadCategories();
         $this->loadActiveSubscriptions();
+        $this->loadRenewableSubscriptions();
 
         $this->checkoutPlan = $this->categories
             ->flatMap(fn ($category) => $category->activePlans)
@@ -73,6 +76,33 @@ new class extends Component {
     {
         return isset($this->activeSubscriptions[$categoryId]);
     }
+
+    private function loadRenewableSubscriptions(): void
+    {
+        if (! auth()->check()) {
+            $this->renewableSubscriptions = [];
+
+            return;
+        }
+
+        $this->renewableSubscriptions = auth()->user()
+            ->toolSubscriptions()
+            ->renewable()
+            ->latest()
+            ->get([
+                'id',
+                'tool_category_id',
+                'status',
+                'expires_at',
+            ])
+            ->keyBy('tool_category_id')
+            ->toArray();
+    }
+
+    public function hasRenewableSubscription(int $categoryId): bool
+    {
+        return isset($this->renewableSubscriptions[$categoryId]);
+    }
 };
 ?>
 
@@ -100,6 +130,7 @@ new class extends Component {
             @forelse ($categories as $category)
                 @php
                     $isPremium = $this->hasActiveSubscription($category->id);
+                    $canRenew = ! $isPremium && $this->hasRenewableSubscription($category->id);
                     $firstPlan = $category->activePlans->first();
                 @endphp
 
@@ -132,6 +163,12 @@ new class extends Component {
                                         <span class="material-symbols-outlined text-[14px]">verified</span>
                                         Active
                                     </span>
+                                @elseif ($canRenew)
+                                    <a href="{{ route('client.tool-subscriptions.checkout', $firstPlan) }}" wire:navigate
+                                        class="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300 shadow-lg shadow-amber-500/10 transition hover:-translate-y-0.5 hover:bg-amber-400/15 hover:shadow-amber-500/20">
+                                        <span class="material-symbols-outlined text-[14px]">autorenew</span>
+                                        Renew
+                                    </a>
                                 @elseif ($firstPlan)
                                     <a href="{{ route('client.tool-subscriptions.checkout', $firstPlan) }}" wire:navigate
                                         class="inline-flex items-center gap-1 rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300 shadow-lg shadow-cyan-500/10 transition hover:-translate-y-0.5 hover:bg-cyan-400/15 hover:shadow-cyan-500/20">

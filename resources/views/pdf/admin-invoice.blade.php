@@ -31,6 +31,15 @@ $discountAmount = $invoice->discountAmount();
 $grandTotal = $invoice->total();
 $currency = '৳';
 
+$statusKey = strtolower($invoice->status ?? '');
+$statusLabel = $invoice->status ? ucfirst($invoice->status) : 'Unpaid';
+$statusColor = match ($statusKey) {
+    'paid' => '#059669',
+    'pending' => '#d97706',
+    'unpaid', 'overdue', 'expired', 'cancelled' => '#dc2626',
+    default => '#0f172a',
+};
+
 $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
 @endphp
 
@@ -502,6 +511,11 @@ $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
                                 <td class="meta-value">{{ $invoice->due_date->format('M d, Y') }}</td>
                             </tr>
                             @endif
+
+                            <tr>
+                                <td class="meta-label">Status</td>
+                                <td class="meta-value" style="color: {{ $statusColor }};">{{ $statusLabel }}</td>
+                            </tr>
                         </table>
                     </td>
                 </tr>

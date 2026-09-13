@@ -5,6 +5,7 @@ use App\Models\ContactMessage;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
+use App\Models\ToolSubscription;
 use App\Models\UserNotification;
 use App\Services\AdminNotificationService;
 use Illuminate\Support\Facades\Auth;
@@ -70,6 +71,25 @@ new class extends Component {
         $this->dispatch('toast', message: 'New booking request received.', type: 'info');
     }
 
+    #[On('echo-private:admin.tool-subscriptions,.tool-subscription.updated')]
+    public function refreshToolSubscriptionNotifications(array $event = []): void
+    {
+        if (($event['actor'] ?? null) === 'admin') {
+            return;
+        }
+
+        $this->notificationRefreshKey++;
+
+        $status = $event['status'] ?? null;
+
+        $message = match ($status) {
+            'pending' => 'New tool subscription payment request received.',
+            default => 'New tool subscription update received.',
+        };
+
+        $this->dispatch('toast', message: $message, type: 'info');
+    }
+
     #[On('echo-private:admin.proposals,.proposal.comment.added')]
     public function refreshProposalCommentNotifications(array $event = []): void
     {
@@ -120,6 +140,13 @@ new class extends Component {
             ->count();
     }
 
+    public function unreadToolSubscriptionCount(): int
+    {
+        return ToolSubscription::query()
+            ->whereNull('admin_read_at')
+            ->count();
+    }
+
     public function unreadUserNotificationCount(): int
     {
         return UserNotification::query()->forUser(Auth::id())->unread()->count();
@@ -127,7 +154,7 @@ new class extends Component {
 
     public function totalUnreadCount(): int
     {
-        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount() + $this->unreadProposalCommentCount() + $this->unreadProposalStatusCount() + $this->unreadUserNotificationCount();
+        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount() + $this->unreadProposalCommentCount() + $this->unreadProposalStatusCount() + $this->unreadToolSubscriptionCount() + $this->unreadUserNotificationCount();
     }
 
     public function latestNotifications()
@@ -203,6 +230,12 @@ new class extends Component {
                 'admin_read_at' => now(),
             ]);
 
+        ToolSubscription::query()
+            ->whereNull('admin_read_at')
+            ->update([
+                'admin_read_at' => now(),
+            ]);
+
         UserNotification::query()
             ->forUser(Auth::id())
             ->unread()
@@ -222,6 +255,7 @@ new class extends Component {
             'contact' => 'mail',
             'booking' => 'event_note',
             'proposal' => 'rate_review',
+            'tool-subscription' => 'subscriptions',
             'project' => 'space_dashboard',
             'issue' => 'rule',
             default => 'notifications',
@@ -235,6 +269,7 @@ new class extends Component {
             'contact' => 'bg-emerald-100 text-emerald-700',
             'booking' => 'bg-amber-100 text-amber-700',
             'proposal' => 'bg-violet-100 text-violet-700',
+            'tool-subscription' => 'bg-indigo-100 text-indigo-700',
             'project' => 'bg-cyan-100 text-cyan-700',
             'issue' => 'bg-rose-100 text-rose-700',
             default => 'bg-slate-100 text-slate-700',
@@ -248,6 +283,7 @@ new class extends Component {
             'contact' => 'bg-emerald-50 text-emerald-700',
             'booking' => 'bg-amber-50 text-amber-700',
             'proposal' => 'bg-violet-50 text-violet-700',
+            'tool-subscription' => 'bg-indigo-50 text-indigo-700',
             'project' => 'bg-cyan-50 text-cyan-700',
             'issue' => 'bg-rose-50 text-rose-700',
             default => 'bg-slate-50 text-slate-700',
@@ -318,6 +354,7 @@ new class extends Component {
                 $unreadBookingCount = $this->unreadBookingCount();
                 $unreadProposalCommentCount = $this->unreadProposalCommentCount();
                 $unreadProposalStatusCount = $this->unreadProposalStatusCount();
+                $unreadToolSubscriptionCount = $this->unreadToolSubscriptionCount();
                 $unreadUserNotificationCount = $this->unreadUserNotificationCount();
                 $totalUnreadCount = $this->totalUnreadCount();
                 $notifications = $this->latestNotifications();
@@ -356,6 +393,8 @@ new class extends Component {
                                 comment{{ $unreadProposalCommentCount === 1 ? '' : 's' }},
                                 {{ $unreadProposalStatusCount }} proposal
                                 update{{ $unreadProposalStatusCount === 1 ? '' : 's' }},
+                                {{ $unreadToolSubscriptionCount }}
+                                subscription{{ $unreadToolSubscriptionCount === 1 ? '' : 's' }},
                                 {{ $unreadUserNotificationCount }}
                                 workspace{{ $unreadUserNotificationCount === 1 ? '' : 's' }}
                             </p>

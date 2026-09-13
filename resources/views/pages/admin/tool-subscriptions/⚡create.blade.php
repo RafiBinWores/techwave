@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\ToolSubscriptionUpdated;
 use App\Models\ToolCategory;
 use App\Models\ToolPlan;
 use App\Models\ToolSubscription;
@@ -59,7 +60,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Subscription')] class extends
     {
         $validated = $this->validate();
 
-        ToolSubscription::create([
+        $subscription = ToolSubscription::create([
             'user_id' => $validated['user_id'],
             'tool_category_id' => $validated['tool_category_id'],
             'tool_plan_id' => $validated['tool_plan_id'],
@@ -68,7 +69,10 @@ new #[Layout('layouts.admin-app')] #[Title('Create Subscription')] class extends
             'status' => $validated['status'],
             'starts_at' => $validated['starts_at'] ?? now(),
             'expires_at' => $validated['expires_at'],
+            'admin_read_at' => now(),
         ]);
+
+        ToolSubscriptionUpdated::dispatch($subscription);
 
         $this->dispatch('toast', message: 'Subscription created successfully.', type: 'success');
 

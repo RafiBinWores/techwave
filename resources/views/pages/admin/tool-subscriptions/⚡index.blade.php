@@ -1,8 +1,14 @@
 <?php
 
+use App\Events\ToolSubscriptionUpdated;
+use App\Mail\ToolSubscriptionConfirmedMail;
+use App\Models\Invoice;
 use App\Models\ToolCategory;
 use App\Models\ToolSubscription;
+use App\Services\UserNotificationService;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -14,6 +20,15 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
     public string $statusFilter = 'all';
     public string $categoryFilter = '';
     public int $perPage = 10;
+
+    public int $refreshKey = 0;
+
+    public function mount(): void
+    {
+        ToolSubscription::query()
+            ->whereNull('admin_read_at')
+            ->update(['admin_read_at' => now()]);
+    }
 
     public function updatedSearch(): void
     {
@@ -69,7 +84,61 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
             'verified_at' => now(),
         ]);
 
+        $invoice = $this->createSubscriptionInvoice($sub);
+        $this->notifySubscriptionConfirmed($sub);
+
+        Mail::to($sub->user?->email)->send(new ToolSubscriptionConfirmedMail($sub, $invoice));
+
+        ToolSubscriptionUpdated::dispatch($sub->fresh());
+
         $this->dispatch('toast', message: 'Payment verified. Subscription is now active.', type: 'success');
+    }
+
+    private function createSubscriptionInvoice(ToolSubscription $sub): ?Invoice
+    {
+        $alreadyInvoicedToday = $sub->invoices()
+            ->whereDate('issue_date', now()->toDateString())
+            ->exists();
+
+        if ($alreadyInvoicedToday) {
+            return null;
+        }
+
+        $invoice = Invoice::create([
+            'user_id' => $sub->user_id,
+            'tool_subscription_id' => $sub->id,
+            'invoice_no' => Invoice::generateInvoiceNumber(),
+            'customer_name' => $sub->user?->name ?? 'Customer',
+            'customer_email' => $sub->user?->email,
+            'customer_phone' => $sub->sender_bkash,
+            'subject' => 'Tool Subscription - '.($sub->toolCategory?->name ?? 'Tool').' ('.($sub->toolPlan?->name ?? 'Plan').')',
+            'status' => 'paid',
+            'issue_date' => now(),
+            'sent_at' => now(),
+        ]);
+
+        $invoice->items()->create([
+            'item_type' => 'custom',
+            'item_id' => $sub->id,
+            'title' => ($sub->toolCategory?->name ?? 'Tool').' - '.($sub->toolPlan?->name ?? 'Plan').' ('.ucfirst($sub->billing_cycle).')',
+            'description' => 'Tool subscription activated. TrxID: '.($sub->transaction_id ?? '-'),
+            'quantity' => 1,
+            'unit_price' => (float) $sub->amount,
+        ]);
+
+        return $invoice;
+    }
+
+    private function notifySubscriptionConfirmed(ToolSubscription $sub): void
+    {
+        UserNotificationService::notifyUser(
+            $sub->user_id,
+            'Subscription Confirmed',
+            'Your '.($sub->toolCategory?->name ?? 'tool').' subscription has been activated. You can download your invoice from My Subscriptions.',
+            from: 'Support Team',
+            url: route('account.tool-subscriptions'),
+            type: 'subscription',
+        );
     }
 
     public function markExpired(int $id): void
@@ -80,14 +149,30 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
             'status' => 'expired',
         ]);
 
+        ToolSubscriptionUpdated::dispatch($sub->fresh());
+
         $this->dispatch('toast', message: 'Subscription marked as expired.', type: 'info');
     }
 
     public function delete(int $id): void
     {
-        ToolSubscription::findOrFail($id)->delete();
+        $sub = ToolSubscription::findOrFail($id);
+
+        ToolSubscriptionUpdated::dispatch($sub->fresh());
+
+        $sub->delete();
 
         $this->dispatch('toast', message: 'Subscription deleted successfully.', type: 'success');
+    }
+
+    #[On('echo-private:admin.tool-subscriptions,.tool-subscription.updated')]
+    public function refreshSubscriptionsFromBroadcast(array $event = []): void
+    {
+        if (($event['actor'] ?? null) === 'admin') {
+            return;
+        }
+
+        $this->refreshKey++;
     }
 };
 ?>
@@ -145,7 +230,7 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
                         <th class="px-6 py-4 text-label-sm text-on-surface-variant"></th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody wire:key="sub-table-{{ $refreshKey }}" class="divide-y divide-slate-100">
                     @forelse ($this->subscriptions() as $sub)
                         <tr wire:key="sub-{{ $sub->id }}" class="transition-colors hover:bg-slate-50/80">
                             <td class="px-6 py-4">
