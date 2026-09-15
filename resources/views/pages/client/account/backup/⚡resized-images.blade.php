@@ -141,12 +141,13 @@ new #[Title('My Resized Images')] class extends Component {
                             </button>
 
                             <div>
-                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">
-                                    Tools Backup
-                                </p>
-                                <h1 class="mt-1 text-2xl font-bold text-white sm:text-3xl">
-                                    Resized Images
+                                <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                                    My
+                                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Resized Images</span>
                                 </h1>
+                                <p class="mt-2 text-sm text-blue-100/50">
+                                    Manage your backed-up resized images and download them anytime before expiry.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -271,7 +272,7 @@ new #[Title('My Resized Images')] class extends Component {
     {{-- Lightbox --}}
     <template x-teleport="body">
         <div x-show="preview" x-transition.opacity.duration.200ms
-            class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm"
+            class="fixed inset-0 z-9999 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm"
             @click="preview = null" @keydown.escape.window="preview = null">
             <button type="button" @click="preview = null"
                 class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20">

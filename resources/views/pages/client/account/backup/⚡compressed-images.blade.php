@@ -198,15 +198,11 @@ new #[Title('My Compressed Images')] class extends Component {
                             </button>
 
                             <div>
-                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">
-                                    Tools Backup
-                                </p>
-
-                                <h1 class="mt-1 text-2xl font-bold text-white sm:text-3xl">
-                                    Compressed Images
+                                <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                                    My
+                                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Compressed Images</span>
                                 </h1>
-
-                                <p class="mt-1 text-sm text-blue-100/45">
+                                <p class="mt-2 text-sm text-blue-100/50">
                                     Manage your backed-up compressed images and download them anytime before expiry.
                                 </p>
                             </div>

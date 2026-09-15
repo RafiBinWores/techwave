@@ -815,7 +815,7 @@
 
 /* Account pages */
 .client-card {
-    @apply rounded-[28px] border border-white/10 bg-white/6 shadow-[0_14px_45px_rgba(0,0,0,0.16)] backdrop-blur-2xl;
+    @apply rounded-2xl border border-white/10 bg-white/6 shadow-[0_14px_45px_rgba(0,0,0,0.16)] backdrop-blur-2xl;
 }
 
 .client-dash-link {

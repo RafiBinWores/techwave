@@ -184,17 +184,22 @@ new #[Title('Project Discussion')] class extends Component {
                 <div class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
 
                     {{-- Header --}}
-                    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="flex items-center gap-3">
+                    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <button @click="sidebarOpen = true"
+                                class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
+                                <span class="material-symbols-outlined">menu</span>
+                            </button>
+
                             <a
                                 href="{{ route('account.workspace-project.activity', $project) }}"
                                 wire:navigate
-                                class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12">
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12">
                                 <span class="material-symbols-outlined text-xl">arrow_back</span>
                             </a>
 
                             <div
-                                class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 shadow-inner"
+                                class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 shadow-inner sm:flex"
                                 style="background: {{ $project->icon_color ?: '#4f46e5' }}22;">
                                 <span class="material-symbols-outlined text-xl" style="color: {{ $project->icon_color ?: '#4f46e5' }}">
                                     {{ $project->icon ?: 'space_dashboard' }}
@@ -202,11 +207,12 @@ new #[Title('Project Discussion')] class extends Component {
                             </div>
 
                             <div>
-                                <h1 class="text-2xl font-bold text-white sm:text-3xl">
-                                    Discussion
+                                <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                                    Project
+                                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Discussion</span>
                                 </h1>
 
-                                <p class="mt-1 text-sm text-blue-100/50">
+                                <p class="mt-2 text-sm text-blue-100/50">
                                     {{ $project->name }}
                                 </p>
                             </div>

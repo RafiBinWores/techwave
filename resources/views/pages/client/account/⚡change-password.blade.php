@@ -109,6 +109,24 @@ new class extends Component {
                 {{-- Main --}}
                 <div class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
 
+                    {{-- Header --}}
+                    <div class="mb-8 flex items-center gap-3">
+                        <button @click="sidebarOpen = true"
+                            class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
+                            <span class="material-symbols-outlined">menu</span>
+                        </button>
+
+                        <div>
+                            <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                                My
+                                <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Change Password</span>
+                            </h1>
+                            <p class="mt-2 text-sm text-blue-100/50">
+                                Use a strong password that you do not use on other websites.
+                            </p>
+                        </div>
+                    </div>
+
                     {{-- Content --}}
                     <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
 

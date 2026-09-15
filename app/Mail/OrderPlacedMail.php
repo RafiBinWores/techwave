@@ -13,17 +13,15 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class BookingQuoteMail extends Mailable implements ShouldQueue
+class OrderPlacedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public Booking $booking;
 
+    public SiteSetting $settings;
+
     public InvoiceTemplate $template;
-
-    public ?SiteSetting $setting;
-
-    public ?string $logoPath = null;
 
     /**
      * Create a new message instance.
@@ -35,35 +33,10 @@ class BookingQuoteMail extends Mailable implements ShouldQueue
             'service',
             'servicePlan',
             'pricingPlan',
-            'order',
         ]);
 
+        $this->settings = SiteSetting::current();
         $this->template = InvoiceTemplate::activeTemplate();
-        $this->setting = SiteSetting::query()->first();
-
-        $logoValue = $this->setting?->logo;
-
-        if (! empty($logoValue)) {
-            if (str_starts_with($logoValue, 'http://') || str_starts_with($logoValue, 'https://')) {
-                $this->logoPath = $logoValue;
-
-                return;
-            }
-
-            $cleanLogo = ltrim($logoValue, '/');
-
-            $possibleLogoPath = str_starts_with($cleanLogo, 'storage/')
-                ? public_path($cleanLogo)
-                : public_path('storage/'.$cleanLogo);
-
-            if (! file_exists($possibleLogoPath)) {
-                $possibleLogoPath = storage_path('app/public/'.str_replace('storage/', '', $cleanLogo));
-            }
-
-            if (file_exists($possibleLogoPath)) {
-                $this->logoPath = $possibleLogoPath;
-            }
-        }
     }
 
     /**
@@ -71,8 +44,10 @@ class BookingQuoteMail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
+        $planName = $this->planName();
+
         return new Envelope(
-            subject: 'Quotation #'.$this->booking->booking_no,
+            subject: 'Booking placed – '.$planName,
         );
     }
 
@@ -82,12 +57,11 @@ class BookingQuoteMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.booking-quote',
+            view: 'emails.order-placed',
             with: [
                 'booking' => $this->booking,
+                'settings' => $this->settings,
                 'template' => $this->template,
-                'setting' => $this->setting,
-                'logoPath' => $this->logoPath,
             ],
         );
     }
@@ -100,5 +74,19 @@ class BookingQuoteMail extends Mailable implements ShouldQueue
     public function attachments(): array
     {
         return [];
+    }
+
+    private function planName(): string
+    {
+        if ($this->booking->booking_type === 'pricing_plan') {
+            return $this->booking->pricingPlan?->title
+                ?? $this->booking->plan_name
+                ?? 'your selected plan';
+        }
+
+        return $this->booking->servicePlan?->name
+            ?? $this->booking->service?->card_title
+            ?? $this->booking->plan_name
+            ?? 'your selected service';
     }
 }

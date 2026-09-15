@@ -385,16 +385,21 @@ new #[Title('Link Billing Account')] class extends Component {
                 <div class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
 
                     {{-- Header --}}
-                    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="flex items-center gap-3">
+                    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex min-w-0 items-center gap-3">
                             <button @click="sidebarOpen = true"
-                                class="cursor-pointer flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
-                                <span class="cursor-pointer material-symbols-outlined">menu</span>
+                                class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:bg-white/12 lg:hidden">
+                                <span class="material-symbols-outlined">menu</span>
                             </button>
 
                             <div>
-                                <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Account Settings</p>
-                                <h1 class="mt-1 text-2xl font-bold text-white sm:text-3xl">Link Billing Account</h1>
+                                <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                                    Link
+                                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Billing Account</span>
+                                </h1>
+                                <p class="mt-2 text-sm text-blue-100/50">
+                                    Connect your billing account to manage services in one place.
+                                </p>
                             </div>
                         </div>
 

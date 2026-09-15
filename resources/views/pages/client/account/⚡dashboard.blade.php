@@ -1051,14 +1051,14 @@ new class extends Component
                             <div>
 
                                 <h1
-                                    class="text-2xl font-bold text-white sm:text-3xl">
-                                    Dashboard
+                                    class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                                    My
+                                    <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Dashboard</span>
                                 </h1>
 
                                 <p
-                                    class="mt-1 text-sm text-blue-100/50">
-                                    Welcome back,
-                                    {{ $this->firstName() }}.
+                                    class="mt-2 text-sm text-blue-100/50">
+                                    Welcome back, {{ $this->firstName() }}.
                                 </p>
 
                             </div>
@@ -1082,25 +1082,6 @@ new class extends Component
                                 </span>
 
                                 Support
-
-                            </a>
-
-                            <a
-                                href="{{ route('account.services') }}"
-                                wire:navigate
-                                class="inline-flex items-center justify-center gap-2
-                                       rounded-2xl
-                                       bg-linear-to-r from-cyan-500 to-blue-500
-                                       px-5 py-3 text-sm font-semibold text-white
-                                       shadow-lg shadow-cyan-500/20
-                                       transition hover:-translate-y-0.5">
-
-                                <span
-                                    class="material-symbols-outlined text-base">
-                                    dashboard
-                                </span>
-
-                                My Services
 
                             </a>
 
@@ -1133,7 +1114,7 @@ new class extends Component
                     <div
                         class="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
 
-                        <div class="client-card p-5">
+                        <div class="client-card p-4">
 
                             <p
                                 class="text-xs uppercase tracking-wider text-blue-100/45">
@@ -1147,7 +1128,7 @@ new class extends Component
 
                         </div>
 
-                        <div class="client-card p-5">
+                        <div class="client-card p-4">
 
                             <p
                                 class="text-xs uppercase tracking-wider text-blue-100/45">
@@ -1161,7 +1142,7 @@ new class extends Component
 
                         </div>
 
-                        <div class="client-card p-5">
+                        <div class="client-card p-4">
 
                             <p
                                 class="text-xs uppercase tracking-wider text-blue-100/45">
@@ -1175,7 +1156,7 @@ new class extends Component
 
                         </div>
 
-                        <div class="client-card p-5">
+                        <div class="client-card p-4">
 
                             <p
                                 class="text-xs uppercase tracking-wider text-blue-100/45">
@@ -1196,7 +1177,7 @@ new class extends Component
                     @if ($whmcsAccount)
 
                     <div
-                        class="mb-6 rounded-[28px] border border-white/10
+                        class="mb-6 rounded-2xl border border-white/10
                                    bg-white/8 p-6
                                    shadow-[0_16px_50px_rgba(0,0,0,0.18)]
                                    backdrop-blur-2xl">
@@ -1368,7 +1349,7 @@ new class extends Component
                     @if ($whmcsAccount)
 
                     <div
-                        class="mb-6 rounded-[28px] border border-white/10
+                        class="mb-6 rounded-2xl border border-white/10
                                    bg-white/8 p-6
                                    shadow-[0_16px_50px_rgba(0,0,0,0.18)]
                                    backdrop-blur-2xl">

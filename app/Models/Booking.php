@@ -24,6 +24,9 @@ use Illuminate\Database\Eloquent\Model;
     'requested_price',
     'quoted_price',
     'final_price',
+    'offer_price',
+    'negotiation_note',
+    'client_responded_at',
     'addons',
     'sender_bkash',
     'transaction_id',
@@ -41,8 +44,10 @@ class Booking extends Model
         'requested_price' => 'decimal:2',
         'quoted_price' => 'decimal:2',
         'final_price' => 'decimal:2',
+        'offer_price' => 'decimal:2',
         'addons' => 'array',
         'admin_read_at' => 'datetime',
+        'client_responded_at' => 'datetime',
     ];
 
     public function user()

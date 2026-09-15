@@ -1,21 +1,25 @@
 <?php
 
 use App\Mail\BookingQuoteMail;
+use App\Mail\OrderConfirmedMail;
 use App\Mail\OrderInvoiceMail;
 use App\Models\Booking;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\UserNotificationService;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Component {
+new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Component
+{
     public Booking $booking;
 
     public string $status = 'pending';
+
     public string $quoted_price = '';
+
     public string $admin_note = '';
 
     public function mount(Booking $booking): void
@@ -79,21 +83,15 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
 
         $email = $this->clientEmail();
 
-        if (!$email) {
+        if (! $email) {
             $this->dispatch('toast', message: 'No customer email found for this booking.', type: 'error');
 
             return;
         }
 
-        if ($this->booking->sender_bkash && $this->booking->transaction_id) {
-            $this->booking->load('order');
+        $this->booking->load('order');
 
-            if (!$this->booking->order) {
-                $this->dispatch('toast', message: 'No order found for this booking. Convert to order first.', type: 'error');
-
-                return;
-            }
-
+        if ($this->booking->order && $this->booking->sender_bkash && $this->booking->transaction_id) {
             Mail::to($email)->send(new OrderInvoiceMail($this->booking->order));
 
             $this->dispatch('toast', message: 'Invoice email sent successfully.', type: 'success');
@@ -118,6 +116,17 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
         $this->booking = $this->booking->fresh(['user', 'service.category', 'servicePlan', 'pricingPlan', 'order']);
 
         $this->dispatch('toast', message: 'Booking marked as accepted.', type: 'success');
+    }
+
+    public function useCustomerOffer(): void
+    {
+        if ($this->booking->offer_price === null) {
+            return;
+        }
+
+        $this->quoted_price = (string) $this->booking->offer_price;
+
+        $this->dispatch('toast', message: 'Customer counter offer applied to the quoted amount.', type: 'success');
     }
 
     public function markAsRejected(): void
@@ -160,6 +169,12 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
 
         if (in_array($this->booking->status, ['rejected', 'cancelled'], true)) {
             $this->dispatch('toast', message: 'Rejected or cancelled bookings cannot be converted to order.', type: 'error');
+
+            return;
+        }
+
+        if ($this->booking->status === 'quoted') {
+            $this->dispatch('toast', message: 'The customer must accept the quotation before this booking can be converted to order.', type: 'error');
 
             return;
         }
@@ -209,7 +224,7 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
             'user_note' => $this->booking->user_note,
             'admin_note' => $this->booking->admin_note,
 
-            'status' => 'awaiting_payment',
+            'status' => 'paid',
             'start_date' => $startDate,
             'end_date' => $endDate,
         ]);
@@ -224,7 +239,18 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
         $email = $order->email ?: $order->user?->email;
 
         if ($email) {
-            Mail::to($email)->send(new OrderInvoiceMail($order));
+            Mail::to($email)->send(new OrderConfirmedMail($order));
+        }
+
+        if ($orderUserId) {
+            UserNotificationService::notifyUser(
+                $orderUserId,
+                'Order Confirmed',
+                'Your booking '.$this->booking->booking_no.' has been confirmed. Order '.$order->order_no.' is now paid and active.',
+                from: 'Support Team',
+                url: route('account.services', ['tab' => $order->order_type === 'pricing_plan' ? 'plans' : 'services']),
+                type: 'order',
+            );
         }
 
         $this->status = 'converted';
@@ -253,7 +279,7 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
             return (int) $booking->user_id;
         }
 
-        if (!$booking->email) {
+        if (! $booking->email) {
             return null;
         }
 
@@ -264,7 +290,7 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
     {
         do {
             $nextId = (int) Order::query()->max('id') + 1;
-            $orderNo = 'ORD-' . now()->format('ymd') . '-' . str_pad((string) $nextId, 4, '0', STR_PAD_LEFT);
+            $orderNo = 'ORD-'.now()->format('ymd').'-'.str_pad((string) $nextId, 4, '0', STR_PAD_LEFT);
         } while (Order::query()->where('order_no', $orderNo)->exists());
 
         return $orderNo;
@@ -339,7 +365,7 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
 
     public function mailSubject(): string
     {
-        return 'Quotation for ' . $this->bookingTitle() . ' - ' . $this->booking->booking_no;
+        return 'Quotation for '.$this->bookingTitle().' - '.$this->booking->booking_no;
     }
 
     public function mailBody(): string
@@ -368,11 +394,11 @@ Techwave Team
 
     public function mailtoLink(): string
     {
-        if (!$this->clientEmail()) {
+        if (! $this->clientEmail()) {
             return '#';
         }
 
-        return 'mailto:' . $this->clientEmail() . '?subject=' . rawurlencode($this->mailSubject()) . '&body=' . rawurlencode($this->mailBody());
+        return 'mailto:'.$this->clientEmail().'?subject='.rawurlencode($this->mailSubject()).'&body='.rawurlencode($this->mailBody());
     }
 };
 ?>
@@ -395,6 +421,13 @@ Techwave Team
                     <span
                         class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
                         Order: {{ $booking->order->order_no }}
+                    </span>
+                @endif
+
+                @if ($booking->client_responded_at)
+                    <span
+                        class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                        {{ $booking->offer_price ? 'Customer Counter Offer' : 'Customer Responded' }}
                     </span>
                 @endif
             </div>
@@ -610,93 +643,6 @@ Techwave Team
             </div>
 
             <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-                <div class="mb-8 flex items-center justify-between gap-4">
-                    <h3 class="flex items-center gap-2 text-h3 font-h2 text-on-surface">
-                        <span class="material-symbols-outlined text-primary">event_note</span>
-                        Booking Summary
-                    </h3>
-
-                    <span class="text-xs font-bold uppercase tracking-wider text-secondary">
-                        Submitted {{ $booking->created_at?->diffForHumans() }}
-                    </span>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div class="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Plan / Service</p>
-
-                        <p class="mt-2 text-base font-semibold text-slate-900">
-                            {{ $this->bookingTitle() }}
-                        </p>
-
-                        <p class="mt-1 text-sm text-secondary">
-                            {{ $this->bookingSubtitle() ?: 'No additional plan details available.' }}
-                        </p>
-                    </div>
-
-                    <div class="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Billing Cycle</p>
-
-                        <p class="mt-2 text-base font-semibold text-slate-900">
-                            {{ $this->billingLabel() }}
-                        </p>
-
-                        <p class="mt-1 text-sm text-secondary">
-                            Booking with review and negotiation process.
-                        </p>
-                    </div>
-
-                    <div class="rounded-xl border border-blue-100 bg-blue-50 p-5">
-                        <p class="text-xs font-bold uppercase tracking-wider text-blue-500">Listed Plan Price</p>
-
-                        <p class="mt-2 text-2xl font-bold text-blue-700">
-                            {{ $booking->plan_price ? '৳ ' . number_format((float) $booking->plan_price, 2) : 'N/A' }}
-                        </p>
-                    </div>
-
-                    @if ($booking->addons)
-                        <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-5">
-                            <p class="text-xs font-bold uppercase tracking-wider text-indigo-500">Selected Addons</p>
-
-                            <div class="mt-3 space-y-2">
-                                @foreach ($booking->addons as $addon)
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-indigo-900">{{ $addon['name'] ?? 'Addon' }}</span>
-                                        <span class="font-semibold text-indigo-700">
-                                            {{ isset($addon['price']) ? '৳ ' . number_format((float) $addon['price'], 2) : 'N/A' }}
-                                        </span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-
-                    <div class="rounded-xl border border-amber-100 bg-amber-50 p-5">
-                        <p class="text-xs font-bold uppercase tracking-wider text-amber-500">Customer Requested Price
-                        </p>
-
-                        <p class="mt-2 text-2xl font-bold text-amber-700">
-                            {{ $booking->requested_price ? '৳ ' . number_format((float) $booking->requested_price, 2) : 'Not requested' }}
-                        </p>
-                    </div>
-
-                    <div class="rounded-xl border border-emerald-100 bg-emerald-50 p-5 md:col-span-2">
-                        <p class="text-xs font-bold uppercase tracking-wider text-emerald-500">Final / Quoted Amount</p>
-
-                        <p class="mt-2 text-3xl font-bold text-emerald-700">
-                            {{ $booking->quoted_price || $booking->final_price ? '৳ ' . number_format($this->finalAmount(), 2) : 'Not quoted yet' }}
-                        </p>
-
-                        @if ($booking->quoted_price)
-                            <p class="mt-2 text-sm text-emerald-700/80">
-                                This is the amount offered after negotiation.
-                            </p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2 text-on-surface">
                     <span class="material-symbols-outlined text-primary">notes</span>
                     Notes
@@ -717,6 +663,49 @@ Techwave Team
                         <p class="mt-3 whitespace-pre-line text-sm leading-7 text-blue-900">
                             {{ $booking->admin_note ?: 'No admin note added yet.' }}
                         </p>
+                    </div>
+
+                    <div class="rounded-xl border border-amber-100 bg-amber-50 p-5">
+                        <p class="text-xs font-bold uppercase tracking-wider text-amber-500">Customer Negotiation</p>
+
+                        @if ($booking->negotiation_note)
+                            <div class="mt-3 space-y-2">
+                                @foreach (collect(explode("\n", $booking->negotiation_note))->reverse() as $line)
+                                    @if (trim($line))
+                                        <p class="whitespace-pre-line text-sm leading-7 text-amber-900">
+                                            {{ $line }}
+                                        </p>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="mt-3 text-sm text-amber-700">No negotiation received yet.</p>
+                        @endif
+
+                        @if ($booking->offer_price)
+                            <div class="mt-4 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-white p-4">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-amber-500">
+                                        Customer Counter Offer
+                                    </p>
+
+                                    <p class="mt-1 text-xl font-bold text-amber-700">
+                                        ৳ {{ number_format((float) $booking->offer_price, 2) }}
+                                    </p>
+                                </div>
+
+                                <button type="button" wire:click="useCustomerOffer"
+                                    class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
+                                    Use as Quoted Amount
+                                </button>
+                            </div>
+                        @endif
+
+                        @if ($booking->client_responded_at)
+                            <p class="mt-3 text-xs text-amber-600/70">
+                                Customer responded {{ $booking->client_responded_at->diffForHumans() }}.
+                            </p>
+                        @endif
                     </div>
                 </div>
             </div>

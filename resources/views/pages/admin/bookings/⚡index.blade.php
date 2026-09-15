@@ -1,9 +1,10 @@
 <?php
 
-use App\Mail\OrderInvoiceMail;
+use App\Mail\OrderConfirmedMail;
 use App\Models\Booking;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\UserNotificationService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -11,12 +12,16 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component {
+new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
+{
     use WithPagination;
 
     public string $search = '';
+
     public string $status = 'all';
+
     public string $bookingType = 'all';
+
     public int $perPage = 10;
 
     public function updatedSearch(): void
@@ -47,26 +52,29 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
             ->with(['user', 'service.category', 'servicePlan', 'pricingPlan', 'order'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('booking_no', 'like', '%' . $search . '%')
-                        ->orWhere('full_name', 'like', '%' . $search . '%')
-                        ->orWhere('phone', 'like', '%' . $search . '%')
-                        ->orWhere('email', 'like', '%' . $search . '%')
-                        ->orWhere('company_name', 'like', '%' . $search . '%')
-                        ->orWhere('company_phone', 'like', '%' . $search . '%')
-                        ->orWhere('company_email', 'like', '%' . $search . '%')
-                        ->orWhere('plan_name', 'like', '%' . $search . '%')
-                        ->orWhere('message', 'like', '%' . $search . '%')
-                        ->orWhere('user_note', 'like', '%' . $search . '%')
+                    $q->where('booking_no', 'like', '%'.$search.'%')
+                        ->orWhere('full_name', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
+                        ->orWhere('company_name', 'like', '%'.$search.'%')
+                        ->orWhere('company_phone', 'like', '%'.$search.'%')
+                        ->orWhere('company_email', 'like', '%'.$search.'%')
+                        ->orWhere('plan_name', 'like', '%'.$search.'%')
+                        ->orWhere('message', 'like', '%'.$search.'%')
+                        ->orWhere('user_note', 'like', '%'.$search.'%')
                         ->orWhereHas('service', function ($serviceQuery) use ($search) {
-                            $serviceQuery->where('card_title', 'like', '%' . $search . '%')->orWhere('detail_title', 'like', '%' . $search . '%');
+                            $serviceQuery->where('card_title', 'like', '%'.$search.'%')->orWhere('detail_title', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('servicePlan', function ($servicePlanQuery) use ($search) {
-                            $servicePlanQuery->where('name', 'like', '%' . $search . '%');
+                            $servicePlanQuery->where('name', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('pricingPlan', function ($pricingPlanQuery) use ($search) {
-                            $pricingPlanQuery->where('title', 'like', '%' . $search . '%')->orWhere('plan_type', 'like', '%' . $search . '%');
+                            $pricingPlanQuery->where('title', 'like', '%'.$search.'%')->orWhere('plan_type', 'like', '%'.$search.'%');
                         });
                 });
+            })
+            ->when($this->status === 'all', function ($query) {
+                $query->where('status', '!=', 'converted');
             })
             ->when($this->status !== 'all', function ($query) {
                 $query->where('status', $this->status);
@@ -92,6 +100,12 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
 
         if (in_array($booking->status, ['rejected', 'cancelled'], true)) {
             $this->dispatch('toast', message: 'Rejected or cancelled bookings cannot be converted to order.', type: 'error');
+
+            return;
+        }
+
+        if ($booking->status === 'quoted') {
+            $this->dispatch('toast', message: 'The customer must accept the quotation before this booking can be converted to order.', type: 'error');
 
             return;
         }
@@ -141,7 +155,7 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
             'user_note' => $booking->user_note,
             'admin_note' => $booking->admin_note,
 
-            'status' => 'awaiting_payment',
+            'status' => 'paid',
 
             'start_date' => $startDate,
             'end_date' => $endDate,
@@ -157,7 +171,18 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
         $email = $order->email ?: $order->user?->email;
 
         if ($email) {
-            Mail::to($email)->send(new OrderInvoiceMail($order));
+            Mail::to($email)->send(new OrderConfirmedMail($order));
+        }
+
+        if ($orderUserId) {
+            UserNotificationService::notifyUser(
+                $orderUserId,
+                'Order Confirmed',
+                'Your booking '.$booking->booking_no.' has been confirmed. Order '.$order->order_no.' is now paid and active.',
+                from: 'Support Team',
+                url: route('account.services', ['tab' => $order->order_type === 'pricing_plan' ? 'plans' : 'services']),
+                type: 'order',
+            );
         }
 
         $this->dispatch('toast', message: 'Booking confirmed, order created, and invoice sent successfully.', type: 'success');
@@ -230,7 +255,7 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
             return (int) $booking->user_id;
         }
 
-        if (!$booking->email) {
+        if (! $booking->email) {
             return null;
         }
 
@@ -240,7 +265,7 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
     private function makeOrderNo(): string
     {
         do {
-            $orderNo = 'ORD-' . now()->format('ymd') . '-' . strtoupper(Str::random(6));
+            $orderNo = 'ORD-'.now()->format('ymd').'-'.strtoupper(Str::random(6));
         } while (Order::query()->where('order_no', $orderNo)->exists());
 
         return $orderNo;
@@ -277,11 +302,11 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
     {
         $price = $booking->final_price ?? ($booking->quoted_price ?? ($booking->requested_price ?? $booking->plan_price));
 
-        if (!$price || (float) $price <= 0) {
+        if (! $price || (float) $price <= 0) {
             return 'Negotiable';
         }
 
-        return '৳' . number_format((float) $price, 2);
+        return '৳'.number_format((float) $price, 2);
     }
 
     public function displayBilling($booking): string
@@ -533,6 +558,23 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component 
                                     ])>
                                         {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
                                     </span>
+
+                                    @if ($booking->client_responded_at && $booking->offer_price)
+                                        <span class="mt-1 block">
+                                            <span
+                                                class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                                                Counter Offer
+                                                ৳{{ number_format((float) $booking->offer_price, 2) }}
+                                            </span>
+                                        </span>
+                                    @elseif ($booking->client_responded_at)
+                                        <span class="mt-1 block">
+                                            <span
+                                                class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                                Client Responded
+                                            </span>
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td class="px-6 py-4">

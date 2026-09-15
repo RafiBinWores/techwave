@@ -1,9 +1,11 @@
 <?php
 
 use App\Events\BookingCreated;
+use App\Mail\OrderPlacedMail;
 use App\Models\Booking;
 use App\Models\PricingPlan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -188,6 +190,12 @@ new #[Title('Checkout')] class extends Component {
         ]);
 
         BookingCreated::dispatch($booking);
+
+        $email = $booking->email ?: $booking->user?->email;
+
+        if ($email) {
+            Mail::to($email)->send(new OrderPlacedMail($booking));
+        }
 
         $this->dispatch('toast', message: 'Your plan booking request has been submitted successfully. Our team will review it and contact you soon.', type: 'success');
 

@@ -6,13 +6,27 @@
     $invoiceNo = $order->order_no ?? 'N/A';
     $issuedDate = $order->created_at?->format('M d, Y') ?? now()->format('M d, Y');
 
-    $customerName = $order->user?->name ?? 'Customer';
-    $customerEmail = $order->user?->email ?? 'N/A';
-    $customerPhone = $order->user?->phone ?? 'N/A';
-    $customerCompany = $order->user?->company_name ?? 'N/A';
+    $customerName = $order->full_name
+        ?: $order->user?->name
+        ?: $order->booking?->full_name
+        ?: 'Customer';
+    $customerEmail = $order->email
+        ?: $order->user?->email
+        ?: $order->booking?->email
+        ?: 'N/A';
+    $customerPhone = $order->phone
+        ?: $order->user?->phone
+        ?: $order->booking?->phone
+        ?: 'N/A';
+    $customerCompany = $order->company_name
+        ?: $order->user?->company?->company_name
+        ?: $order->booking?->company_name
+        ?: 'N/A';
 
     $planName = $plan?->title ?? 'Pricing Plan';
-    $description = $plan?->description ?? 'N/A';
+    $description = $plan
+        ? ($plan->description ?? 'Business IT plan subscription.')
+        : ($order->servicePlan?->description ?? ($order->service?->short_description ?? 'Service order.'));
     $billingCycle = ucfirst($order->billing_cycle ?? 'N/A');
 
     $subtotal = (float) ($order->amount ?? 0);
@@ -24,6 +38,24 @@
     $companyPhone = $setting->phone ?? '+880 1XXX XXXXXX';
     $companyAddress = $setting->location ?? 'N/A';
     $companyWebsite = $setting->website ?? ($setting->url ?? config('app.url'));
+
+    $statusKey = $order->status ?? 'pending';
+    $statusLabel = match ($statusKey) {
+        'pending' => 'Pending',
+        'awaiting_payment' => 'Awaiting Payment',
+        'paid' => 'Paid',
+        'active' => 'Active',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+        default => ucfirst($statusKey),
+    };
+
+    $statusColor = match ($statusKey) {
+        'paid', 'active', 'completed' => '#16a34a',
+        'cancelled' => '#dc2626',
+        'pending', 'awaiting_payment' => '#d97706',
+        default => '#64748b',
+    };
 
     /*
     |--------------------------------------------------------------------------
@@ -37,15 +69,17 @@
     if (!empty($logoValue)) {
         $cleanLogo = ltrim($logoValue, '/');
 
-        if (str_starts_with($cleanLogo, 'storage/')) {
-            $possibleLogoPath = public_path($cleanLogo);
-        } else {
-            $possibleLogoPath = public_path('storage/' . $cleanLogo);
+        $possibleLogoPath = str_starts_with($cleanLogo, 'storage/')
+            ? public_path($cleanLogo)
+            : public_path('storage/' . $cleanLogo);
+
+        if (!file_exists($possibleLogoPath)) {
+            $possibleLogoPath = storage_path('app/public/' . str_replace('storage/', '', $cleanLogo));
         }
 
         if (file_exists($possibleLogoPath)) {
-            $mimeType = mime_content_type($possibleLogoPath);
-            $logoSrc = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($possibleLogoPath));
+            $mimeType = mime_content_type($possibleLogoPath) ?: 'image/png';
+            $logoSrc = 'data:' . $mimeType . ';base64,' . base64_encode((string) file_get_contents($possibleLogoPath));
         }
     }
 @endphp
@@ -432,7 +466,7 @@
 
                             <tr>
                                 <td class="meta-label">Status</td>
-                                <td class="meta-value">{{ ucfirst($order->payment_status) }}</td>
+                                <td class="meta-value" style="color: {{ $statusColor }};">{{ $statusLabel }}</td>
                             </tr>
                         </table>
                     </td>
@@ -459,9 +493,7 @@
             <table class="items">
                 <thead>
                     <tr>
-                        <th>Plan</th>
-                        <th>Description</th>
-                        <th class="center">Plan Type</th>
+                        <th>Service / Plan</th>
                         <th class="right">Unit Price</th>
                         <th class="right">Total</th>
                     </tr>
@@ -471,14 +503,10 @@
                     <tr>
                         <td>
                             <span class="plan-name">{{ $planName }}</span>
-                        </td>
 
-                        <td>
-                            <span class="description">{{ $description }}</span>
-                        </td>
-
-                        <td class="center">
-                            {{ $billingCycle }}
+                            @if ($description && $description !== 'N/A')
+                                <div class="description">{{ $description }}</div>
+                            @endif
                         </td>
 
                         <td class="right">
