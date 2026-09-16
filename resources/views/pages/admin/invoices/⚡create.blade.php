@@ -7,6 +7,7 @@ use App\Models\Service;
 use App\Models\ServicePlan;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -449,21 +450,7 @@ new #[Layout('layouts.admin-app')] #[Title('Create Invoice')] class extends Comp
 
     public function nextInvoiceNumber(): string
     {
-        $datePrefix = 'INV-'.now()->format('Ymd');
-
-        $lastNumber = (int) Invoice::query()
-            ->where('invoice_no', 'like', $datePrefix.'-%')
-            ->count();
-
-        do {
-            $lastNumber++;
-
-            $number = str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
-
-            $candidate = $datePrefix.'-'.$number;
-        } while (Invoice::query()->where('invoice_no', $candidate)->exists());
-
-        return $number;
+        return Str::afterLast(Invoice::generateInvoiceNumber(), '-');
     }
 
     public function invoiceNo(): string

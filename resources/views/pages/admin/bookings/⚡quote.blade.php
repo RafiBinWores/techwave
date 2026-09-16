@@ -4,6 +4,7 @@ use App\Mail\BookingQuoteMail;
 use App\Mail\OrderConfirmedMail;
 use App\Mail\OrderInvoiceMail;
 use App\Models\Booking;
+use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\UserNotificationService;
@@ -288,12 +289,7 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
 
     private function makeOrderNo(): string
     {
-        do {
-            $nextId = (int) Order::query()->max('id') + 1;
-            $orderNo = 'ORD-'.now()->format('ymd').'-'.str_pad((string) $nextId, 4, '0', STR_PAD_LEFT);
-        } while (Order::query()->where('order_no', $orderNo)->exists());
-
-        return $orderNo;
+        return Invoice::generateInvoiceNumber();
     }
 
     public function bookingTitle(): string

@@ -2,6 +2,7 @@
 
 use App\Mail\OrderConfirmedMail;
 use App\Models\Booking;
+use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\UserNotificationService;
@@ -264,11 +265,7 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
 
     private function makeOrderNo(): string
     {
-        do {
-            $orderNo = 'ORD-'.now()->format('ymd').'-'.strtoupper(Str::random(6));
-        } while (Order::query()->where('order_no', $orderNo)->exists());
-
-        return $orderNo;
+        return Invoice::generateInvoiceNumber();
     }
 
     private function orderAmount($booking): float

@@ -179,7 +179,7 @@ new #[Title('My Resized Images')] class extends Component {
 
                         {{-- Table --}}
                         @forelse ($this->images() as $image)
-                            <div class="flex items-center gap-4 border-b border-white/10 px-2 py-3 transition hover:bg-white/[0.03]">
+                            <div class="flex items-center gap-4 border-b border-white/10 px-2 py-3 transition hover:bg-white/3">
                                 <label class="relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center">
                                     <input type="checkbox" wire:model.live="selectedIds" value="{{ $image->id }}"
                                         class="peer sr-only">
@@ -252,7 +252,7 @@ new #[Title('My Resized Images')] class extends Component {
                                 <h3 class="mt-4 text-lg font-semibold text-white">No backed-up images yet</h3>
                                 <p class="mt-2 text-sm text-blue-100/50">Resize images as a premium user to get 30-day backup.</p>
                                 <a href="{{ route('client.tools.image-resizer') }}" wire:navigate
-                                    class="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5">
+                                    class="mt-6 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5">
                                     <span class="material-symbols-outlined text-base">photo_size_select_large</span>
                                     Resize Images
                                 </a>

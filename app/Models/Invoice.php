@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'user_id',
@@ -62,17 +63,35 @@ class Invoice extends Model
     {
         $datePrefix = 'INV-'.now()->format('Ymd');
 
-        $lastNumber = (int) static::query()
-            ->where('invoice_no', 'like', $datePrefix.'-%')
-            ->count();
+        $lastNumber = static::lastSequenceNumber($datePrefix);
 
         do {
             $lastNumber++;
             $number = str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
             $candidate = $datePrefix.'-'.$number;
-        } while (static::query()->where('invoice_no', $candidate)->exists());
+        } while (
+            static::query()->where('invoice_no', $candidate)->exists()
+            || Order::query()->where('order_no', $candidate)->exists()
+        );
 
         return $candidate;
+    }
+
+    private static function lastSequenceNumber(string $datePrefix): int
+    {
+        $invoiceNumber = (int) static::query()
+            ->where('invoice_no', 'like', $datePrefix.'-%')
+            ->get('invoice_no')
+            ->map(fn ($invoice) => (int) Str::afterLast($invoice->invoice_no, '-'))
+            ->max();
+
+        $orderNumber = (int) Order::query()
+            ->where('order_no', 'like', $datePrefix.'-%')
+            ->get('order_no')
+            ->map(fn ($order) => (int) Str::afterLast($order->order_no, '-'))
+            ->max();
+
+        return max($invoiceNumber, $orderNumber);
     }
 
     public function subtotal(): float
