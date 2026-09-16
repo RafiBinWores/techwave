@@ -1156,6 +1156,8 @@
     }
 }
 
+
+
 /* User notification bar */
 .notification-scroll {
     scrollbar-width: thin;
@@ -2076,4 +2078,27 @@
 
 .linear-project-editor .tiptap::-webkit-scrollbar-thumb:hover {
     background: rgb(148 163 184);
+}
+
+/* workspace scrollable panels */
+.workspace-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.4) transparent;
+}
+
+.workspace-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.workspace-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.workspace-scroll::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / 0.4);
+    border-radius: 999px;
+}
+
+.workspace-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(148 163 184 / 0.65);
 }
