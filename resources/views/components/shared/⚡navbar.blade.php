@@ -683,17 +683,17 @@ new class extends Component {
                 @endauth
             </div>
 
-            <div class="flex items-center gap-2 lg:hidden">
-                @auth
-                {{-- Mobile Notification --}}
-                <div class="relative" wire:key="client-notifications-mobile-{{ $notificationRefreshKey }}">
+<div class="relative flex items-center gap-2 lg:hidden">
+                    @auth
+                    {{-- Mobile Notification --}}
+                    <div wire:key="client-notifications-mobile-{{ $notificationRefreshKey }}">
                     <button type="button" @click.stop="notificationOpen = !notificationOpen; mobileMenu = false"
                         class="glass-chip relative flex h-11 w-11 items-center justify-center rounded-xl text-white">
                         <span class="material-symbols-outlined">notifications</span>
 
                         @if ($totalUnread > 0)
                         <span
-                            class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white ring-2 ring-slate-950">
+                            class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white">
                             {{ $totalUnread > 99 ? '99+' : $totalUnread }}
                         </span>
                         @endif
@@ -701,7 +701,7 @@ new class extends Component {
 
                     <div x-cloak x-show="notificationOpen" @click.outside="notificationOpen = false"
                         x-transition.origin.top.right style="display: none;"
-                        class="absolute right-0 top-full z-999 mt-3 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-3xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-2xl">
+                        class="absolute right-2 top-full z-999 mt-3 w-80 max-w-[calc(100vw-1rem)] overflow-hidden rounded-3xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-2xl sm:right-0 sm:max-w-[calc(100vw-1.5rem)]">
 
                         <div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
                             <div>
