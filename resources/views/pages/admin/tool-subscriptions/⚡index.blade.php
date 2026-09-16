@@ -58,7 +58,7 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
     public function subscriptions()
     {
         return ToolSubscription::query()
-            ->with(['user', 'toolCategory', 'toolPlan'])
+            ->with(['user', 'toolCategory', 'toolPlan', 'invoices'])
             ->when($this->search, function ($query) {
                 $query->whereHas('user', function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
@@ -111,7 +111,7 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
             'customer_name' => $sub->user?->name ?? 'Customer',
             'customer_email' => $sub->user?->email,
             'customer_phone' => $sub->sender_bkash,
-            'subject' => 'Tool Subscription - '.($sub->toolCategory?->name ?? 'Tool').' ('.($sub->toolPlan?->name ?? 'Plan').')',
+            'subject' => 'Tool Subscription - ' . ($sub->toolCategory?->name ?? 'Tool') . ' (' . ($sub->toolPlan?->name ?? 'Plan') . ')',
             'status' => 'paid',
             'issue_date' => now(),
             'sent_at' => now(),
@@ -120,8 +120,8 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
         $invoice->items()->create([
             'item_type' => 'custom',
             'item_id' => $sub->id,
-            'title' => ($sub->toolCategory?->name ?? 'Tool').' - '.($sub->toolPlan?->name ?? 'Plan').' ('.ucfirst($sub->billing_cycle).')',
-            'description' => 'Tool subscription activated. TrxID: '.($sub->transaction_id ?? '-'),
+            'title' => ($sub->toolCategory?->name ?? 'Tool') . ' - ' . ($sub->toolPlan?->name ?? 'Plan') . ' (' . ucfirst($sub->billing_cycle) . ')',
+            'description' => 'Tool subscription activated. TrxID: ' . ($sub->transaction_id ?? '-'),
             'quantity' => 1,
             'unit_price' => (float) $sub->amount,
         ]);
@@ -134,7 +134,7 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
         UserNotificationService::notifyUser(
             $sub->user_id,
             'Subscription Confirmed',
-            'Your '.($sub->toolCategory?->name ?? 'tool').' subscription has been activated. You can download your invoice from My Subscriptions.',
+            'Your ' . ($sub->toolCategory?->name ?? 'tool') . ' subscription has been activated. You can download your invoice from My Subscriptions.',
             from: 'Support Team',
             url: route('account.tool-subscriptions'),
             type: 'subscription',
@@ -203,7 +203,7 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
                 class="rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10">
                 <option value="">All Categories</option>
                 @foreach ($this->categories() as $cat)
-                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                 @endforeach
             </select>
             <select wire:model.live="statusFilter"
@@ -221,8 +221,7 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/50">
                         <th class="px-6 py-4 text-label-sm text-on-surface-variant">USER</th>
-                        <th class="px-6 py-4 text-label-sm text-on-surface-variant">CATEGORY</th>
-                        <th class="px-6 py-4 text-label-sm text-on-surface-variant">PLAN</th>
+                        <th class="px-6 py-4 text-label-sm text-on-surface-variant">TOOLS</th>
                         <th class="px-6 py-4 text-label-sm text-on-surface-variant">PAYMENT</th>
                         <th class="px-6 py-4 text-label-sm text-on-surface-variant">AMOUNT</th>
                         <th class="px-6 py-4 text-center text-label-sm text-on-surface-variant">STATUS</th>
@@ -232,71 +231,99 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
                 </thead>
                 <tbody wire:key="sub-table-{{ $refreshKey }}" class="divide-y divide-slate-100">
                     @forelse ($this->subscriptions() as $sub)
-                        <tr wire:key="sub-{{ $sub->id }}" class="transition-colors hover:bg-slate-50/80">
-                            <td class="px-6 py-4">
-                                <div>
-                                    <span class="block text-label-md font-semibold text-on-surface">{{ $sub->user?->name ?? '—' }}</span>
-                                    <span class="block text-body-sm text-on-surface-variant">{{ $sub->user?->email }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="rounded bg-primary/5 px-2 py-1 text-xs font-medium text-primary">{{ $sub->toolCategory?->name ?? '—' }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-label-md">{{ $sub->toolPlan?->name ?? '—' }}</td>
-                            <td class="px-6 py-4">
-                                @if ($sub->transaction_id)
-                                    <div class="text-xs">
-                                        <span class="text-on-surface-variant">TrxID:</span>
-                                        <span class="font-mono text-primary">{{ $sub->transaction_id }}</span>
-                                        @if ($sub->sender_bkash)
-                                            <br><span class="text-on-surface-variant">From:</span>
-                                            <span class="font-mono">{{ $sub->sender_bkash }}</span>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-body-sm text-on-surface-variant">—</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 font-mono text-body-md">৳{{ number_format((float) $sub->amount, 2) }}</td>
-                            <td class="px-6 py-4 text-center">
-                                <span @class([
-                                    'inline-flex rounded border px-2 py-1 text-[11px] font-bold uppercase tracking-wider',
-                                    'bg-green-50 text-green-700 border-green-100' => $sub->status === 'active',
-                                    'bg-red-50 text-red-700 border-red-100' => $sub->status === 'expired',
-                                    'bg-amber-50 text-amber-700 border-amber-100' => $sub->status === 'cancelled',
-                                    'bg-blue-50 text-blue-700 border-blue-100' => $sub->status === 'pending',
-                                ])>
-                                    {{ $sub->status }}
+                    <tr wire:key="sub-{{ $sub->id }}" class="transition-colors hover:bg-slate-50/80">
+                        <td class="px-6 py-4">
+                            <div>
+                                <span class="block text-label-md font-semibold text-on-surface">{{ $sub->user?->name ?? '—' }}</span>
+                                <span class="block text-body-sm text-on-surface-variant">{{ $sub->user?->email }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-label-md font-medium text-on-surface">
+                                {{ $sub->toolCategory?->name ?? '—' }} - {{ $sub->toolPlan?->name ?? '—' }}
+                            </span>
+                            @if ($sub->invoices->isNotEmpty())
+                            <div class="mt-1 space-y-0.5">
+                                @foreach ($sub->invoices as $invoice)
+                                <span class="block font-mono text-[11px] text-on-surface-variant">
+                                    {{ $invoice->invoice_no }}
                                 </span>
-                            </td>
-                            <td class="px-6 py-4 font-mono text-body-sm text-on-surface-variant">
-                                {{ $sub->expires_at?->format('M d, Y') ?? '—' }}
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <div x-data="{ open: false }" class="relative inline-block text-left">
-                                    <button type="button" @click="open = !open"
-                                        class="text-slate-400 transition-colors hover:text-primary">
-                                        <span class="material-symbols-outlined">more_vert</span>
-                                    </button>
+                                @endforeach
+                            </div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4">
+                            @if ($sub->transaction_id)
+                            <div class="text-xs">
+                                <span class="text-on-surface-variant">TrxID:</span>
+                                <span class="font-mono text-primary">{{ $sub->transaction_id }}</span>
+                                @if ($sub->sender_bkash)
+                                <br><span class="text-on-surface-variant">From:</span>
+                                <span class="font-mono">{{ $sub->sender_bkash }}</span>
+                                @endif
+                            </div>
+                            @else
+                            <span class="text-body-sm text-on-surface-variant">—</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 font-mono text-body-md">৳{{ number_format((float) $sub->amount, 2) }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span @class([ 'inline-flex rounded border px-2 py-1 text-[11px] font-bold uppercase tracking-wider' , 'bg-green-50 text-green-700 border-green-100'=> $sub->status === 'active',
+                                'bg-red-50 text-red-700 border-red-100' => $sub->status === 'expired',
+                                'bg-amber-50 text-amber-700 border-amber-100' => $sub->status === 'cancelled',
+                                'bg-blue-50 text-blue-700 border-blue-100' => $sub->status === 'pending',
+                                ])>
+                                {{ $sub->status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-body-sm text-on-surface-variant">
+                            {{ $sub->expires_at?->format('M d, Y') ?? '—' }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div x-data="{ open: false, pos: { top: 0, right: 0 } }" class="text-left">
+                                <button type="button"
+                                    @click="open = !open; if (open) { const r = $el.getBoundingClientRect(); pos = { top: r.bottom + 8, right: Math.max(window.innerWidth - r.right, 12) }; }"
+                                    class="text-slate-400 transition-colors hover:text-primary">
+                                    <span class="material-symbols-outlined">more_vert</span>
+                                </button>
+                                <template x-teleport="body">
                                     <div x-cloak x-show="open" @click.outside="open = false" x-transition
-                                        class="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                                        :style="`position: fixed; z-index: 60; top: ${pos.top}px; right: ${pos.right}px;`"
+                                        class="w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
                                         @if ($sub->status === 'pending')
-                                            <button type="button" wire:click="verify({{ $sub->id }})"
-                                                wire:confirm="Verify payment and activate this subscription?"
-                                                @click="open = false"
-                                                class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-emerald-700 transition hover:bg-emerald-50">
-                                                <span class="material-symbols-outlined text-[18px]">check_circle</span>
-                                                Verify & Activate
-                                            </button>
+                                        <button type="button" wire:click="verify({{ $sub->id }})"
+                                            wire:confirm="Verify payment and activate this subscription?"
+                                            @click="open = false"
+                                            class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-emerald-700 transition hover:bg-emerald-50">
+                                            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                            Verify & Activate
+                                        </button>
                                         @endif
                                         @if ($sub->status === 'active')
-                                            <button type="button" wire:click="markExpired({{ $sub->id }})"
-                                                wire:confirm="Mark this subscription as expired?"
-                                                @click="open = false"
-                                                class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-amber-700 transition hover:bg-amber-50">
-                                                <span class="material-symbols-outlined text-[18px]">schedule</span>
-                                                Mark Expired
-                                            </button>
+                                        <button type="button" wire:click="markExpired({{ $sub->id }})"
+                                            wire:confirm="Mark this subscription as expired?"
+                                            @click="open = false"
+                                            class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-amber-700 transition hover:bg-amber-50">
+                                            <span class="material-symbols-outlined text-[18px]">schedule</span>
+                                            Mark Expired
+                                        </button>
+                                        @endif
+                                        @if ($sub->invoices->isNotEmpty())
+                                        <div class="my-1 border-t border-slate-100"></div>
+                                        @foreach ($sub->invoices as $invoice)
+                                        <a href="{{ route('admin.invoices.view', $invoice) }}" wire:navigate
+                                            @click="open = false"
+                                            class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                            View Invoice
+                                        </a>
+                                        <a href="{{ route('admin.invoices.pdf', $invoice) }}" target="_blank"
+                                            @click="open = false"
+                                            class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                                            Download Invoice
+                                        </a>
+                                        @endforeach
                                         @endif
                                         <a href="{{ route('admin.tool-subscriptions.edit', $sub) }}" wire:navigate
                                             @click="open = false"
@@ -312,21 +339,22 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
                                             Delete
                                         </button>
                                     </div>
-                                </div>
-                            </td>
-                        </tr>
+                                </template>
+                            </div>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-6 py-14 text-center">
-                                <div class="mx-auto flex max-w-sm flex-col items-center">
-                                    <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                                        <span class="material-symbols-outlined">subscriptions</span>
-                                    </div>
-                                    <h3 class="text-base font-semibold text-on-surface">No subscriptions found</h3>
-                                    <p class="mt-1 text-sm text-secondary">Create a subscription to get started.</p>
+                    <tr>
+                        <td colspan="7" class="px-6 py-14 text-center">
+                            <div class="mx-auto flex max-w-sm flex-col items-center">
+                                <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                                    <span class="material-symbols-outlined">subscriptions</span>
                                 </div>
-                            </td>
-                        </tr>
+                                <h3 class="text-base font-semibold text-on-surface">No subscriptions found</h3>
+                                <p class="mt-1 text-sm text-secondary">Create a subscription to get started.</p>
+                            </div>
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
