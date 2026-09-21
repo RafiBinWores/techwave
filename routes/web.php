@@ -18,10 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/uploads/{path}', UploadController::class)
-    ->where('path', '.*')
-    ->middleware('signed')
-    ->name('uploads.show');
+Route::get('/uploads/{path}', UploadController::class)->where('path', '.*')->middleware('signed')->name('uploads.show');
 
 /*
 |--------------------------------------------------------------------------

@@ -119,7 +119,17 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
             'live_tv_enabled' => ['boolean'],
 
             'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
-            'favicon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg,ico', 'max:2048'],
+            'favicon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=256,max_height=256'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'favicon.image' => 'The favicon must be a valid image.',
+            'favicon.mimes' => 'The favicon must be a JPG, JPEG, PNG, or WebP image.',
+            'favicon.max' => 'The favicon must not be larger than 2MB.',
+            'favicon.dimensions' => 'The favicon must not be larger than 256 × 256 pixels.',
         ];
     }
 
@@ -228,7 +238,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                 Storage::disk('public')->delete($this->setting->favicon);
             }
 
-            $faviconPath = app(\App\Services\ImageService::class)->optimizeAndStore($this->favicon, 'settings/favicon', maxWidth: 256, maxHeight: 256, quality: 90);
+            $faviconPath = app(\App\Services\ImageService::class)->optimizeAndStore($this->favicon, 'settings/favicon', maxWidth: 256, quality: 90);
         }
 
         $this->setting->update([
@@ -261,9 +271,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
         $this->logo = null;
         $this->favicon = null;
 
-        $this->setting = $this->setting->fresh();
-
-        $this->captureOriginalState();
+        $this->dispatch('branding-saved');
 
         $this->dispatch('toast', message: 'Settings updated successfully.', type: 'success');
     }
@@ -285,147 +293,145 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                 <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                     <div class="flex flex-wrap gap-2">
                         @foreach ($tabs as $key => $tab)
-                            <button type="button" wire:click="setTab('{{ $key }}')"
-                                @class([
-                                    'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition cursor-pointer',
-                                    'bg-primary text-white shadow-sm' => $activeTab === $key,
-                                    'text-slate-600 hover:bg-slate-50 hover:text-primary' =>
-                                        $activeTab !== $key,
-                                ])>
-                                <span class="material-symbols-outlined text-[20px]">
-                                    {{ $tab['icon'] }}
-                                </span>
-                                {{ $tab['label'] }}
-                            </button>
+                        <button type="button" wire:click="setTab('{{ $key }}')"
+                            @class([ 'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition cursor-pointer' , 'bg-primary text-white shadow-sm'=> $activeTab === $key,
+                            'text-slate-600 hover:bg-slate-50 hover:text-primary' =>
+                            $activeTab !== $key,
+                            ])>
+                            <span class="material-symbols-outlined text-[20px]">
+                                {{ $tab['icon'] }}
+                            </span>
+                            {{ $tab['label'] }}
+                        </button>
                         @endforeach
                     </div>
                 </div>
 
                 <!-- Basic Settings -->
                 @if ($activeTab === 'basic')
-                    <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-                        <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
-                            <span class="material-symbols-outlined text-primary">business</span>
-                            Basic Information
-                        </h3>
+                <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
+                        <span class="material-symbols-outlined text-primary">business</span>
+                        Basic Information
+                    </h3>
 
-                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Site Name</label>
-                                <input type="text" wire:model.live="site_name"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="TechWave" />
-                                @error('site_name')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Site Name</label>
+                            <input type="text" wire:model.live="site_name"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="TechWave" />
+                            @error('site_name')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Email</label>
-                                <input type="email" wire:model.live="email"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="info@example.com" />
-                                @error('email')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Email</label>
+                            <input type="email" wire:model.live="email"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="info@example.com" />
+                            @error('email')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Phone / Number</label>
-                                <input type="text" wire:model.live="phone"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="+880..." />
-                                @error('phone')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Phone / Number</label>
+                            <input type="text" wire:model.live="phone"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="+880..." />
+                            @error('phone')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Location</label>
-                                <input type="text" wire:model.live="location"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="Dhaka, Bangladesh" />
-                                @error('location')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Location</label>
+                            <input type="text" wire:model.live="location"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="Dhaka, Bangladesh" />
+                            @error('location')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2 md:col-span-2">
-                                <label class="block font-label-md text-on-surface">Map Embed / Map Link</label>
-                                <textarea wire:model.live="map_embed_link" rows="3"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="Google map iframe embed code or map link"></textarea>
-                                @error('map_embed_link')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="block font-label-md text-on-surface">Map Embed / Map Link</label>
+                            <textarea wire:model.live="map_embed_link" rows="3"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="Google map iframe embed code or map link"></textarea>
+                            @error('map_embed_link')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 md:col-span-2">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="text-label-md font-label-md text-on-surface">Live TV</h4>
-                                        <p class="mt-1 text-body-sm font-body-sm text-secondary">Enable or disable the Live TV feature on the website.</p>
-                                    </div>
-                                    <label class="relative inline-flex cursor-pointer items-center">
-                                        <input type="checkbox" wire:model.live="live_tv_enabled" class="peer sr-only" />
-                                        <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                                    </label>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 md:col-span-2">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-label-md font-label-md text-on-surface">Live TV</h4>
+                                    <p class="mt-1 text-body-sm font-body-sm text-secondary">Enable or disable the Live TV feature on the website.</p>
                                 </div>
+                                <label class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" wire:model.live="live_tv_enabled" class="peer sr-only" />
+                                    <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                </label>
                             </div>
                         </div>
                     </div>
+                </div>
                 @endif
 
                 <!-- Payment Settings -->
                 @if ($activeTab === 'payment')
-                    <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-                        <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
-                            <span class="material-symbols-outlined text-primary">payments</span>
-                            bKash Payment Settings
-                        </h3>
+                <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
+                        <span class="material-symbols-outlined text-primary">payments</span>
+                        bKash Payment Settings
+                    </h3>
 
-                        <div class="grid grid-cols-1 gap-6">
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">bKash Number</label>
-                                <input type="text" wire:model.live="bkash_number"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="01XXXXXXXXX" />
-                                @error('bkash_number')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                                <p class="text-xs text-secondary">The bKash number where users will send payments.</p>
-                            </div>
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">bKash Number</label>
+                            <input type="text" wire:model.live="bkash_number"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="01XXXXXXXXX" />
+                            @error('bkash_number')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-secondary">The bKash number where users will send payments.</p>
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">bKash Payment Instructions</label>
-                                <textarea wire:model.live="bkash_instructions" rows="8"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5 font-mono text-sm"
-                                    placeholder="1. Open your bKash app..."></textarea>
-                                @error('bkash_instructions')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                                <p class="text-xs text-secondary">Step-by-step instructions shown to users before they submit payment.</p>
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">bKash Payment Instructions</label>
+                            <textarea wire:model.live="bkash_instructions" rows="8"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5 font-mono text-sm"
+                                placeholder="1. Open your bKash app..."></textarea>
+                            @error('bkash_instructions')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-secondary">Step-by-step instructions shown to users before they submit payment.</p>
                         </div>
                     </div>
+                </div>
                 @endif
 
                 <!-- Legal Pages -->
                 @if ($activeTab === 'legal')
-                    <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-                        <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
-                            <span class="material-symbols-outlined text-primary">policy</span>
-                            Legal Pages
-                        </h3>
+                <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
+                        <span class="material-symbols-outlined text-primary">policy</span>
+                        Legal Pages
+                    </h3>
 
-                        <div class="space-y-8">
-                            <!-- Terms & Conditions -->
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">
-                                    Terms & Conditions
-                                </label>
+                    <div class="space-y-8">
+                        <!-- Terms & Conditions -->
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">
+                                Terms & Conditions
+                            </label>
 
-                                <div wire:ignore x-data="{
+                            <div wire:ignore x-data="{
                                     quill: null,
                                     value: @entangle('terms_conditions'),
                                 
@@ -476,22 +482,22 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                                         });
                                     }
                                 }"
-                                    class="overflow-hidden rounded-lg border border-outline-variant bg-white">
-                                    <div x-ref="editor" class="legal-quill-editor"></div>
-                                </div>
-
-                                @error('terms_conditions')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
+                                class="overflow-hidden rounded-lg border border-outline-variant bg-white">
+                                <div x-ref="editor" class="legal-quill-editor"></div>
                             </div>
 
-                            <!-- Privacy Policy -->
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">
-                                    Privacy Policy
-                                </label>
+                            @error('terms_conditions')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                                <div wire:ignore x-data="{
+                        <!-- Privacy Policy -->
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">
+                                Privacy Policy
+                            </label>
+
+                            <div wire:ignore x-data="{
                                     quill: null,
                                     value: @entangle('privacy_policy'),
                                 
@@ -542,152 +548,282 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                                         });
                                     }
                                 }"
-                                    class="overflow-hidden rounded-lg border border-outline-variant bg-white">
-                                    <div x-ref="editor" class="legal-quill-editor"></div>
-                                </div>
-
-                                @error('privacy_policy')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
+                                class="overflow-hidden rounded-lg border border-outline-variant bg-white">
+                                <div x-ref="editor" class="legal-quill-editor"></div>
                             </div>
+
+                            @error('privacy_policy')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
+                </div>
                 @endif
 
                 <!-- Social Media -->
                 @if ($activeTab === 'social')
-                    <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-                        <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
-                            <span class="material-symbols-outlined text-primary">share</span>
-                            Social Media
-                        </h3>
+                <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
+                        <span class="material-symbols-outlined text-primary">share</span>
+                        Social Media
+                    </h3>
 
-                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Facebook URL</label>
-                                <input type="url" wire:model.live="facebook_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="Facebook URL" />
-                                @error('facebook_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Facebook URL</label>
+                            <input type="url" wire:model.live="facebook_url"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="Facebook URL" />
+                            @error('facebook_url')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">LinkedIn URL</label>
-                                <input type="url" wire:model.live="linkedin_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="LinkedIn URL" />
-                                @error('linkedin_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">LinkedIn URL</label>
+                            <input type="url" wire:model.live="linkedin_url"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="LinkedIn URL" />
+                            @error('linkedin_url')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Twitter / X URL</label>
-                                <input type="url" wire:model.live="twitter_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="Twitter / X URL" />
-                                @error('twitter_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Twitter / X URL</label>
+                            <input type="url" wire:model.live="twitter_url"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="Twitter / X URL" />
+                            @error('twitter_url')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Instagram URL</label>
-                                <input type="url" wire:model.live="instagram_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="Instagram URL" />
-                                @error('instagram_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">Instagram URL</label>
+                            <input type="url" wire:model.live="instagram_url"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="Instagram URL" />
+                            @error('instagram_url')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">YouTube URL</label>
-                                <input type="url" wire:model.live="youtube_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="YouTube URL" />
-                                @error('youtube_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">YouTube URL</label>
+                            <input type="url" wire:model.live="youtube_url"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="YouTube URL" />
+                            @error('youtube_url')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">GitHub URL</label>
-                                <input type="url" wire:model.live="github_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="GitHub URL" />
-                                @error('github_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2">
+                            <label class="block font-label-md text-on-surface">GitHub URL</label>
+                            <input type="url" wire:model.live="github_url"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="GitHub URL" />
+                            @error('github_url')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="space-y-2 md:col-span-2">
-                                <label class="block font-label-md text-on-surface">WhatsApp URL</label>
-                                <input type="url" wire:model.live="whatsapp_url"
-                                    class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                    placeholder="WhatsApp URL" />
-                                @error('whatsapp_url')
-                                    <p class="text-sm text-red-500">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="block font-label-md text-on-surface">WhatsApp URL</label>
+                            <input type="url" wire:model.live="whatsapp_url"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5"
+                                placeholder="WhatsApp URL" />
+                            @error('whatsapp_url')
+                            <p class="text-sm text-red-500">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
+                </div>
                 @endif
 
                 <!-- Branding -->
                 @if ($activeTab === 'branding')
-                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h3 class="mb-6 text-h3 font-h2">Site Logo</h3>
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-                            <label for="logo"
-                                class="flex h-48 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface">
-                                @if (($logoPreview = $this->previewUrl($logo)))
-                                    <img src="{{ $logoPreview }}"
-                                        class="h-full w-full object-contain p-5" />
-                                @elseif ($setting->logo)
-                                    <img src="{{ \App\Services\UploadStorage::url($setting->logo) }}"
-                                        class="h-full w-full object-contain p-5" />
+                    {{-- Site Logo --}}
+                    <div
+                        x-data="{ preview: null }"
+                        x-on:branding-saved.window="
+                if (preview) URL.revokeObjectURL(preview);
+                preview = null;
+            "
+                        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <h3 class="mb-6 text-h3 font-h2">Site Logo</h3>
+
+                        <label
+                            for="logo"
+                            class="relative flex h-48 cursor-pointer flex-col items-center justify-center
+                       overflow-hidden rounded-lg border-2 border-dashed
+                       border-outline-variant bg-surface transition
+                       hover:border-primary/50 hover:bg-primary/5">
+                            <img
+                                x-show="preview"
+                                x-cloak
+                                :src="preview"
+                                alt="Logo preview"
+                                class="h-full w-full object-contain p-5" />
+
+                            <div
+                                x-show="!preview"
+                                class="flex h-full w-full flex-col items-center justify-center">
+                                @if ($setting->logo)
+                                <img
+                                    src="{{ \App\Services\UploadStorage::url($setting->logo) }}"
+                                    alt="Current site logo"
+                                    class="h-full w-full object-contain p-5" />
                                 @else
-                                    <span class="material-symbols-outlined mb-2 text-5xl text-outline">image</span>
-                                    <p class="text-sm text-outline">Upload logo</p>
+                                <span class="material-symbols-outlined mb-2 text-5xl text-outline">
+                                    image
+                                </span>
+
+                                <p class="text-sm text-outline">
+                                    Upload logo
+                                </p>
                                 @endif
-                            </label>
+                            </div>
 
-                            <input id="logo" type="file" wire:model="logo" accept="image/*,.svg"
-                                class="hidden" />
-                            @error('logo')
-                                <p class="mt-3 text-sm text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h3 class="mb-6 text-h3 font-h2">Favicon</h3>
-
-                            <label for="favicon"
-                                class="flex h-48 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface">
-                                @if (($faviconPreview = $this->previewUrl($favicon)))
-                                    <img src="{{ $faviconPreview }}"
-                                        class="h-full w-full object-contain p-5" />
-                                @elseif ($setting->favicon)
-                                    <img src="{{ \App\Services\UploadStorage::url($setting->favicon) }}"
-                                        class="h-full w-full object-contain p-5" />
-                                @else
+                            <div
+                                wire:loading.flex
+                                wire:target="logo"
+                                class="absolute inset-0 z-20 items-center justify-center
+                           bg-white/80 backdrop-blur-sm">
+                                <div class="flex flex-col items-center gap-3">
                                     <span
-                                        class="material-symbols-outlined mb-2 text-5xl text-outline">add_photo_alternate</span>
-                                    <p class="text-sm text-outline">Upload favicon</p>
-                                @endif
-                            </label>
+                                        class="h-7 w-7 animate-spin rounded-full
+                                   border-2 border-primary/30 border-t-primary"></span>
 
-                            <input id="favicon" type="file" wire:model="favicon" accept="image/*,.svg,.ico"
-                                class="hidden" />
-                            @error('favicon')
-                                <p class="mt-3 text-sm text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
+                                    <span class="text-sm font-medium text-primary">
+                                        Uploading logo...
+                                    </span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <input
+                            id="logo"
+                            type="file"
+                            wire:model="logo"
+                            accept=".png,.jpg,.jpeg,.webp,.svg,image/*"
+                            class="hidden"
+                            x-on:change="
+                    if (preview) {
+                        URL.revokeObjectURL(preview);
+                    }
+
+                    const file = $event.target.files[0];
+
+                    preview = file
+                        ? URL.createObjectURL(file)
+                        : null;
+                " />
+
+                        @error('logo')
+                        <p class="mt-3 text-sm text-red-500">
+                            {{ $message }}
+                        </p>
+                        @enderror
+
+                        <p class="mt-3 text-xs text-secondary">
+                            PNG, JPG, WebP or SVG. Maximum 5MB.
+                        </p>
                     </div>
+
+
+                    {{-- Favicon --}}
+                    <div
+                        x-data="{ preview: null }"
+                        x-on:branding-saved.window="
+                if (preview) URL.revokeObjectURL(preview);
+                preview = null;
+            "
+                        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <h3 class="mb-6 text-h3 font-h2">Favicon</h3>
+
+                        <label
+                            for="favicon"
+                            class="relative flex h-48 cursor-pointer flex-col items-center justify-center
+                       overflow-hidden rounded-lg border-2 border-dashed
+                       border-outline-variant bg-surface transition
+                       hover:border-primary/50 hover:bg-primary/5">
+                            <img
+                                x-show="preview"
+                                x-cloak
+                                :src="preview"
+                                alt="Favicon preview"
+                                class="h-full w-full object-contain p-5" />
+
+                            <div
+                                x-show="!preview"
+                                class="flex h-full w-full flex-col items-center justify-center">
+                                @if ($setting->favicon)
+                                <img
+                                    src="{{ \App\Services\UploadStorage::url($setting->favicon) }}"
+                                    alt="Current favicon"
+                                    class="h-full w-full object-contain p-5" />
+                                @else
+                                <span class="material-symbols-outlined mb-2 text-5xl text-outline">
+                                    add_photo_alternate
+                                </span>
+
+                                <p class="text-sm text-outline">
+                                    Upload favicon
+                                </p>
+                                @endif
+                            </div>
+
+                            <div
+                                wire:loading.flex
+                                wire:target="favicon"
+                                class="absolute inset-0 z-20 items-center justify-center
+                           bg-white/80 backdrop-blur-sm">
+                                <div class="flex flex-col items-center gap-3">
+                                    <span
+                                        class="h-7 w-7 animate-spin rounded-full
+                                   border-2 border-primary/30 border-t-primary"></span>
+
+                                    <span class="text-sm font-medium text-primary">
+                                        Uploading favicon...
+                                    </span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <input
+                            id="favicon"
+                            type="file"
+                            wire:model="favicon"
+                            accept=".png,.jpg,.jpeg,.webp,.svg,.ico,image/*"
+                            class="hidden"
+                            x-on:change="
+                    if (preview) {
+                        URL.revokeObjectURL(preview);
+                    }
+
+                    const file = $event.target.files[0];
+
+                    preview = file
+                        ? URL.createObjectURL(file)
+                        : null;
+                " />
+
+                        @error('favicon')
+                        <p class="mt-3 text-sm text-red-500">
+                            {{ $message }}
+                        </p>
+                        @enderror
+
+                        <p class="mt-3 text-xs text-secondary">
+                            PNG, JPG, WebP, SVG or ICO. Maximum 2MB.
+                        </p>
+                    </div>
+
+                </div>
                 @endif
 
                 <!-- Main Save Button -->
