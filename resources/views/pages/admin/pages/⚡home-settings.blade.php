@@ -128,7 +128,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
             return $image;
         }
 
-        return Storage::url($image);
+        return \App\Services\UploadStorage::url($image);
     }
 
     public function save(): void
@@ -800,7 +800,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                                             @endphp
                                             <div
                                                 class="relative overflow-hidden rounded-lg border border-white/10 {{ $span }} {{ $compactPreview ? 'bg-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.10)]' : ($dashboardPreview ? 'bg-[#080b18] shadow-[0_0_24px_rgba(76,29,149,0.10)]' : '') }}">
-                                                <img src="{{ $service->image ? asset('storage/' . $service->image) : 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80' }}"
+                                                <img src="{{ $service->image ? \App\Services\UploadStorage::url($service->image) : 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80' }}"
                                                     class="absolute inset-0 h-full w-full object-cover {{ $compactPreview ? 'opacity-20' : ($dashboardPreview ? 'opacity-70' : '') }}"
                                                     alt="">
                                                 <div

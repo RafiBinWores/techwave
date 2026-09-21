@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\UploadStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -59,7 +60,7 @@ class SiteSetting extends Model
             return $this->logo;
         }
 
-        return asset('storage/'.$this->logo);
+        return UploadStorage::url($this->logo);
     }
 
     public function getFaviconUrlAttribute(): string
@@ -69,7 +70,7 @@ class SiteSetting extends Model
                 return $this->favicon;
             }
 
-            return asset('storage/'.$this->favicon);
+            return UploadStorage::url($this->favicon);
         }
 
         return asset('assets/images/logo/logo.png');

@@ -388,7 +388,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit User')] class extends Component
                                     />
                                 @elseif ($user->avatar)
                                     <img
-                                        src="{{ Storage::url($user->avatar) }}"
+                                        src="{{ \App\Services\UploadStorage::url($user->avatar) }}"
                                         alt="{{ $user->name }}"
                                         class="h-full w-full object-cover"
                                     />
@@ -862,7 +862,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit User')] class extends Component
                                         <img src="{{ $company_logo_file->temporaryUrl() }}" alt="Company logo preview"
                                             class="h-14 w-14 rounded-lg border border-slate-200 bg-white object-contain" />
                                     @elseif ($company_logo)
-                                        <img src="{{ Storage::url($company_logo) }}" alt="Company logo"
+                                        <img src="{{ \App\Services\UploadStorage::url($company_logo) }}" alt="Company logo"
                                             class="h-14 w-14 rounded-lg border border-slate-200 bg-white object-contain" />
                                     @endif
 

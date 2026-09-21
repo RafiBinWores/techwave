@@ -187,7 +187,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
             return $value;
         }
 
-        return Storage::disk('public')->url($value);
+        return \App\Services\UploadStorage::url($value);
     }
 
     public function previewImage(string $field, string $fallback): string

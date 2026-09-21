@@ -465,7 +465,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
             'name' => $file->getClientOriginalName(),
             'mime' => $mime,
             'size' => (int) $file->getSize(),
-            'url' => Storage::disk('public')->url($path),
+            'url' => \App\Services\UploadStorage::url($path),
         ];
 
         $this->reset('editorUpload');
@@ -582,7 +582,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
                 'name' => $file->getClientOriginalName(),
                 'mime' => (string) $file->getMimeType(),
                 'size' => (int) $file->getSize(),
-                'url' => Storage::disk('public')->url($file->storeAs('workspace/issues', $storeName, 'public')),
+                'url' => \App\Services\UploadStorage::url($file->storeAs('workspace/issues', $storeName, 'public')),
             ];
         }
 
@@ -795,7 +795,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
                                     title="{{ $task->assignee->name }}"
                                     class="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200">
                                     <img
-                                        src="{{ Storage::url($task->assignee->avatar) }}"
+                                        src="{{ \App\Services\UploadStorage::url($task->assignee->avatar) }}"
                                         alt="{{ $task->assignee->name }}"
                                         class="h-full w-full object-cover">
                                 </span>
@@ -862,7 +862,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Issues')] class extends Comp
                             title="{{ $task->assignee->name }}"
                             class="h-6 w-6 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200">
                             <img
-                                src="{{ Storage::url($task->assignee->avatar) }}"
+                                src="{{ \App\Services\UploadStorage::url($task->assignee->avatar) }}"
                                 alt="{{ $task->assignee->name }}"
                                 class="h-full w-full object-cover">
                         </span>

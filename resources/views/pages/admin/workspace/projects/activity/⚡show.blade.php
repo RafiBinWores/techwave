@@ -438,7 +438,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
             'name' => $file->getClientOriginalName(),
             'mime' => $mime,
             'size' => (int) $file->getSize(),
-            'url' => Storage::disk('public')->url($path),
+            'url' => \App\Services\UploadStorage::url($path),
         ];
 
         $this->reset('editorUpload');
@@ -465,7 +465,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
                 'name' => $file->getClientOriginalName(),
                 'mime' => (string) $file->getMimeType(),
                 'size' => (int) $file->getSize(),
-                'url' => Storage::disk('public')->url($file->store('workspace/project-updates', 'public')),
+                'url' => \App\Services\UploadStorage::url($file->store('workspace/project-updates', 'public')),
             ];
         }
 

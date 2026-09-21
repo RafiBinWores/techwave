@@ -9,6 +9,7 @@ use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
 use App\Http\Controllers\SubscriptionInvoiceController;
+use App\Http\Controllers\UploadController;
 use App\Http\Controllers\WhmcsInvoiceController;
 use App\Http\Controllers\WhmcsSsoController;
 use App\Models\User;
@@ -16,6 +17,11 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/uploads/{path}', UploadController::class)
+    ->where('path', '.*')
+    ->middleware('signed')
+    ->name('uploads.show');
 
 /*
 |--------------------------------------------------------------------------

@@ -176,7 +176,7 @@ new #[Layout('layouts.admin-app')] #[Title('Companies We Work With')] class exte
                                     <div class="flex items-center gap-3">
                                         <div class="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-slate-100 p-2">
                                             <img
-                                                src="{{ Storage::url($companyLogo->logo) }}"
+                                                src="{{ \App\Services\UploadStorage::url($companyLogo->logo) }}"
                                                 alt="{{ $companyLogo->name }}"
                                                 class="h-full w-full object-contain"
                                             />

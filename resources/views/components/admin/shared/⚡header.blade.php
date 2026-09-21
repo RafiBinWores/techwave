@@ -507,7 +507,7 @@ new class extends Component {
             <button type="button" @click="userMenu = !userMenu"
                 class="flex items-center gap-2 cursor-pointer rounded-lg p-1.5 transition hover:bg-slate-100">
                 @if (auth()->user()->avatar)
-                    <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
+                    <img src="{{ \App\Services\UploadStorage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
                         class="h-8 w-8 object-cover rounded-full" />
                 @else
                     <div

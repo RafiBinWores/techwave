@@ -36,24 +36,32 @@ class ImageService
         $directory = trim($directory, '/');
         $path = $directory.'/'.$name.'-'.time().'.'.$extension;
 
-        Storage::disk($disk)->makeDirectory($directory);
+        $workspace = new LocalFileWorkspace;
 
-        $outputPath = Storage::disk($disk)->path($path);
+        try {
+            $workspace->disk()->makeDirectory($directory);
 
-        $spatieImage = Image::load($image->getRealPath());
+            $outputPath = $workspace->disk()->path($path);
 
-        if ($maxWidth) {
-            $spatieImage->width($maxWidth);
+            $spatieImage = Image::load($image->getRealPath());
+
+            if ($maxWidth) {
+                $spatieImage->width($maxWidth);
+            }
+
+            if (in_array($extension, ['jpg', 'webp'])) {
+                $spatieImage->quality($quality);
+            }
+
+            $spatieImage
+                ->optimize()
+                ->save($outputPath);
+
+            $workspace->publish(Storage::disk($disk), $path);
+
+            return $path;
+        } finally {
+            $workspace->cleanup();
         }
-
-        if (in_array($extension, ['jpg', 'webp'])) {
-            $spatieImage->quality($quality);
-        }
-
-        $spatieImage
-            ->optimize()
-            ->save($outputPath);
-
-        return $path;
     }
 }

@@ -245,7 +245,7 @@ new #[Layout('layouts.admin-app')] #[Title('Completed Projects')] class extends 
                                     <div class="flex items-center gap-3">
                                         <div class="h-14 w-16 overflow-hidden rounded-xl bg-slate-100">
                                             @if ($project->thumbnail)
-                                                <img src="{{ Storage::url($project->thumbnail) }}"
+                                                <img src="{{ \App\Services\UploadStorage::url($project->thumbnail) }}"
                                                     alt="{{ $project->title }}" class="h-full w-full object-cover" />
                                             @else
                                                 <div

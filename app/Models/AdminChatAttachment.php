@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\UploadStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +29,6 @@ class AdminChatAttachment extends Model
 
     public function url(): string
     {
-        return asset('storage/'.$this->file_path);
+        return UploadStorage::url($this->file_path);
     }
 }

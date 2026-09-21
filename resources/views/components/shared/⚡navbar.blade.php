@@ -621,7 +621,7 @@ new class extends Component {
                     <button type="button" @click="userMenu = !userMenu; notificationOpen = false"
                         class="flex cursor-pointer items-center gap-3 rounded-full px-2 py-1.5 text-white transition hover:bg-white/5">
                         @if (auth()->user()->avatar)
-                        <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
+                        <img src="{{ \App\Services\UploadStorage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
                             class="h-10 w-10 rounded-full object-cover" />
                         @else
                         <div
@@ -941,7 +941,7 @@ new class extends Component {
                     <div class="mt-3 border-t border-white/10 pt-3">
                         <div class="flex items-center gap-3 rounded-xl px-2 py-2 text-white">
                             @if (auth()->user()->avatar)
-                            <img src="{{ Storage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
+                            <img src="{{ \App\Services\UploadStorage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
                                 class="h-10 w-10 rounded-full object-cover" />
                             @else
                             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 text-sm font-bold text-white">

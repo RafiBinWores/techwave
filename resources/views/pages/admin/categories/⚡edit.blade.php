@@ -173,7 +173,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Category')] class extends Compo
                             />
                         @elseif ($category->image)
                             <img
-                                src="{{ Storage::url($category->image) }}"
+                                src="{{ \App\Services\UploadStorage::url($category->image) }}"
                                 alt="{{ $category->name }}"
                                 class="h-full w-full object-contain p-8"
                             />

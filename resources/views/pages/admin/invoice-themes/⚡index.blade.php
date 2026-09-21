@@ -198,7 +198,7 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Theme Management')] class ex
                                         <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
                                             @if ($theme->preview_image)
                                                 <img
-                                                    src="{{ Storage::url($theme->preview_image) }}"
+                                                    src="{{ \App\Services\UploadStorage::url($theme->preview_image) }}"
                                                     alt="{{ $theme->name }}"
                                                     class="h-full w-full object-cover"
                                                 />

@@ -40,7 +40,7 @@
         <div class="mt-2 flex flex-wrap gap-1.5">
             @foreach ($update->attachments as $attachment)
             <a
-                href="{{ $attachment['url'] }}"
+                href="{{ \App\Services\UploadStorage::url($attachment['url']) }}"
                 target="_blank"
                 rel="noopener"
                 class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50">

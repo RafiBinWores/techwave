@@ -30,7 +30,7 @@ new #[Title('Projects | Techwave')] class extends Component {
                 return $project->thumbnail;
             }
 
-            return asset('storage/' . $project->thumbnail);
+            return \App\Services\UploadStorage::url($project->thumbnail);
         }
 
         return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80';

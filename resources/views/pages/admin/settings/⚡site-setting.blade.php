@@ -648,7 +648,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                                     <img src="{{ $logoPreview }}"
                                         class="h-full w-full object-contain p-5" />
                                 @elseif ($setting->logo)
-                                    <img src="{{ Storage::url($setting->logo) }}"
+                                    <img src="{{ \App\Services\UploadStorage::url($setting->logo) }}"
                                         class="h-full w-full object-contain p-5" />
                                 @else
                                     <span class="material-symbols-outlined mb-2 text-5xl text-outline">image</span>
@@ -672,7 +672,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                                     <img src="{{ $faviconPreview }}"
                                         class="h-full w-full object-contain p-5" />
                                 @elseif ($setting->favicon)
-                                    <img src="{{ Storage::url($setting->favicon) }}"
+                                    <img src="{{ \App\Services\UploadStorage::url($setting->favicon) }}"
                                         class="h-full w-full object-contain p-5" />
                                 @else
                                     <span

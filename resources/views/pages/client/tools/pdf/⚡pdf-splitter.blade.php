@@ -184,6 +184,8 @@ new #[Title('PDF Splitter')] class extends Component {
         $this->previewLoading = true;
         $this->previewFailed = false;
 
+        $workspace = new \App\Services\LocalFileWorkspace;
+
         try {
             $realPath = is_object($this->file) && method_exists($this->file, 'getRealPath') ? $this->file->getRealPath() : null;
 
@@ -203,7 +205,7 @@ new #[Title('PDF Splitter')] class extends Component {
 
             $directory = $this->previewDirectory();
 
-            $disk->makeDirectory($directory);
+            $workspace->disk()->makeDirectory($directory);
 
             $urls = [];
 
@@ -216,9 +218,11 @@ new #[Title('PDF Splitter')] class extends Component {
                 app(GhostscriptService::class)->renderPageImage(
                     inputPath: $realPath,
                     page: $page,
-                    outputPath: $disk->path($relative),
+                    outputPath: $workspace->disk()->path($relative),
                     resolution: 50,
                 );
+
+                $workspace->publish($disk, $relative);
 
                 $urls[] = [
                     'page' => $page,
@@ -237,6 +241,8 @@ new #[Title('PDF Splitter')] class extends Component {
             $this->previewLoading = false;
             $this->previewReady = false;
             $this->previewFailed = true;
+        } finally {
+            $workspace->cleanup();
         }
     }
 
@@ -263,7 +269,7 @@ new #[Title('PDF Splitter')] class extends Component {
 
         $pages = $pageCount > 1 ? [1, $pageCount] : [1];
 
-        return array_map(fn (int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
+        return array_map(fn(int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
     }
 
     /**
@@ -318,7 +324,7 @@ new #[Title('PDF Splitter')] class extends Component {
         if ($tokens === []) {
             $pages = $pageCount > 1 ? [1, $pageCount] : [1];
 
-            return array_map(fn (int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
+            return array_map(fn(int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
         }
 
         $preview = [];
@@ -367,7 +373,7 @@ new #[Title('PDF Splitter')] class extends Component {
         if ($ranges === []) {
             $pages = $pageCount > 1 ? [1, $pageCount] : [1];
 
-            return array_map(fn (int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
+            return array_map(fn(int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
         }
 
         if ($this->combineRanges) {
@@ -376,7 +382,7 @@ new #[Title('PDF Splitter')] class extends Component {
                 $ranges[count($ranges) - 1]['end'],
             ]));
 
-            return array_map(fn (int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
+            return array_map(fn(int $page) => ['page' => $page, 'range' => null, 'rangeLabel' => null], $pages);
         }
 
         $preview = [];
@@ -600,7 +606,7 @@ new #[Title('PDF Splitter')] class extends Component {
         $retention = $this->retentionSettings();
 
         try {
-            Storage::disk($disk)->makeDirectory($directory);
+            \App\Services\UploadStorage::ensureDirectory($disk, $directory);
 
             $originalName = $file->getClientOriginalName();
 
@@ -783,9 +789,34 @@ new #[Title('PDF Splitter')] class extends Component {
                 <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text italic text-transparent">PDFs</span>
             </h1>
             <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/60 md:text-lg">
-                Split a PDF into individual pages, extract a page range, or pull out only the pages you need — all
-                powered by Ghostscript.
+                Split a PDF into individual pages, extract a page range, or pull out only the pages you need.
             </p>
+        </div>
+
+        <div class="mb-12 hidden lg:flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-300/40 bg-cyan-400/15 text-sm font-bold text-cyan-200 shadow-lg shadow-cyan-500/20">
+                    1
+                </div>
+                <span class="text-xs font-bold tracking-[0.22em] text-white">UPLOAD</span>
+            </div>
+            <div class="hidden h-px w-10 bg-white/15 sm:block"></div>
+            <div class="flex items-center gap-3 opacity-70">
+                <div
+                    class="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm font-bold text-blue-100/60">
+                    2
+                </div>
+                <span class="text-xs font-bold tracking-[0.22em] text-blue-100/50">SPLIT</span>
+            </div>
+            <div class="hidden h-px w-10 bg-white/15 sm:block"></div>
+            <div class="flex items-center gap-3 opacity-70">
+                <div
+                    class="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm font-bold text-blue-100/60">
+                    3
+                </div>
+                <span class="text-xs font-bold tracking-[0.22em] text-blue-100/50">DOWNLOAD</span>
+            </div>
         </div>
 
         @php
@@ -948,7 +979,7 @@ new #[Title('PDF Splitter')] class extends Component {
                                         <p class="text-xs text-blue-100/50">
                                             {{ $this->formatBytes($this->fileSize) }}
                                             @if ($this->pageCount !== null)
-                                                &middot; {{ $this->pageCount }} {{ Str::plural('page', $this->pageCount) }}
+                                            &middot; {{ $this->pageCount }} {{ Str::plural('page', $this->pageCount) }}
                                             @endif
                                         </p>
                                     </div>
@@ -966,63 +997,63 @@ new #[Title('PDF Splitter')] class extends Component {
                                             Page Preview
                                         </p>
                                         @if ($this->pageCount !== null)
-                                            <span class="text-[11px] text-blue-100/40">
-                                                {{ $this->pageCount }} {{ Str::plural('page', $this->pageCount) }} total
-                                            </span>
+                                        <span class="text-[11px] text-blue-100/40">
+                                            {{ $this->pageCount }} {{ Str::plural('page', $this->pageCount) }} total
+                                        </span>
                                         @endif
                                     </div>
 
                                     @if ($this->previewReady && !empty($this->previewUrls))
+                                    @php
+                                    $previewGroups = collect($this->previewUrls)->groupBy('range')->values();
+                                    @endphp
+                                    <div class="{{ $this->mode === 'custom' ? 'flex flex-wrap items-start gap-3' : 'space-y-3' }}">
+                                        @foreach ($previewGroups as $group)
                                         @php
-                                        $previewGroups = collect($this->previewUrls)->groupBy('range')->values();
+                                        $groupedItems = $group->values()->all();
+                                        $rangeLabel = $groupedItems[0]['rangeLabel'] ?? null;
                                         @endphp
-                                        <div class="{{ $this->mode === 'custom' ? 'flex flex-wrap items-start gap-3' : 'space-y-3' }}">
-                                            @foreach ($previewGroups as $group)
-                                                @php
-                                                $groupedItems = $group->values()->all();
-                                                $rangeLabel = $groupedItems[0]['rangeLabel'] ?? null;
-                                                @endphp
-                                                <div class="overflow-hidden rounded-xl border border-white/10 bg-slate-950/25 p-3">
-                                                    @if ($rangeLabel !== null)
-                                                        <div class="mb-2.5 flex items-center gap-1.5">
-                                                            <span class="material-symbols-outlined text-sm text-cyan-300">{{ $this->mode === 'custom' ? 'select_all' : 'filter_alt' }}</span>
-                                                            <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-200">
-                                                                @if ($this->mode === 'custom')
-                                                                Pages {{ $rangeLabel }}
-                                                                @else
-                                                                Range {{ $rangeLabel }}
-                                                                @endif
-                                                            </span>
-                                                        </div>
+                                        <div class="overflow-hidden rounded-xl border border-white/10 bg-slate-950/25 p-3">
+                                            @if ($rangeLabel !== null)
+                                            <div class="mb-2.5 flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-sm text-cyan-300">{{ $this->mode === 'custom' ? 'select_all' : 'filter_alt' }}</span>
+                                                <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-200">
+                                                    @if ($this->mode === 'custom')
+                                                    Pages {{ $rangeLabel }}
+                                                    @else
+                                                    Range {{ $rangeLabel }}
                                                     @endif
-                                                    <div class="flex flex-wrap items-center justify-center gap-3">
-                                                        @foreach ($groupedItems as $thumb)
-                                                            <div
-                                                                class="w-20 overflow-hidden rounded-lg border border-white/10 bg-white/5 sm:w-32">
-                                                                <img src="{{ $thumb['url'] }}" alt="Page {{ $thumb['page'] }}"
-                                                                    class="aspect-[3/4] w-full object-cover" loading="lazy" />
-                                                                <p
-                                                                    class="border-t border-white/10 bg-slate-950/60 py-1 text-center text-[11px] font-bold text-cyan-200">
-                                                                    Page {{ $thumb['page'] }}
-                                                                </p>
-                                                            </div>
-                                                            @if (!$loop->last)
-                                                                <span class="material-symbols-outlined shrink-0 text-lg text-blue-100/30">arrow_right_alt</span>
-                                                            @endif
-                                                        @endforeach
-                                                    </div>
+                                                </span>
+                                            </div>
+                                            @endif
+                                            <div class="flex flex-wrap items-center justify-center gap-3">
+                                                @foreach ($groupedItems as $thumb)
+                                                <div
+                                                    class="w-20 overflow-hidden rounded-lg border border-white/10 bg-white/5 sm:w-32">
+                                                    <img src="{{ $thumb['url'] }}" alt="Page {{ $thumb['page'] }}"
+                                                        class="aspect-[3/4] w-full object-cover" loading="lazy" />
+                                                    <p
+                                                        class="border-t border-white/10 bg-slate-950/60 py-1 text-center text-[11px] font-bold text-cyan-200">
+                                                        Page {{ $thumb['page'] }}
+                                                    </p>
                                                 </div>
-                                            @endforeach
+                                                @if (!$loop->last)
+                                                <span class="material-symbols-outlined shrink-0 text-lg text-blue-100/30">arrow_right_alt</span>
+                                                @endif
+                                                @endforeach
+                                            </div>
                                         </div>
+                                        @endforeach
+                                    </div>
                                     @elseif ($this->previewFailed)
-                                        <p class="rounded-lg border border-white/10 bg-white/4 px-3 py-2 text-[11px] text-blue-100/40">
-                                            Preview unavailable.
-                                        </p>
+                                    <p class="rounded-lg border border-white/10 bg-white/4 px-3 py-2 text-[11px] text-blue-100/40">
+                                        Preview unavailable.
+                                    </p>
                                     @else
-                                        <div class="flex h-24 items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/4">
-                                            <span class="h-5 w-5 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-300"></span>
-                                            <span class="text-xs text-blue-100/55">Generating page preview...</span>
-                                        </div>
+                                    <div class="flex h-24 items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/4">
+                                        <span class="h-5 w-5 animate-spin rounded-full border-2 border-cyan-100/30 border-t-cyan-300"></span>
+                                        <span class="text-xs text-blue-100/55">Generating page preview...</span>
+                                    </div>
                                     @endif
                                 </div>
                             </div>
@@ -1171,8 +1202,8 @@ new #[Title('PDF Splitter')] class extends Component {
                                     <label for="custom-pages" class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-blue-100/50">
                                         Pages (e.g. 1,3,5-7)
                                     </label>
-                                <input id="custom-pages" type="text" wire:model.live.debounce.600ms="customPages"
-                                    placeholder="1,3,5-7"
+                                    <input id="custom-pages" type="text" wire:model.live.debounce.600ms="customPages"
+                                        placeholder="1,3,5-7"
                                         class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-2.5 text-sm font-semibold text-white placeholder:text-blue-100/30 focus:border-cyan-400/40 focus:outline-none" />
                                     @error('customPages')
                                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
@@ -1238,36 +1269,6 @@ new #[Title('PDF Splitter')] class extends Component {
 
                     <div class="h-20 lg:hidden"></div>
                     @endif
-                </div>
-
-                <div class="mt-12 grid w-full gap-6 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
-                            <span class="material-symbols-outlined">upload</span>
-                        </div>
-                        <h3 class="mt-4 font-semibold text-white">1. Upload</h3>
-                        <p class="mt-2 text-sm text-blue-100/62">
-                            Select a PDF up to {{ $this->max_upload_size_mb }}MB from your device.
-                        </p>
-                    </div>
-                    <div class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/15 text-blue-300">
-                            <span class="material-symbols-outlined">call_split</span>
-                        </div>
-                        <h3 class="mt-4 font-semibold text-white">2. Choose Mode</h3>
-                        <p class="mt-2 text-sm text-blue-100/62">
-                            Split all pages, extract a range, or pick custom pages.
-                        </p>
-                    </div>
-                    <div class="rounded-2xl border border-white/10 bg-white/6 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
-                            <span class="material-symbols-outlined">download</span>
-                        </div>
-                        <h3 class="mt-4 font-semibold text-white">3. Download</h3>
-                        <p class="mt-2 text-sm text-blue-100/62">
-                            Download your split PDFs, or a ZIP when split into many pages.
-                        </p>
-                    </div>
                 </div>
     </main>
 </div>

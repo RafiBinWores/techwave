@@ -150,7 +150,7 @@ new #[Title('Blogs | Techwave')] class extends Component {
             return $blog->thumbnail;
         }
 
-        return asset('storage/' . $blog->thumbnail);
+        return \App\Services\UploadStorage::url($blog->thumbnail);
     }
 };
 ?>

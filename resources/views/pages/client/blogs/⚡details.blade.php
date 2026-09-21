@@ -39,7 +39,7 @@ new class extends Component {
             return $blog->thumbnail;
         }
 
-        return asset('storage/' . $blog->thumbnail);
+        return \App\Services\UploadStorage::url($blog->thumbnail);
     }
 
     public function getRecentBlogsProperty()

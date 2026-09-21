@@ -173,7 +173,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Tool Category')] class extends 
                             />
                         @elseif ($toolCategory->image)
                             <img
-                                src="{{ Storage::url($toolCategory->image) }}"
+                                src="{{ \App\Services\UploadStorage::url($toolCategory->image) }}"
                                 alt="{{ $toolCategory->name }}"
                                 class="h-full w-full object-contain p-8"
                             />

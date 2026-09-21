@@ -275,7 +275,7 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
                                 <div class="flex items-center gap-3">
                                     <div class="h-10 w-10 overflow-hidden rounded-full bg-slate-100">
                                         @if ($account->user?->avatar)
-                                            <img src="{{ Storage::url($account->user->avatar) }}" alt="{{ $account->user->name }}"
+                                            <img src="{{ \App\Services\UploadStorage::url($account->user->avatar) }}" alt="{{ $account->user->name }}"
                                                 class="h-full w-full object-cover" />
                                         @else
                                             <div
@@ -461,7 +461,7 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
                                         class="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
                                         <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-slate-100">
                                             @if ($user->avatar)
-                                                <img src="{{ Storage::url($user->avatar) }}" class="h-full w-full object-cover" />
+                                                <img src="{{ \App\Services\UploadStorage::url($user->avatar) }}" class="h-full w-full object-cover" />
                                             @else
                                                 <div class="flex h-full w-full items-center justify-center bg-primary/10 text-xs font-bold uppercase text-primary">
                                                     {{ str($user->name)->substr(0, 1) }}
@@ -493,7 +493,7 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
                             <div class="mt-3 flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
                                 <div class="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-slate-100">
                                     @if ($selectedUser->avatar)
-                                        <img src="{{ Storage::url($selectedUser->avatar) }}" class="h-full w-full object-cover" />
+                                        <img src="{{ \App\Services\UploadStorage::url($selectedUser->avatar) }}" class="h-full w-full object-cover" />
                                     @else
                                         <div class="flex h-full w-full items-center justify-center bg-primary/10 text-sm font-bold uppercase text-primary">
                                             {{ str($selectedUser->name)->substr(0, 1) }}

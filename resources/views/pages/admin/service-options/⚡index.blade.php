@@ -189,7 +189,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Options')] class extends Com
                                     <div class="flex items-center gap-3">
                                         <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
                                             @if ($option->image)
-                                                <img src="{{ Storage::url($option->image) }}"
+                                                <img src="{{ \App\Services\UploadStorage::url($option->image) }}"
                                                     alt="{{ $option->card_title }}"
                                                     class="h-full w-full object-cover" />
                                             @else

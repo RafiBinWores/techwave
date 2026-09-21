@@ -54,9 +54,7 @@
 
     $logoCid = null;
 
-    if (!empty($logoPath) && file_exists($logoPath)) {
-        $logoCid = $message->embed($logoPath);
-    }
+    $logoCid = \App\Services\UploadStorage::emailLogo($logoPath, $message ?? null);
 @endphp
 
 <!DOCTYPE html>

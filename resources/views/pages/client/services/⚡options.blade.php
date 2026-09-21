@@ -28,7 +28,7 @@ new #[Title('Service Options | Techwave')] class extends Component {
                 return $option->image;
             }
 
-            return asset('storage/' . $option->image);
+            return \App\Services\UploadStorage::url($option->image);
         }
 
         return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
@@ -41,7 +41,7 @@ new #[Title('Service Options | Techwave')] class extends Component {
                 return $this->service->image;
             }
 
-            return asset('storage/' . $this->service->image);
+            return \App\Services\UploadStorage::url($this->service->image);
         }
 
         return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';

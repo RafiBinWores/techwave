@@ -4,24 +4,7 @@
     $logoSrc = null;
     $logoValue = $settings?->logo;
 
-    if (filled($logoValue)) {
-        if (str_starts_with($logoValue, 'http://') || str_starts_with($logoValue, 'https://')) {
-            $logoSrc = $logoValue;
-        } else {
-            $cleanLogo = ltrim($logoValue, '/');
-            $possiblePath = str_starts_with($cleanLogo, 'storage/')
-                ? public_path($cleanLogo)
-                : public_path('storage/'.$cleanLogo);
-
-            if (! file_exists($possiblePath)) {
-                $possiblePath = storage_path('app/public/'.str_replace('storage/', '', $cleanLogo));
-            }
-
-            if (file_exists($possiblePath)) {
-                $logoSrc = $message->embed($possiblePath);
-            }
-        }
-    }
+    $logoSrc = \App\Services\UploadStorage::emailLogo($logoValue, $message ?? null);
 
     $subtotal = $proposal->subtotal();
     $discountAmount = $proposal->discountAmount();

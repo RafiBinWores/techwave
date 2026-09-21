@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\UploadStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,6 +67,6 @@ class UserBgRemovedImage extends Model
             return null;
         }
 
-        return Storage::url($this->result_path);
+        return UploadStorage::url($this->result_path);
     }
 }

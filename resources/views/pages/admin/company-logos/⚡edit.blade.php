@@ -131,7 +131,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Company Logo')] class extends C
                             />
                         @elseif ($companyLogo->logo)
                             <img
-                                src="{{ Storage::url($companyLogo->logo) }}"
+                                src="{{ \App\Services\UploadStorage::url($companyLogo->logo) }}"
                                 alt="{{ $companyLogo->name }}"
                                 class="h-full w-full object-contain p-8"
                             />

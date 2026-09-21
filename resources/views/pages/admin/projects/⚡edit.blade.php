@@ -571,7 +571,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Project')] class extends Compon
                             <img src="{{ $thumbnail->temporaryUrl() }}" alt="Project preview"
                                 class="h-full w-full object-cover" />
                         @elseif ($project->thumbnail)
-                            <img src="{{ Storage::url($project->thumbnail) }}" alt="{{ $project->title }}"
+                            <img src="{{ \App\Services\UploadStorage::url($project->thumbnail) }}" alt="{{ $project->title }}"
                                 class="h-full w-full object-cover" />
                         @else
                             <span class="material-symbols-outlined mb-2 text-5xl text-outline">

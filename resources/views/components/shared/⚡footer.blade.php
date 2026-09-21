@@ -23,7 +23,7 @@ new class extends Component {
             return $logo;
         }
 
-        return Storage::url($logo);
+        return \App\Services\UploadStorage::url($logo);
     }
 
     public function siteName(): string

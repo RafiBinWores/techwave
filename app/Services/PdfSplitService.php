@@ -29,84 +29,92 @@ class PdfSplitService
             'local'
         );
 
-        $disk = Storage::disk($diskName);
-        $inputPath = $disk->path($record->original_path);
-
-        if (! is_file($inputPath)) {
-            $this->markFailed(
-                $record,
-                'Original PDF file was not found on disk.'
-            );
-
-            return;
-        }
-
-        $validation = $this->validatePdf($inputPath);
-
-        if (! $validation['valid']) {
-            $this->markFailed(
-                $record,
-                $validation['error'] ?? 'Invalid PDF file.'
-            );
-
-            return;
-        }
-
-        $outputDirectory = $this->outputDirectory($record);
-
-        $disk->makeDirectory($outputDirectory);
-
-        Log::info('PDF split started', [
-            'split_pdf_id' => $record->id,
-            'mode' => $record->mode,
-        ]);
+        $destination = Storage::disk($diskName);
+        $workspace = new LocalFileWorkspace;
 
         try {
-            $pageCount = $this->ghostscript->pageCount($inputPath);
+            $disk = $workspace->disk();
+            $workspace->import($destination, $record->original_path);
+            $inputPath = $disk->path($record->original_path);
 
-            if ($pageCount <= 0) {
-                throw new RuntimeException(
-                    'The uploaded PDF contains no pages.'
+            if (! is_file($inputPath)) {
+                $this->markFailed(
+                    $record,
+                    'Original PDF file was not found on disk.'
                 );
+
+                return;
             }
 
-            $record->update(['page_count' => $pageCount]);
+            $validation = $this->validatePdf($inputPath);
 
-            if ($record->mode === 'all') {
-                $this->splitAllPages($record, $disk, $outputDirectory);
-            } elseif ($record->mode === 'range' && $this->shouldSplitRangesSeparately($record)) {
-                $this->splitByRanges($record, $disk, $outputDirectory);
-            } else {
-                $this->extractSelectedPages($record, $disk, $outputDirectory);
+            if (! $validation['valid']) {
+                $this->markFailed(
+                    $record,
+                    $validation['error'] ?? 'Invalid PDF file.'
+                );
+
+                return;
             }
 
-            Log::info('PDF split completed', [
+            $outputDirectory = $this->outputDirectory($record);
+
+            $disk->makeDirectory($outputDirectory);
+
+            Log::info('PDF split started', [
                 'split_pdf_id' => $record->id,
-                'page_count' => $pageCount,
-                'total_seconds' => round(
-                    microtime(true) - $totalStartedAt,
-                    2
-                ),
+                'mode' => $record->mode,
             ]);
 
-            if (! $record->is_backup_enabled) {
-                $record->deleteOriginalFile();
+            try {
+                $pageCount = $this->ghostscript->pageCount($inputPath);
+
+                if ($pageCount <= 0) {
+                    throw new RuntimeException(
+                        'The uploaded PDF contains no pages.'
+                    );
+                }
+
+                $record->update(['page_count' => $pageCount]);
+
+                if ($record->mode === 'all') {
+                    $this->splitAllPages($record, $disk, $outputDirectory);
+                } elseif ($record->mode === 'range' && $this->shouldSplitRangesSeparately($record)) {
+                    $this->splitByRanges($record, $disk, $outputDirectory);
+                } else {
+                    $this->extractSelectedPages($record, $disk, $outputDirectory);
+                }
+
+                Log::info('PDF split completed', [
+                    'split_pdf_id' => $record->id,
+                    'page_count' => $pageCount,
+                    'total_seconds' => round(
+                        microtime(true) - $totalStartedAt,
+                        2
+                    ),
+                ]);
+
+                if (! $record->is_backup_enabled) {
+                    $record->deleteOriginalFile();
+                }
+            } catch (Throwable $e) {
+                $record->deleteOutputFile();
+
+                $this->markFailed($record, $e->getMessage());
+
+                Log::error('PDF split failed', [
+                    'split_pdf_id' => $record->id,
+                    'seconds' => round(
+                        microtime(true) - $totalStartedAt,
+                        2
+                    ),
+                    'error' => $e->getMessage(),
+                ]);
+
+                throw $e;
             }
-        } catch (Throwable $e) {
-            $record->deleteOutputFile();
-
-            $this->markFailed($record, $e->getMessage());
-
-            Log::error('PDF split failed', [
-                'split_pdf_id' => $record->id,
-                'seconds' => round(
-                    microtime(true) - $totalStartedAt,
-                    2
-                ),
-                'error' => $e->getMessage(),
-            ]);
-
-            throw $e;
+        } finally {
+            $workspace->cleanup();
         }
     }
 
@@ -152,7 +160,7 @@ class PdfSplitService
                 }
             }
 
-            $this->finalizeRecord($record, $zipPath);
+            $this->finalizeRecord($record, $zipPath, $disk);
         } catch (Throwable $e) {
             foreach ($temporaryPaths as $temporary) {
                 if (is_file($temporary['full'])) {
@@ -185,7 +193,7 @@ class PdfSplitService
             ),
         );
 
-        $this->finalizeRecord($record, $outputPath);
+        $this->finalizeRecord($record, $outputPath, $disk);
     }
 
     /**
@@ -370,7 +378,7 @@ class PdfSplitService
                 }
             }
 
-            $this->finalizeRecord($record, $zipPath);
+            $this->finalizeRecord($record, $zipPath, $disk);
         } catch (Throwable $e) {
             foreach ($temporaryPaths as $temporary) {
                 if (is_file($temporary['full'])) {
@@ -431,14 +439,8 @@ class PdfSplitService
     private function finalizeRecord(
         SplitPdf $record,
         string $outputPath,
+        Filesystem $disk,
     ): void {
-        $diskName = (string) config(
-            'pdf-compressor.storage_disk',
-            'local'
-        );
-
-        $disk = Storage::disk($diskName);
-
         $outputFullPath = $disk->path($outputPath);
 
         clearstatcache(true, $outputFullPath);
@@ -450,6 +452,8 @@ class PdfSplitService
                 'The split output file is empty.'
             );
         }
+
+        LocalFileWorkspace::transfer($disk, Storage::disk(config('pdf-compressor.storage_disk')), $outputPath);
 
         $record->update([
             'output_path' => $outputPath,

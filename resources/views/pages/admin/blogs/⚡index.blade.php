@@ -234,7 +234,7 @@ new #[Layout('layouts.admin-app')] #[Title('Blog Management')] class extends Com
                                         <div class="h-14 w-16 overflow-hidden rounded-xl bg-slate-100">
                                             @if ($blog->thumbnail)
                                                 <img
-                                                    src="{{ Storage::url($blog->thumbnail) }}"
+                                                    src="{{ \App\Services\UploadStorage::url($blog->thumbnail) }}"
                                                     alt="{{ $blog->title }}"
                                                     class="h-full w-full object-cover"
                                                 />

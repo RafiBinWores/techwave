@@ -12,7 +12,7 @@
         $siteSetting = SiteSetting::current();
 
         $favicon = $siteSetting->favicon
-            ? asset('storage/' . $siteSetting->favicon)
+            ? \App\Services\UploadStorage::url($siteSetting->favicon)
             : asset('assets/images/logo/logo.png');
     @endphp
 

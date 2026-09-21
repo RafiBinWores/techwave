@@ -40,11 +40,11 @@ return [
     | Storage Disk
     |--------------------------------------------------------------------------
     |
-    | Disk used for storing uploaded and compressed PDFs. Must be a private disk.
+    | Private upload disk. Its driver follows UPLOADS_DISK in filesystems.php.
     |
     */
 
-    'storage_disk' => env('PDF_COMPRESSOR_DISK', 'local'),
+    'storage_disk' => env('PDF_COMPRESSOR_DISK', 'documents'),
 
     /*
     |--------------------------------------------------------------------------

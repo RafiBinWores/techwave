@@ -49,7 +49,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             return $image;
         }
 
-        return asset('storage/' . $image);
+        return \App\Services\UploadStorage::url($image);
     }
 
     public function pricingPlans()
@@ -83,7 +83,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                 return $project->thumbnail;
             }
 
-            return asset('storage/' . $project->thumbnail);
+            return \App\Services\UploadStorage::url($project->thumbnail);
         }
 
         return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80';
@@ -173,7 +173,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
             return $blog->thumbnail;
         }
 
-        return asset('storage/' . $blog->thumbnail);
+        return \App\Services\UploadStorage::url($blog->thumbnail);
     }
 };
 ?>
@@ -315,7 +315,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                         <div x-ref="track" class="flex w-max items-center gap-4 will-change-transform">
                             @forelse ($this->companyLogos() as $logo)
                                 <div class="logo-card group">
-                                    <img src="{{ Storage::url($logo->logo) }}" alt="{{ $logo->name }}"
+                                    <img src="{{ \App\Services\UploadStorage::url($logo->logo) }}" alt="{{ $logo->name }}"
                                         class="logo-img" />
                                     @if ($logo->website_url)
                                         <a href="{{ $logo->website_url }}" target="_blank"
@@ -392,7 +392,7 @@ new #[Title('Techwave | Complete IT Solutions in Bangladesh – Web, Email, Netw
                             );
 
                             $serviceImage = $service->image
-                                ? asset('storage/' . $service->image)
+                                ? \App\Services\UploadStorage::url($service->image)
                                 : 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1400&q=80';
 
                             $serviceMediaStyle = $service->media_background_style;

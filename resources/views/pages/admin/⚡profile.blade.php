@@ -79,7 +79,7 @@ new #[Layout('layouts.admin-app')] #[Title('My Profile')] class extends Componen
         }
 
         if ($this->avatar) {
-            return Storage::url($this->avatar);
+            return \App\Services\UploadStorage::url($this->avatar);
         }
 
         return '';

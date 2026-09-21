@@ -196,7 +196,7 @@ new #[Layout('layouts.admin-app')] #[Title('Service Management')] class extends 
                                                 <div class="h-full w-full" style="{{ $service->media_background_style }}">
                                                 </div>
                                             @elseif ($service->image)
-                                                <img src="{{ Storage::url($service->image) }}"
+                                                <img src="{{ \App\Services\UploadStorage::url($service->image) }}"
                                                     alt="{{ $service->card_title }}"
                                                     class="h-full w-full object-cover" />
                                             @else

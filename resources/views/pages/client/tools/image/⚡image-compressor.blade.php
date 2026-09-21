@@ -238,6 +238,8 @@ new #[Title('Image Compressor')] class extends Component {
 
     private function compressSingle($image): array
     {
+        $workspace = new \App\Services\LocalFileWorkspace;
+
         try {
             $originalName = $image->getClientOriginalName();
             $originalSize = (int) $image->getSize();
@@ -258,9 +260,9 @@ new #[Title('Image Compressor')] class extends Component {
 
             $uniqueId = Str::random(20);
             $storagePath = 'temp/compressor/' . $uniqueId . '.' . $outputExt;
-            $outputFullPath = Storage::disk('public')->path($storagePath);
+            $outputFullPath = $workspace->disk()->path($storagePath);
 
-            Storage::disk('public')->makeDirectory('temp/compressor');
+            $workspace->disk()->makeDirectory('temp/compressor');
 
             $sourcePath = $image->getRealPath();
 
@@ -314,10 +316,12 @@ new #[Title('Image Compressor')] class extends Component {
                 $note = 'PNG kept as PNG. Enable WebP option for stronger compression.';
             }
 
+            $workspace->publish(Storage::disk('public'), $storagePath);
+
             if ($this->is_premium_user) {
                $persistentPath = 'compressed/users/' . auth()->id() . '/' . $uniqueId . '.' . $outputExt;
 
-                Storage::disk('public')->writeStream($persistentPath, Storage::disk('public')->readStream($storagePath));
+                Storage::disk('public')->copy($storagePath, $persistentPath);
 
                 UserCompressedImage::query()->create([
                     'user_id' => auth()->id(),
@@ -361,6 +365,8 @@ new #[Title('Image Compressor')] class extends Component {
                 'savings_percent' => 0,
                 'status' => 'error',
             ];
+        } finally {
+            $workspace->cleanup();
         }
     }
 
@@ -488,11 +494,7 @@ new #[Title('Image Compressor')] class extends Component {
             $fileName = pathinfo($result['original_name'], PATHINFO_FILENAME);
             $extension = $result['compressed_ext'] ?: pathinfo($result['original_name'], PATHINFO_EXTENSION);
             $downloadName = $fileName . '_compressed.' . $extension;
-            $filePath = Storage::disk('public')->path($result['compressed_path']);
-
-            if (is_file($filePath)) {
-                $zip->addFile($filePath, $downloadName);
-            }
+            $zip->addFromString($downloadName, Storage::disk('public')->get($result['compressed_path']));
         }
 
         $zip->close();

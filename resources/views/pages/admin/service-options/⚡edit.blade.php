@@ -802,7 +802,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service Option')] class extends
                                 <img src="{{ $image->temporaryUrl() }}" alt="Option preview"
                                     class="h-full w-full object-cover" />
                             @elseif ($serviceOption->image)
-                                <img src="{{ Storage::url($serviceOption->image) }}"
+                                <img src="{{ \App\Services\UploadStorage::url($serviceOption->image) }}"
                                     alt="{{ $serviceOption->card_title }}" class="h-full w-full object-cover" />
                             @else
                                 <span class="material-symbols-outlined mb-2 text-5xl text-outline">

@@ -56,7 +56,7 @@ new #[Layout('layouts.admin-auth')] class extends Component {
                             $siteSetting = SiteSetting::current();
 
                             $logo = $siteSetting->logo
-                                ? asset('storage/' . $siteSetting->logo)
+                                ? \App\Services\UploadStorage::url($siteSetting->favicon)
                                 : asset('assets/images/logo/logo.png');
                         @endphp
 

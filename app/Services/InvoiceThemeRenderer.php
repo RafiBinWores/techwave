@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\InvoiceTheme;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 class InvoiceThemeRenderer
 {
@@ -1670,16 +1669,7 @@ CSS;
 
     private function backgroundDataUri(InvoiceTheme $theme): ?string
     {
-        $path = $theme->pdf_background_image;
-
-        if (! $path || ! Storage::disk('public')->exists($path)) {
-            return null;
-        }
-
-        $absolutePath = Storage::disk('public')->path($path);
-        $mimeType = mime_content_type($absolutePath) ?: 'image/png';
-
-        return 'data:'.$mimeType.';base64,'.base64_encode((string) file_get_contents($absolutePath));
+        return UploadStorage::dataUri($theme->pdf_background_image);
     }
 
     private static function innerHtml(\DOMNode $node): string

@@ -556,7 +556,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
             'name' => $file->getClientOriginalName(),
             'mime' => $mime,
             'size' => (int) $file->getSize(),
-            'url' => Storage::disk('public')->url($path),
+            'url' => \App\Services\UploadStorage::url($path),
         ];
 
         $this->reset('editorUpload');
@@ -791,7 +791,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
                                 @if ($projectManager->avatar)
                                 <span class="h-5 w-5 overflow-hidden rounded-full ring-1 ring-slate-200">
                                     <img
-                                        src="{{ Storage::url($projectManager->avatar) }}"
+                                        src="{{ \App\Services\UploadStorage::url($projectManager->avatar) }}"
                                         alt="{{ $projectManager->name }}"
                                         class="h-full w-full object-cover">
                                 </span>
@@ -920,7 +920,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
                                 @if ($projectManager->avatar)
                                 <span class="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200">
                                     <img
-                                        src="{{ Storage::url($projectManager->avatar) }}"
+                                        src="{{ \App\Services\UploadStorage::url($projectManager->avatar) }}"
                                         alt="{{ $projectManager->name }}"
                                         class="h-full w-full object-cover">
                                 </span>
@@ -947,7 +947,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
                                 @if ($project->client->avatar)
                                 <span class="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200">
                                     <img
-                                        src="{{ Storage::url($project->client->avatar) }}"
+                                        src="{{ \App\Services\UploadStorage::url($project->client->avatar) }}"
                                         alt="{{ $project->client->name }}"
                                         class="h-full w-full object-cover">
                                 </span>
@@ -984,7 +984,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
                                                 title="{{ $member->name }}"
                                                 class="h-5 w-5 overflow-hidden rounded-full border-2 border-white">
                                                 <img
-                                                    src="{{ Storage::url($member->avatar) }}"
+                                                    src="{{ \App\Services\UploadStorage::url($member->avatar) }}"
                                                     alt="{{ $member->name }}"
                                                     class="h-full w-full object-cover">
                                             </span>
@@ -1042,7 +1042,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Overview')] class extends Co
                                                         @if ($member->avatar)
                                                         <span class="h-8 w-8 shrink-0 overflow-hidden rounded-full">
                                                             <img
-                                                                src="{{ Storage::url($member->avatar) }}"
+                                                                src="{{ \App\Services\UploadStorage::url($member->avatar) }}"
                                                                 alt="{{ $member->name }}"
                                                                 class="h-full w-full object-cover">
                                                         </span>

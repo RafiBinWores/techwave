@@ -885,7 +885,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     <img src="{{ $image->temporaryUrl() }}" alt="Service preview"
                                         class="h-full w-full object-cover" />
                                 @elseif ($service->image)
-                                    <img src="{{ Storage::url($service->image) }}" alt="{{ $service->card_title }}"
+                                    <img src="{{ \App\Services\UploadStorage::url($service->image) }}" alt="{{ $service->card_title }}"
                                         class="h-full w-full object-cover" />
                                 @else
                                     <span class="material-symbols-outlined mb-2 text-5xl text-outline">

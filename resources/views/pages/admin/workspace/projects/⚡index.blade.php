@@ -207,7 +207,7 @@ new #[Layout('layouts.admin-app')] #[Title('Workspace')] class extends Component
             'name' => $file->getClientOriginalName(),
             'mime' => $mime,
             'size' => (int) $file->getSize(),
-            'url' => Storage::disk('public')->url($path),
+            'url' => \App\Services\UploadStorage::url($path),
         ];
 
         $this->reset('editorUpload');

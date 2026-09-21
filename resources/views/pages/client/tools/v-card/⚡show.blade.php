@@ -491,8 +491,8 @@ new #[Layout('layouts::vcard')] class extends Component {
         ($ringEnabled ? 'border:' . $ringWidth . 'px solid ' . $ringColor . ';' : 'border:0;') .
         'box-shadow:0 18px 40px rgba(15,23,42,.22);';
 
-    $profileUrl = filled($data['profilePath'] ?? null) ? Storage::url($data['profilePath']) : null;
-    $bannerUrl = filled($data['bannerPath'] ?? null) ? Storage::url($data['bannerPath']) : null;
+    $profileUrl = filled($data['profilePath'] ?? null) ? \App\Services\UploadStorage::url($data['profilePath']) : null;
+    $bannerUrl = filled($data['bannerPath'] ?? null) ? \App\Services\UploadStorage::url($data['bannerPath']) : null;
     $bannerImage = $useProfileAsBanner && $profileUrl ? $profileUrl : $bannerUrl;
     $showHeaderAvatar = !($useProfileAsBanner && $profileUrl);
 
@@ -555,7 +555,7 @@ new #[Layout('layouts::vcard')] class extends Component {
                         style="background:linear-gradient(160deg,rgba(2,6,23,.92),rgba(15,23,42,.88));">
                         <div class="w-full max-w-[220px]">
                             @if (filled($data['loadingPath'] ?? null))
-                                <img src="{{ Storage::url($data['loadingPath']) }}"
+                                <img src="{{ \App\Services\UploadStorage::url($data['loadingPath']) }}"
                                     class="mx-auto h-24 w-24 rounded-3xl object-cover shadow-2xl ring-1 ring-white/15"
                                     style="animation:publicVcardLoadingPulse 1.8s ease-in-out infinite" alt="Loading">
                             @else

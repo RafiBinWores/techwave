@@ -30,112 +30,124 @@ class PdfMergeService
             'local'
         );
 
-        $disk = Storage::disk($diskName);
+        $destination = Storage::disk($diskName);
+        $workspace = new LocalFileWorkspace;
 
-        if ($sourcePaths === []) {
-            $this->markFailed(
-                $record,
-                'No source PDF files were provided to merge.'
-            );
+        try {
+            $disk = $workspace->disk();
+            foreach ($sourcePaths as $sourcePath) {
+                $workspace->import($destination, $sourcePath);
+            }
 
-            return;
-        }
-
-        foreach ($sourcePaths as $sourcePath) {
-            $fullPath = $disk->path($sourcePath);
-
-            $validation = $this->validatePdf($fullPath);
-
-            if (! $validation['valid']) {
+            if ($sourcePaths === []) {
                 $this->markFailed(
                     $record,
-                    'Invalid source PDF: '.($validation['error'] ?? 'Unknown error.')
+                    'No source PDF files were provided to merge.'
                 );
 
                 return;
             }
-        }
 
-        $outputDirectory = $this->outputDirectory($record);
+            foreach ($sourcePaths as $sourcePath) {
+                $fullPath = $disk->path($sourcePath);
 
-        $disk->makeDirectory($outputDirectory);
+                $validation = $this->validatePdf($fullPath);
 
-        $outputPath = $outputDirectory.'/'.Str::random(30).'.pdf';
+                if (! $validation['valid']) {
+                    $this->markFailed(
+                        $record,
+                        'Invalid source PDF: '.($validation['error'] ?? 'Unknown error.')
+                    );
 
-        $outputFullPath = $disk->path($outputPath);
-
-        Log::info('PDF merge started', [
-            'merged_pdf_id' => $record->id,
-            'source_count' => count($sourcePaths),
-        ]);
-
-        try {
-            $fullSourcePaths = array_map(
-                fn (string $path) => $disk->path($path),
-                $sourcePaths
-            );
-
-            $this->ghostscript->merge(
-                inputPaths: $fullSourcePaths,
-                outputPath: $outputFullPath,
-                timeout: (int) config(
-                    'pdf-compressor.processing_timeout',
-                    180
-                ),
-            );
-
-            clearstatcache(true, $outputFullPath);
-
-            $outputSize = @filesize($outputFullPath);
-
-            if ($outputSize === false || $outputSize <= 0) {
-                throw new RuntimeException(
-                    'The merged PDF output is empty.'
-                );
-            }
-
-            $record->update([
-                'output_path' => $outputPath,
-                'output_size' => (int) $outputSize,
-                'status' => 'completed',
-                'error_message' => null,
-                'processed_at' => now(),
-            ]);
-
-            if (! $record->is_backup_enabled) {
-                foreach ($sourcePaths as $sourcePath) {
-                    $disk->delete($sourcePath);
+                    return;
                 }
             }
 
-            Log::info('PDF merge completed', [
+            $outputDirectory = $this->outputDirectory($record);
+
+            $disk->makeDirectory($outputDirectory);
+
+            $outputPath = $outputDirectory.'/'.Str::random(30).'.pdf';
+
+            $outputFullPath = $disk->path($outputPath);
+
+            Log::info('PDF merge started', [
                 'merged_pdf_id' => $record->id,
-                'output_size_mb' => round(
-                    $outputSize / 1024 / 1024,
-                    2
-                ),
-                'total_seconds' => round(
-                    microtime(true) - $totalStartedAt,
-                    2
-                ),
+                'source_count' => count($sourcePaths),
             ]);
-        } catch (Throwable $e) {
-            if (is_file($outputFullPath)) {
-                @unlink($outputFullPath);
+
+            try {
+                $fullSourcePaths = array_map(
+                    fn (string $path) => $disk->path($path),
+                    $sourcePaths
+                );
+
+                $this->ghostscript->merge(
+                    inputPaths: $fullSourcePaths,
+                    outputPath: $outputFullPath,
+                    timeout: (int) config(
+                        'pdf-compressor.processing_timeout',
+                        180
+                    ),
+                );
+
+                clearstatcache(true, $outputFullPath);
+
+                $outputSize = @filesize($outputFullPath);
+
+                if ($outputSize === false || $outputSize <= 0) {
+                    throw new RuntimeException(
+                        'The merged PDF output is empty.'
+                    );
+                }
+
+                $workspace->publish($destination, $outputPath);
+
+                $record->update([
+                    'output_path' => $outputPath,
+                    'output_size' => (int) $outputSize,
+                    'status' => 'completed',
+                    'error_message' => null,
+                    'processed_at' => now(),
+                ]);
+
+                if (! $record->is_backup_enabled) {
+                    foreach ($sourcePaths as $sourcePath) {
+                        $destination->delete($sourcePath);
+                    }
+                }
+
+                Log::info('PDF merge completed', [
+                    'merged_pdf_id' => $record->id,
+                    'output_size_mb' => round(
+                        $outputSize / 1024 / 1024,
+                        2
+                    ),
+                    'total_seconds' => round(
+                        microtime(true) - $totalStartedAt,
+                        2
+                    ),
+                ]);
+            } catch (Throwable $e) {
+                if (is_file($outputFullPath)) {
+                    @unlink($outputFullPath);
+                }
+
+                $this->markFailed($record, $e->getMessage());
+
+                Log::error('PDF merge failed', [
+                    'merged_pdf_id' => $record->id,
+                    'seconds' => round(
+                        microtime(true) - $totalStartedAt,
+                        2
+                    ),
+                    'error' => $e->getMessage(),
+                ]);
+
+                throw $e;
             }
-
-            $this->markFailed($record, $e->getMessage());
-
-            Log::error('PDF merge failed', [
-                'merged_pdf_id' => $record->id,
-                'seconds' => round(
-                    microtime(true) - $totalStartedAt,
-                    2
-                ),
-                'error' => $e->getMessage(),
-            ]);
-
-            throw $e;
+        } finally {
+            $workspace->cleanup();
         }
     }
 

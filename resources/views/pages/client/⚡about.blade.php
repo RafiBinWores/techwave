@@ -25,7 +25,7 @@ new #[Title('About Us | Techwave')] class extends Component
             return $value;
         }
 
-        return Storage::disk('public')->url($value);
+        return \App\Services\UploadStorage::url($value);
     }
 };
 ?>

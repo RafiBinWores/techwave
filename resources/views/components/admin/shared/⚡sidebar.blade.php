@@ -65,9 +65,9 @@ new class extends Component {
             <div class="h-12 w-12 rounded-xl text-white flex items-center justify-center shrink-0">
 
                 @php
-                    $logo = $this->siteSetting->logo
-                        ? asset('storage/' . $this->siteSetting->logo)
-                        : asset('assets/images/logo/logo.png');
+                $logo = $this->siteSetting->logo
+                ? \App\Services\UploadStorage::url($this->siteSetting->logo)
+                : asset('assets/images/logo/logo.png');
                 @endphp
                 <img src="{{ $logo }}" alt="Logo" class="">
             </div>
@@ -94,9 +94,9 @@ new class extends Component {
     </button>
     </div> --}}
 
-        <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
-            <span class="material-symbols-outlined">close</span>
-        </button>
+    <button @click="sidebarOpen = false" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+        <span class="material-symbols-outlined">close</span>
+    </button>
     </div>
 
 
@@ -360,34 +360,6 @@ new class extends Component {
                     <span class="material-symbols-outlined shrink-0 text-[20px]">receipt_long</span>
                     <span class="font-manrope text-sm font-medium">Invoice Themes</span>
                 </a>
-
-                <a href="{{ route('client.tools.image-compressor') }}" wire:navigate
-                    wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                    <span class="material-symbols-outlined shrink-0 text-[20px]">compress</span>
-                    <span class="font-manrope text-sm font-medium">Image Compressor</span>
-                </a>
-
-                <a href="{{ route('admin.compressed-images.index') }}" wire:navigate
-                    wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                    <span class="material-symbols-outlined shrink-0 text-[20px]">photo_library</span>
-                    <span class="font-manrope text-sm font-medium">Compressed Images</span>
-                </a>
-
-                <a href="{{ route('client.tools.image-resizer') }}" wire:navigate
-                    wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                    <span class="material-symbols-outlined shrink-0 text-[20px]">photo_size_select_large</span>
-                    <span class="font-manrope text-sm font-medium">Image Resizer</span>
-                </a>
-
-                <a href="{{ route('client.tools.bg-remover') }}" wire:navigate
-                    wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
-                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                    <span class="material-symbols-outlined shrink-0 text-[20px]">magic_exchange</span>
-                    <span class="font-manrope text-sm font-medium">BG Remover</span>
-                </a>
             </div>
         </div>
 
@@ -491,9 +463,9 @@ new class extends Component {
                     <span class="material-symbols-outlined shrink-0 text-[20px]">forum</span>
                     <span class="font-manrope text-sm font-medium">Team Chat</span>
                     @if ($this->unreadChatCount > 0)
-                        <span class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 font-manrope text-[11px] font-semibold text-white">
-                            {{ $this->unreadChatCount > 99 ? '99+' : $this->unreadChatCount }}
-                        </span>
+                    <span class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 font-manrope text-[11px] font-semibold text-white">
+                        {{ $this->unreadChatCount > 99 ? '99+' : $this->unreadChatCount }}
+                    </span>
                     @endif
                 </a>
             </div>

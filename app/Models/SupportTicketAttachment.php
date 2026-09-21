@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\UploadStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -28,7 +29,7 @@ class SupportTicketAttachment extends Model
 
     public function url(): string
     {
-        return Storage::url($this->file_path);
+        return UploadStorage::url($this->file_path);
     }
 
     public function isImage(): bool

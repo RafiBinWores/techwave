@@ -646,7 +646,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Blog')] class extends Component
                             <img src="{{ $thumbnail->temporaryUrl() }}" alt="Blog preview"
                                 class="h-full w-full object-cover" />
                         @elseif ($blog->thumbnail)
-                            <img src="{{ Storage::url($blog->thumbnail) }}" alt="{{ $blog->title }}"
+                            <img src="{{ \App\Services\UploadStorage::url($blog->thumbnail) }}" alt="{{ $blog->title }}"
                                 class="h-full w-full object-cover" />
                         @else
                             <span class="material-symbols-outlined mb-2 text-5xl text-outline">

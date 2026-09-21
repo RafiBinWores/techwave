@@ -9,15 +9,7 @@
 
     $logoCid = null;
 
-    if (!empty($logoPath)) {
-        if (str_starts_with($logoPath, 'http://') || str_starts_with($logoPath, 'https://')) {
-            $logoCid = $logoPath;
-        } elseif (file_exists($logoPath)) {
-            $logoCid = isset($message) && method_exists($message, 'embed')
-                ? $message->embed($logoPath)
-                : asset('storage/'.ltrim(str_replace('storage/', '', $logoPath), '/'));
-        }
-    }
+    $logoCid = \App\Services\UploadStorage::emailLogo($logoPath, $message ?? null);
 
     $quotationNo = $booking->booking_no ?? 'QT-' . str_pad((string) $booking->id, 6, '0', STR_PAD_LEFT);
     $issuedDate = $booking->updated_at?->format('M d, Y') ?? now()->format('M d, Y');

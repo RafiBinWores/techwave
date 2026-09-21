@@ -4,22 +4,7 @@ $logoValue = $settings?->logo ?? null;
 
 $logoSrc = null;
 
-if (!empty($logoValue)) {
-$cleanLogo = ltrim($logoValue, '/');
-
-$possibleLogoPath = str_starts_with($cleanLogo, 'storage/')
-? public_path($cleanLogo)
-: public_path('storage/' . $cleanLogo);
-
-if (!file_exists($possibleLogoPath)) {
-$possibleLogoPath = storage_path('app/public/' . str_replace('storage/', '', $cleanLogo));
-}
-
-if (file_exists($possibleLogoPath)) {
-$mimeType = mime_content_type($possibleLogoPath) ?: 'image/png';
-$logoSrc = 'data:' . $mimeType . ';base64,' . base64_encode((string) file_get_contents($possibleLogoPath));
-}
-}
+$logoSrc = \App\Services\UploadStorage::dataUri($logoValue);
 
 $companyName = $settings?->site_name ?? config('app.name');
 $companyEmail = $settings?->email ?? '';

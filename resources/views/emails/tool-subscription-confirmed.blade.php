@@ -10,26 +10,7 @@
     $logoSrc = null;
     $logoValue = $settings?->logo;
 
-    if (filled($logoValue)) {
-        if (str_starts_with($logoValue, 'http://') || str_starts_with($logoValue, 'https://')) {
-            $logoSrc = $logoValue;
-        } else {
-            $cleanLogo = ltrim($logoValue, '/');
-            $logoPath = str_starts_with($cleanLogo, 'storage/')
-                ? public_path($cleanLogo)
-                : public_path('storage/'.$cleanLogo);
-
-            if (! file_exists($logoPath)) {
-                $logoPath = storage_path('app/public/'.str_replace('storage/', '', $cleanLogo));
-            }
-
-            if (file_exists($logoPath)) {
-                $logoSrc = isset($message) && method_exists($message, 'embed')
-                    ? $message->embed($logoPath)
-                    : asset(str_replace('public/', '', $cleanLogo));
-            }
-        }
-    }
+    $logoSrc = \App\Services\UploadStorage::emailLogo($logoValue, $message ?? null);
 
     $currency = '৳';
     $amount = (float) ($invoice?->total() ?? $subscription->amount);

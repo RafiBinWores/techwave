@@ -43,27 +43,7 @@ class BookingQuoteMail extends Mailable implements ShouldQueue
 
         $logoValue = $this->setting?->logo;
 
-        if (! empty($logoValue)) {
-            if (str_starts_with($logoValue, 'http://') || str_starts_with($logoValue, 'https://')) {
-                $this->logoPath = $logoValue;
-
-                return;
-            }
-
-            $cleanLogo = ltrim($logoValue, '/');
-
-            $possibleLogoPath = str_starts_with($cleanLogo, 'storage/')
-                ? public_path($cleanLogo)
-                : public_path('storage/'.$cleanLogo);
-
-            if (! file_exists($possibleLogoPath)) {
-                $possibleLogoPath = storage_path('app/public/'.str_replace('storage/', '', $cleanLogo));
-            }
-
-            if (file_exists($possibleLogoPath)) {
-                $this->logoPath = $possibleLogoPath;
-            }
-        }
+        $this->logoPath = $logoValue;
     }
 
     /**

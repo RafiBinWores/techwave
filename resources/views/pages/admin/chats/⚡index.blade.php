@@ -381,7 +381,7 @@ new #[Layout('layouts.admin-app')] #[Title('Team Chat')] class extends Component
                         class="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition {{ $selectedUserId === $employee['id'] ? 'bg-blue-50/70' : 'hover:bg-slate-50' }}">
                         <span class="relative shrink-0">
                             @if ($employee['avatar'])
-                                <img src="{{ asset('storage/'.$employee['avatar']) }}" alt="{{ $employee['name'] }}"
+                                <img src="{{ \App\Services\UploadStorage::url($employee['avatar']) }}" alt="{{ $employee['name'] }}"
                                     class="h-11 w-11 rounded-full object-cover">
                             @else
                                 <span
@@ -439,7 +439,7 @@ new #[Layout('layouts.admin-app')] #[Title('Team Chat')] class extends Component
                     </button>
 
                     @if ($activeEmployee['avatar'])
-                        <img src="{{ asset('storage/'.$activeEmployee['avatar']) }}" alt="{{ $activeEmployee['name'] }}"
+                        <img src="{{ \App\Services\UploadStorage::url($activeEmployee['avatar']) }}" alt="{{ $activeEmployee['name'] }}"
                             class="h-11 w-11 shrink-0 rounded-full object-cover">
                     @else
                         <span

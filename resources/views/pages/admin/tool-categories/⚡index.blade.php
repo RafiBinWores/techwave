@@ -170,7 +170,7 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Categories')] class extends Com
                                         <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
                                             @if ($category->image)
                                                 <img
-                                                    src="{{ Storage::url($category->image) }}"
+                                                    src="{{ \App\Services\UploadStorage::url($category->image) }}"
                                                     alt="{{ $category->name }}"
                                                     class="h-full w-full object-cover"
                                                 />

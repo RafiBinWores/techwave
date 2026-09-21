@@ -166,7 +166,7 @@ new #[Layout('layouts.admin-app')] #[Title('Manage Users')] class extends Compon
                                 <div class="flex items-center gap-3">
                                     <div class="h-10 w-10 overflow-hidden rounded-full bg-slate-100">
                                         @if ($user->avatar)
-                                            <img src="{{ Storage::url($user->avatar) }}" alt="{{ $user->name }}"
+                                            <img src="{{ \App\Services\UploadStorage::url($user->avatar) }}" alt="{{ $user->name }}"
                                                 class="h-full w-full object-cover" />
                                         @else
                                             <div

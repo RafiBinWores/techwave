@@ -168,7 +168,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Subcategory')] class extends Co
                             <img src="{{ $image->temporaryUrl() }}" alt="Subcategory preview"
                                 class="h-full w-full object-contain p-8" />
                         @elseif ($this->subcategory->image)
-                            <img src="{{ Storage::url($this->subcategory->image) }}" alt="{{ $this->subcategory->name }}"
+                            <img src="{{ \App\Services\UploadStorage::url($this->subcategory->image) }}" alt="{{ $this->subcategory->name }}"
                                 class="h-full w-full object-contain p-8" />
                         @else
                             <span class="material-symbols-outlined mb-2 text-5xl text-outline">

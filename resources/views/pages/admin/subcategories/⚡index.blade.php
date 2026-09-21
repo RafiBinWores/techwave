@@ -198,7 +198,7 @@ new #[Layout('layouts.admin-app')] #[Title('Subcategory Management')] class exte
                                         <div
                                             class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
                                             @if ($subcategory->image)
-                                                <img src="{{ Storage::url($subcategory->image) }}"
+                                                <img src="{{ \App\Services\UploadStorage::url($subcategory->image) }}"
                                                     alt="{{ $subcategory->name }}" class="h-full w-full object-cover" />
                                             @else
                                                 <div

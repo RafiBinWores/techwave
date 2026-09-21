@@ -274,9 +274,9 @@ new #[Title('QR Code Generator')] class extends Component {
             return $svg;
         }
 
-        $path = Storage::disk('public')->path($siteSetting->logo);
-        $data = base64_encode((string) file_get_contents($path));
-        $mime = mime_content_type($path) ?: 'image/png';
+        $contents = Storage::disk('public')->get($siteSetting->logo);
+        $data = base64_encode($contents);
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($contents) ?: 'image/png';
 
         return $data ? $this->insertCenterImage($svg, $data, $mime) : $svg;
     }
@@ -499,14 +499,12 @@ new #[Title('QR Code Generator')] class extends Component {
 <div class="min-h-screen overflow-x-hidden text-white">
     <section class="mx-auto max-w-350 px-3 py-6 sm:px-6 lg:px-8">
         <div class="relative mb-6 text-center sm:mb-10">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300 sm:text-xs sm:tracking-[0.35em]">
-                Business Tools
-            </p>
             <h1 class="mt-2 text-xl font-black tracking-tight sm:mt-4 sm:text-5xl">
-                QR Code Generator
+                QR Code
+                <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text italic text-transparent">Generator</span>
             </h1>
-            <p class="mx-auto mt-2 max-w-2xl text-xs leading-5 text-blue-100/65 sm:mt-4 sm:text-sm sm:leading-6">
-                Create branded QR codes with frames, colors, logos and scan-ready SVG export.
+            <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/60 md:text-lg">
+                Create branded QR codes with frames, colors, logos and scan-ready export.
             </p>
         </div>
 
@@ -529,75 +527,75 @@ new #[Title('QR Code Generator')] class extends Component {
 
                     <div class="flex items-center gap-2 flex-warp overflow-x-auto">
                         @foreach ([
-        'url' => ['label' => 'URL', 'icon' => 'link'],
-        'text' => ['label' => 'Text', 'icon' => 'notes'],
-        'wifi' => ['label' => 'WiFi', 'icon' => 'wifi'],
-        'email' => ['label' => 'Email', 'icon' => 'mail'],
-        'phone' => ['label' => 'Phone', 'icon' => 'call'],
-    ] as $val => $cfg)
-                            <button type="button" wire:click="$set('inputType', '{{ $val }}')"
-                                class="group flex cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-1.5 text-center transition
+                        'url' => ['label' => 'URL', 'icon' => 'link'],
+                        'text' => ['label' => 'Text', 'icon' => 'notes'],
+                        'wifi' => ['label' => 'WiFi', 'icon' => 'wifi'],
+                        'email' => ['label' => 'Email', 'icon' => 'mail'],
+                        'phone' => ['label' => 'Phone', 'icon' => 'call'],
+                        ] as $val => $cfg)
+                        <button type="button" wire:click="$set('inputType', '{{ $val }}')"
+                            class="group flex cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-1.5 text-center transition
                                 {{ $this->inputType === $val ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100 shadow-lg shadow-cyan-500/10' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                <span class="material-symbols-outlined">{{ $cfg['icon'] }}</span>
-                                <span
-                                    class="block text-xs md:font-medium uppercase tracking-wider">{{ $cfg['label'] }}</span>
-                            </button>
+                            <span class="material-symbols-outlined">{{ $cfg['icon'] }}</span>
+                            <span
+                                class="block text-xs md:font-medium uppercase tracking-wider">{{ $cfg['label'] }}</span>
+                        </button>
                         @endforeach
                     </div>
 
                     <div class="mt-5">
                         @if ($this->inputType === 'wifi')
-                            <div class="space-y-3">
-                                <input wire:model.live.debounce.300ms="wifiSsid" type="text"
-                                    placeholder="Network name / SSID"
-                                    class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
+                        <div class="space-y-3">
+                            <input wire:model.live.debounce.300ms="wifiSsid" type="text"
+                                placeholder="Network name / SSID"
+                                class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
 
-                                <div class="grid gap-3 sm:grid-cols-[150px_1fr]">
-                                    <select wire:model.live="wifiEncryption"
-                                        class="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
-                                        <option value="WPA">WPA/WPA2</option>
-                                        <option value="WEP">WEP</option>
-                                        <option value="nopass">No Password</option>
-                                    </select>
+                            <div class="grid gap-3 sm:grid-cols-[150px_1fr]">
+                                <select wire:model.live="wifiEncryption"
+                                    class="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
+                                    <option value="WPA">WPA/WPA2</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">No Password</option>
+                                </select>
 
-                                    <input wire:model.live.debounce.300ms="wifiPassword" type="text"
-                                        placeholder="WiFi password"
-                                        class="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
-                                </div>
-
-                                <label class="flex cursor-pointer items-center gap-2 text-sm text-blue-100/60">
-                                    <input type="checkbox" wire:model.live="wifiHidden"
-                                        class="rounded border-white/20 bg-black/20 text-cyan-500">
-                                    Hidden network
-                                </label>
+                                <input wire:model.live.debounce.300ms="wifiPassword" type="text"
+                                    placeholder="WiFi password"
+                                    class="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
                             </div>
+
+                            <label class="flex cursor-pointer items-center gap-2 text-sm text-blue-100/60">
+                                <input type="checkbox" wire:model.live="wifiHidden"
+                                    class="rounded border-white/20 bg-black/20 text-cyan-500">
+                                Hidden network
+                            </label>
+                        </div>
                         @elseif ($this->inputType === 'email')
-                            <div class="space-y-3">
-                                <input wire:model.live.debounce.300ms="email" type="email"
-                                    placeholder="name@example.com"
-                                    class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
-
-                                <input wire:model.live.debounce.300ms="emailSubject" type="text"
-                                    placeholder="Subject"
-                                    class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
-
-                                <textarea wire:model.live.debounce.300ms="emailBody" rows="3" placeholder="Message"
-                                    class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10"></textarea>
-                            </div>
-                        @elseif ($this->inputType === 'phone')
-                            <input wire:model.live.debounce.300ms="phone" type="text" placeholder="+8801XXXXXXXXX"
+                        <div class="space-y-3">
+                            <input wire:model.live.debounce.300ms="email" type="email"
+                                placeholder="name@example.com"
                                 class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
-                        @elseif ($this->inputType === 'text')
-                            <textarea wire:model.live.debounce.300ms="input" rows="4" placeholder="Write your text here..."
+
+                            <input wire:model.live.debounce.300ms="emailSubject" type="text"
+                                placeholder="Subject"
+                                class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
+
+                            <textarea wire:model.live.debounce.300ms="emailBody" rows="3" placeholder="Message"
                                 class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10"></textarea>
+                        </div>
+                        @elseif ($this->inputType === 'phone')
+                        <input wire:model.live.debounce.300ms="phone" type="text" placeholder="+8801XXXXXXXXX"
+                            class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
+                        @elseif ($this->inputType === 'text')
+                        <textarea wire:model.live.debounce.300ms="input" rows="4" placeholder="Write your text here..."
+                            class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10"></textarea>
                         @else
-                            <input wire:model.live.debounce.300ms="input" type="url"
-                                placeholder="https://example.com"
-                                class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
+                        <input wire:model.live.debounce.300ms="input" type="url"
+                            placeholder="https://example.com"
+                            class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
                         @endif
 
                         @error('input')
-                            <p class="mt-2 text-xs font-semibold text-red-300">{{ $message }}</p>
+                        <p class="mt-2 text-xs font-semibold text-red-300">{{ $message }}</p>
                         @enderror
 
                         <p class="mt-3 flex items-center gap-2 text-xs font-semibold text-blue-100/40">
@@ -612,290 +610,290 @@ new #[Title('QR Code Generator')] class extends Component {
                     <div
                         class="flex items-center gap-1 overflow-x-auto border-b border-white/10 px-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         @foreach ([
-        'frame' => ['label' => 'Frame', 'icon' => 'dialogs', 'premium' => false],
-        'colors' => ['label' => 'Colors', 'icon' => 'palette', 'premium' => false],
-        'shape' => ['label' => 'Shape', 'icon' => 'category', 'premium' => true],
-        'logo' => ['label' => 'Logo', 'icon' => 'image', 'premium' => true],
-    ] as $tab => $cfg)
-                            @php $locked = $cfg['premium'] && !$this->isPremium; @endphp
+                        'frame' => ['label' => 'Frame', 'icon' => 'dialogs', 'premium' => false],
+                        'colors' => ['label' => 'Colors', 'icon' => 'palette', 'premium' => false],
+                        'shape' => ['label' => 'Shape', 'icon' => 'category', 'premium' => true],
+                        'logo' => ['label' => 'Logo', 'icon' => 'image', 'premium' => true],
+                        ] as $tab => $cfg)
+                        @php $locked = $cfg['premium'] && !$this->isPremium; @endphp
 
-                            <button type="button"
-                                wire:click="{{ $locked ? '' : '$set(\'activeTab\', \'' . $tab . '\')' }}"
-                                class="flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-3 py-3 text-[11px] font-black uppercase tracking-wider transition sm:text-xs
+                        <button type="button"
+                            wire:click="{{ $locked ? '' : '$set(\'activeTab\', \'' . $tab . '\')' }}"
+                            class="flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-3 py-3 text-[11px] font-black uppercase tracking-wider transition sm:text-xs
                                 {{ $locked ? 'cursor-not-allowed opacity-40' : 'hover:text-cyan-100' }}
                                 {{ $this->activeTab === $tab && !$locked ? 'border-cyan-300 text-cyan-100' : 'border-transparent text-blue-100/45' }}">
-                                <span class="material-symbols-outlined text-base">{{ $cfg['icon'] }}</span>
-                                {{ $cfg['label'] }}
-                                @if ($locked)
-                                    <span class="material-symbols-outlined text-sm">lock</span>
-                                @endif
-                            </button>
+                            <span class="material-symbols-outlined text-base">{{ $cfg['icon'] }}</span>
+                            {{ $cfg['label'] }}
+                            @if ($locked)
+                            <span class="material-symbols-outlined text-sm">lock</span>
+                            @endif
+                        </button>
                         @endforeach
                     </div>
 
                     <div class="p-4 sm:p-5">
                         @if ($this->activeTab === 'frame')
-                            <div class="space-y-5">
-                                <div>
-                                    <label class="mb-2 block text-xs font-bold text-blue-100/55">Layout</label>
-                                    <div class="flex gap-2">
-                                        @foreach (['none' => 'None', 'scan-bottom' => 'Bottom', 'scan-top' => 'Top', 'card' => 'Card'] as $val => $label)
-                                            <button type="button"
-                                                wire:click="$set('framePreset', '{{ $val }}')"
-                                                class="flex-1 rounded-xl py-2.5 text-xs font-bold uppercase tracking-wider transition
+                        <div class="space-y-5">
+                            <div>
+                                <label class="mb-2 block text-xs font-bold text-blue-100/55">Layout</label>
+                                <div class="flex gap-2">
+                                    @foreach (['none' => 'None', 'scan-bottom' => 'Bottom', 'scan-top' => 'Top', 'card' => 'Card'] as $val => $label)
+                                    <button type="button"
+                                        wire:click="$set('framePreset', '{{ $val }}')"
+                                        class="flex-1 rounded-xl py-2.5 text-xs font-bold uppercase tracking-wider transition
                                                     {{ $this->framePreset === $val ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-400/40' : 'bg-white/5 text-blue-100/50 hover:bg-white/10' }}">
-                                                {{ $label }}
-                                            </button>
-                                        @endforeach
+                                        {{ $label }}
+                                    </button>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <div>
+                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Frame
+                                        text</label>
+                                    <input wire:model.live.debounce.300ms="frameText" type="text"
+                                        class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
+                                </div>
+
+                                <div>
+                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Frame
+                                        color</label>
+                                    <div class="flex gap-2">
+                                        <input wire:model.live="frameColor" type="color"
+                                            class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                        <input wire:model.live.debounce.300ms="frameColor" type="text"
+                                            class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
                                     </div>
                                 </div>
 
-                                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold text-blue-100/55">Frame
-                                            text</label>
-                                        <input wire:model.live.debounce.300ms="frameText" type="text"
-                                            class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
-                                    </div>
-
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold text-blue-100/55">Frame
-                                            color</label>
-                                        <div class="flex gap-2">
-                                            <input wire:model.live="frameColor" type="color"
-                                                class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
-                                            <input wire:model.live.debounce.300ms="frameColor" type="text"
-                                                class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold text-blue-100/55">Text
-                                            color</label>
-                                        <div class="flex gap-2">
-                                            <input wire:model.live="frameTextColor" type="color"
-                                                class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
-                                            <input wire:model.live.debounce.300ms="frameTextColor" type="text"
-                                                class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
-                                        </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Text
+                                        color</label>
+                                    <div class="flex gap-2">
+                                        <input wire:model.live="frameTextColor" type="color"
+                                            class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                        <input wire:model.live.debounce.300ms="frameTextColor" type="text"
+                                            class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
                                     </div>
                                 </div>
                             </div>
+                        </div>
                         @elseif ($this->activeTab === 'colors')
-                            <div class="space-y-5">
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold text-blue-100/55">QR color</label>
-                                        <div class="flex gap-2">
-                                            <input wire:model.live="foregroundColor" type="color"
-                                                class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
-                                            <input wire:model.live.debounce.300ms="foregroundColor" type="text"
-                                                class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold text-blue-100/55">QR
-                                            background</label>
-                                        <div class="flex gap-2">
-                                            <input wire:model.live="backgroundColor" type="color"
-                                                class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
-                                            <input wire:model.live.debounce.300ms="backgroundColor" type="text"
-                                                class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
-                                        </div>
+                        <div class="space-y-5">
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">QR color</label>
+                                    <div class="flex gap-2">
+                                        <input wire:model.live="foregroundColor" type="color"
+                                            class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                        <input wire:model.live.debounce.300ms="foregroundColor" type="text"
+                                            class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
                                     </div>
                                 </div>
 
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold text-blue-100/55">Size</label>
-                                        <input wire:model.live.debounce.300ms="size" type="number" min="200"
-                                            max="900" step="20"
-                                            class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
-                                    </div>
-
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold text-blue-100/55">Margin</label>
-                                        <input wire:model.live.debounce.300ms="margin" type="number" min="0"
-                                            max="10" step="1"
-                                            class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
+                                <div>
+                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">QR
+                                        background</label>
+                                    <div class="flex gap-2">
+                                        <input wire:model.live="backgroundColor" type="color"
+                                            class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                        <input wire:model.live.debounce.300ms="backgroundColor" type="text"
+                                            class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
                                     </div>
                                 </div>
+                            </div>
 
-                                @if ($this->isPremium)
-                                    <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Size</label>
+                                    <input wire:model.live.debounce.300ms="size" type="number" min="200"
+                                        max="900" step="20"
+                                        class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
+                                </div>
+
+                                <div>
+                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Margin</label>
+                                    <input wire:model.live.debounce.300ms="margin" type="number" min="0"
+                                        max="10" step="1"
+                                        class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
+                                </div>
+                            </div>
+
+                            @if ($this->isPremium)
+                            <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
+                                <label
+                                    class="mb-2 block text-xs font-black uppercase tracking-wider text-cyan-100">
+                                    Premium gradient
+                                </label>
+
+                                <select wire:model.live="gradientType"
+                                    class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
+                                    <option value="none">No gradient</option>
+                                    <option value="vertical">Vertical</option>
+                                    <option value="horizontal">Horizontal</option>
+                                    <option value="diagonal">Diagonal</option>
+                                </select>
+
+                                @if ($this->gradientType !== 'none')
+                                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <div>
                                         <label
-                                            class="mb-2 block text-xs font-black uppercase tracking-wider text-cyan-100">
-                                            Premium gradient
-                                        </label>
-
-                                        <select wire:model.live="gradientType"
-                                            class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
-                                            <option value="none">No gradient</option>
-                                            <option value="vertical">Vertical</option>
-                                            <option value="horizontal">Horizontal</option>
-                                            <option value="diagonal">Diagonal</option>
-                                        </select>
-
-                                        @if ($this->gradientType !== 'none')
-                                            <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                                                <div>
-                                                    <label
-                                                        class="mb-1 block text-xs font-bold text-blue-100/55">Start</label>
-                                                    <input wire:model.live="gradientStart" type="color"
-                                                        class="h-10 w-full cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12">
-                                                </div>
-                                                <div>
-                                                    <label
-                                                        class="mb-1 block text-xs font-bold text-blue-100/55">End</label>
-                                                    <input wire:model.live="gradientEnd" type="color"
-                                                        class="h-10 w-full cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12">
-                                                </div>
-                                            </div>
-                                        @endif
+                                            class="mb-1 block text-xs font-bold text-blue-100/55">Start</label>
+                                        <input wire:model.live="gradientStart" type="color"
+                                            class="h-10 w-full cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12">
                                     </div>
+                                    <div>
+                                        <label
+                                            class="mb-1 block text-xs font-bold text-blue-100/55">End</label>
+                                        <input wire:model.live="gradientEnd" type="color"
+                                            class="h-10 w-full cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12">
+                                    </div>
+                                </div>
                                 @endif
                             </div>
+                            @endif
+                        </div>
                         @elseif ($this->activeTab === 'shape')
-                            @if (!$this->isPremium)
-                                <div class="py-10 text-center">
-                                    <span class="material-symbols-outlined text-5xl text-blue-100/25">lock</span>
-                                    <h3 class="mt-3 text-lg font-black">Unlock QR shapes</h3>
-                                    <p class="mx-auto mt-2 max-w-sm text-sm text-blue-100/45">
-                                        Upgrade to customize module shape and eye colors.
-                                    </p>
-                                    <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
-                                        class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-cyan-500/20">
-                                        <span class="material-symbols-outlined text-base">workspace_premium</span>
-                                        Upgrade Now
-                                    </a>
-                                </div>
-                            @else
-                                <div class="space-y-5">
-                                    <div>
-                                        <label
-                                            class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                            Module style
-                                        </label>
-                                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-                                            @foreach (['square' => 'Square', 'dot' => 'Dot', 'round' => 'Round'] as $val => $label)
-                                                <button type="button"
-                                                    wire:click="$set('moduleStyle', '{{ $val }}')"
-                                                    class="rounded-2xl border px-4 py-3 text-xs font-black transition sm:py-4
+                        @if (!$this->isPremium)
+                        <div class="py-10 text-center">
+                            <span class="material-symbols-outlined text-5xl text-blue-100/25">lock</span>
+                            <h3 class="mt-3 text-lg font-black">Unlock QR shapes</h3>
+                            <p class="mx-auto mt-2 max-w-sm text-sm text-blue-100/45">
+                                Upgrade to customize module shape and eye colors.
+                            </p>
+                            <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
+                                class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-cyan-500/20">
+                                <span class="material-symbols-outlined text-base">workspace_premium</span>
+                                Upgrade Now
+                            </a>
+                        </div>
+                        @else
+                        <div class="space-y-5">
+                            <div>
+                                <label
+                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
+                                    Module style
+                                </label>
+                                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+                                    @foreach (['square' => 'Square', 'dot' => 'Dot', 'round' => 'Round'] as $val => $label)
+                                    <button type="button"
+                                        wire:click="$set('moduleStyle', '{{ $val }}')"
+                                        class="rounded-2xl border px-4 py-3 text-xs font-black transition sm:py-4
                                                     {{ $this->moduleStyle === $val ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                                    {{ $label }}
-                                                </button>
-                                            @endforeach
-                                        </div>
-                                    </div>
+                                        {{ $label }}
+                                    </button>
+                                    @endforeach
+                                </div>
+                            </div>
 
-                                    <div>
-                                        <label
-                                            class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                            Eye style
-                                        </label>
-                                        <div class="grid grid-cols-2 gap-2 sm:gap-3">
-                                            @foreach (['square' => 'Square eye', 'circle' => 'Circle eye'] as $val => $label)
-                                                <button type="button"
-                                                    wire:click="$set('eyeStyle', '{{ $val }}')"
-                                                    class="rounded-2xl border px-4 py-3 text-xs font-black transition sm:py-4
+                            <div>
+                                <label
+                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
+                                    Eye style
+                                </label>
+                                <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                                    @foreach (['square' => 'Square eye', 'circle' => 'Circle eye'] as $val => $label)
+                                    <button type="button"
+                                        wire:click="$set('eyeStyle', '{{ $val }}')"
+                                        class="rounded-2xl border px-4 py-3 text-xs font-black transition sm:py-4
                                                     {{ $this->eyeStyle === $val ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                                    {{ $label }}
-                                                </button>
-                                            @endforeach
-                                        </div>
-                                    </div>
+                                        {{ $label }}
+                                    </button>
+                                    @endforeach
                                 </div>
-                            @endif
+                            </div>
+                        </div>
+                        @endif
                         @elseif ($this->activeTab === 'logo')
-                            @if (!$this->isPremium)
-                                <div class="py-10 text-center">
-                                    <span class="material-symbols-outlined text-5xl text-blue-100/25">lock</span>
-                                    <h3 class="mt-3 text-lg font-black">Logo customization is premium</h3>
-                                    <p class="mx-auto mt-2 max-w-sm text-sm text-blue-100/45">
-                                        Free users will use the default site logo. Upgrade to remove logo, change icon,
-                                        or upload custom logo.
-                                    </p>
-                                    <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
-                                        class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-cyan-500/20">
-                                        <span class="material-symbols-outlined text-base">workspace_premium</span>
-                                        Upgrade Now
-                                    </a>
-                                </div>
-                            @else
-                                <div class="space-y-5">
-                                    <div>
-                                        <label
-                                            class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                            Center logo
-                                        </label>
-                                        <div class="flex flex-wrap gap-2">
-                                            <button type="button" wire:click="removeLogo"
-                                                class="rounded-2xl border px-4 py-2.5 text-xs font-black transition
+                        @if (!$this->isPremium)
+                        <div class="py-10 text-center">
+                            <span class="material-symbols-outlined text-5xl text-blue-100/25">lock</span>
+                            <h3 class="mt-3 text-lg font-black">Logo customization is premium</h3>
+                            <p class="mx-auto mt-2 max-w-sm text-sm text-blue-100/45">
+                                Free users will use the default site logo. Upgrade to remove logo, change icon,
+                                or upload custom logo.
+                            </p>
+                            <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
+                                class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-cyan-500/20">
+                                <span class="material-symbols-outlined text-base">workspace_premium</span>
+                                Upgrade Now
+                            </a>
+                        </div>
+                        @else
+                        <div class="space-y-5">
+                            <div>
+                                <label
+                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
+                                    Center logo
+                                </label>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" wire:click="removeLogo"
+                                        class="rounded-2xl border px-4 py-2.5 text-xs font-black transition
                                                 {{ $this->centerLogo === null ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                                None
-                                            </button>
+                                        None
+                                    </button>
 
-                                            <button type="button" wire:click="selectSiteLogo"
-                                                class="rounded-2xl border px-4 py-2.5 text-xs font-black transition
+                                    <button type="button" wire:click="selectSiteLogo"
+                                        class="rounded-2xl border px-4 py-2.5 text-xs font-black transition
                                                 {{ $this->centerLogo === 'site' ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                                Site Logo
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                            Preset icons
-                                        </label>
-                                        <div class="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
-                                            @foreach ($this->presetIcons as $key => $icon)
-                                                <button type="button"
-                                                    wire:click="selectPreset('{{ $key }}')"
-                                                    class="rounded-2xl border p-2 text-center transition sm:p-3
-                                                    {{ $this->presetLogo === $key ? 'border-cyan-300/50 bg-cyan-400/10' : 'border-white/10 bg-white/4 hover:bg-white/8' }}">
-                                                    <img src="data:image/svg+xml;base64,{{ base64_encode($icon['svg']) }}"
-                                                        alt="{{ $icon['label'] }}"
-                                                        class="mx-auto h-9 w-9 rounded-xl sm:h-10 sm:w-10">
-                                                    <span
-                                                        class="mt-2 block text-[10px] font-bold text-blue-100/60 sm:text-[11px]">
-                                                        {{ $icon['label'] }}
-                                                    </span>
-                                                </button>
-                                            @endforeach
-                                        </div>
-                                    </div>
-
-                                    <div class="border-t border-white/10 pt-5">
-                                        <label
-                                            class="block cursor-pointer rounded-2xl border border-dashed border-white/15 bg-white/4 px-5 py-6 text-center transition hover:bg-white/8">
-                                            <span
-                                                class="material-symbols-outlined text-3xl text-blue-100/35">cloud_upload</span>
-                                            <p class="mt-2 text-sm font-black text-blue-100/70">Upload custom logo</p>
-                                            <p class="mt-1 text-xs text-blue-100/35">PNG, JPG, WebP or SVG. Max 2MB.
-                                            </p>
-                                            <input wire:model="customLogo" type="file" accept="image/*,.svg"
-                                                class="hidden">
-                                        </label>
-
-                                        @error('customLogo')
-                                            <p class="mt-2 text-xs font-semibold text-red-300">{{ $message }}</p>
-                                        @enderror
-
-                                        @if ($this->customLogo)
-                                            <div
-                                                class="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                                                <span
-                                                    class="material-symbols-outlined shrink-0 text-cyan-200">image</span>
-                                                <span class="break-all text-xs font-semibold text-blue-100/60">
-                                                    {{ $this->customLogo->getClientOriginalName() }}
-                                                </span>
-                                            </div>
-                                        @endif
-                                    </div>
+                                        Site Logo
+                                    </button>
                                 </div>
-                            @endif
+                            </div>
+
+                            <div>
+                                <label
+                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
+                                    Preset icons
+                                </label>
+                                <div class="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
+                                    @foreach ($this->presetIcons as $key => $icon)
+                                    <button type="button"
+                                        wire:click="selectPreset('{{ $key }}')"
+                                        class="rounded-2xl border p-2 text-center transition sm:p-3
+                                                    {{ $this->presetLogo === $key ? 'border-cyan-300/50 bg-cyan-400/10' : 'border-white/10 bg-white/4 hover:bg-white/8' }}">
+                                        <img src="data:image/svg+xml;base64,{{ base64_encode($icon['svg']) }}"
+                                            alt="{{ $icon['label'] }}"
+                                            class="mx-auto h-9 w-9 rounded-xl sm:h-10 sm:w-10">
+                                        <span
+                                            class="mt-2 block text-[10px] font-bold text-blue-100/60 sm:text-[11px]">
+                                            {{ $icon['label'] }}
+                                        </span>
+                                    </button>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="border-t border-white/10 pt-5">
+                                <label
+                                    class="block cursor-pointer rounded-2xl border border-dashed border-white/15 bg-white/4 px-5 py-6 text-center transition hover:bg-white/8">
+                                    <span
+                                        class="material-symbols-outlined text-3xl text-blue-100/35">cloud_upload</span>
+                                    <p class="mt-2 text-sm font-black text-blue-100/70">Upload custom logo</p>
+                                    <p class="mt-1 text-xs text-blue-100/35">PNG, JPG, WebP or SVG. Max 2MB.
+                                    </p>
+                                    <input wire:model="customLogo" type="file" accept="image/*,.svg"
+                                        class="hidden">
+                                </label>
+
+                                @error('customLogo')
+                                <p class="mt-2 text-xs font-semibold text-red-300">{{ $message }}</p>
+                                @enderror
+
+                                @if ($this->customLogo)
+                                <div
+                                    class="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                                    <span
+                                        class="material-symbols-outlined shrink-0 text-cyan-200">image</span>
+                                    <span class="break-all text-xs font-semibold text-blue-100/60">
+                                        {{ $this->customLogo->getClientOriginalName() }}
+                                    </span>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
                         @endif
                     </div>
                 </div>
@@ -910,10 +908,6 @@ new #[Title('QR Code Generator')] class extends Component {
                                 <h2 class="text-base font-black sm:text-lg">Live preview</h2>
                                 <p class="mt-1 text-xs text-blue-100/45">QR appears only after valid content.</p>
                             </div>
-                            <span
-                                class="rounded-full bg-emerald-400/10 px-3 py-1.5 text-xs font-black text-emerald-200">
-                                SVG
-                            </span>
                         </div>
                     </div>
 
@@ -921,39 +915,39 @@ new #[Title('QR Code Generator')] class extends Component {
                         <div
                             class="grid min-h-[320px] place-items-center rounded-3xl border border-dashed border-white/15 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_45%),rgba(255,255,255,0.03)] p-3 sm:min-h-[400px] sm:p-5">
                             @if ($this->generatedQr)
-                                <img src="{{ $this->generatedQr }}" alt="Generated QR Code" x-ref="qrImg"
-                                    class="max-h-[280px] max-w-full drop-shadow-2xl sm:max-h-[390px]">
+                            <img src="{{ $this->generatedQr }}" alt="Generated QR Code" x-ref="qrImg"
+                                class="max-h-[280px] max-w-full drop-shadow-2xl sm:max-h-[390px]">
                             @else
+                            <div
+                                class="w-full max-w-[250px] rounded-[1.5rem] border border-white/10 bg-white p-4 text-center shadow-2xl sm:max-w-[310px] sm:rounded-[2rem] sm:p-6">
                                 <div
-                                    class="w-full max-w-[250px] rounded-[1.5rem] border border-white/10 bg-white p-4 text-center shadow-2xl sm:max-w-[310px] sm:rounded-[2rem] sm:p-6">
+                                    class="mx-auto grid h-40 w-40 grid-cols-7 gap-1 rounded-2xl bg-slate-50 p-3 sm:h-56 sm:w-56 sm:p-4">
+                                    @foreach (range(1, 49) as $i)
                                     <div
-                                        class="mx-auto grid h-40 w-40 grid-cols-7 gap-1 rounded-2xl bg-slate-50 p-3 sm:h-56 sm:w-56 sm:p-4">
-                                        @foreach (range(1, 49) as $i)
-                                            <div
-                                                class="rounded-sm {{ in_array($i, [1, 2, 3, 4, 5, 8, 12, 15, 19, 22, 23, 24, 25, 26, 29, 33, 36, 40, 43, 44, 45, 46, 47, 7, 14, 21, 35, 42, 49, 28, 31, 38]) ? 'bg-slate-900' : 'bg-slate-200' }}">
-                                            </div>
-                                        @endforeach
+                                        class="rounded-sm {{ in_array($i, [1, 2, 3, 4, 5, 8, 12, 15, 19, 22, 23, 24, 25, 26, 29, 33, 36, 40, 43, 44, 45, 46, 47, 7, 14, 21, 35, 42, 49, 28, 31, 38]) ? 'bg-slate-900' : 'bg-slate-200' }}">
                                     </div>
-
-                                    <div
-                                        class="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 sm:mt-5 sm:px-4 sm:text-xs">
-                                        <span class="material-symbols-outlined text-base">qr_code_2</span>
-                                        QR Preview
-                                    </div>
-
-                                    <p class="mt-3 text-xs font-semibold text-slate-500 sm:text-sm">
-                                        Enter valid content to generate your QR code.
-                                    </p>
+                                    @endforeach
                                 </div>
+
+                                <div
+                                    class="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 sm:mt-5 sm:px-4 sm:text-xs">
+                                    <span class="material-symbols-outlined text-base">qr_code_2</span>
+                                    QR Preview
+                                </div>
+
+                                <p class="mt-3 text-xs font-semibold text-slate-500 sm:text-sm">
+                                    Enter valid content to generate your QR code.
+                                </p>
+                            </div>
                             @endif
                         </div>
 
                         @if ($this->generatedQr)
-                            <button type="button" x-data x-on:click="window.downloadQr($event)"
-                                class="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:shadow-cyan-500/30">
-                                <span class="material-symbols-outlined text-base">download</span>
-                                <span class="btn-text">Download QR Code</span>
-                            </button>
+                        <button type="button" x-data x-on:click="window.downloadQr($event)"
+                            class="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:shadow-cyan-500/30">
+                            <span class="material-symbols-outlined text-base">download</span>
+                            <span class="btn-text">Download QR Code</span>
+                        </button>
                         @endif
 
                         <p class="mt-4 text-center text-xs leading-5 text-blue-100/40">
@@ -967,7 +961,7 @@ new #[Title('QR Code Generator')] class extends Component {
 </div>
 
 @push('scripts')
-    <script>
+<script>
     window.downloadQr = async function(event) {
         const btn = event.currentTarget;
         const txt = btn.querySelector('.btn-text');

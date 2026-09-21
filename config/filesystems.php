@@ -1,5 +1,24 @@
 <?php
 
+$s3 = [
+    'driver' => 's3',
+    'key' => env('AWS_ACCESS_KEY_ID'),
+    'secret' => env('AWS_SECRET_ACCESS_KEY'),
+    'region' => env('AWS_DEFAULT_REGION'),
+    'bucket' => env('AWS_BUCKET'),
+    'url' => env('AWS_URL'),
+    'endpoint' => env('AWS_ENDPOINT'),
+    'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+    'throw' => true,
+    'report' => false,
+];
+
+$uploadsDisk = env('UPLOADS_DISK', 'local');
+
+if (! in_array($uploadsDisk, ['local', 's3'], true)) {
+    throw new InvalidArgumentException('UPLOADS_DISK must be local or s3.');
+}
+
 return [
 
     /*
@@ -38,12 +57,22 @@ return [
             'report' => false,
         ],
 
-        'public' => [
+        /* Logical disks keep existing callers independent of the storage provider. */
+        'public' => $uploadsDisk === 's3' ? [...$s3, 'root' => 'uploads'] : [
             'driver' => 'local',
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
-            'throw' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
+        'documents' => $uploadsDisk === 's3' ? [...$s3, 'root' => 'documents'] : [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/private-documents',
+            'serve' => true,
+            'throw' => true,
             'report' => false,
         ],
 

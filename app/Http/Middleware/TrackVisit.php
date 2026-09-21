@@ -63,6 +63,7 @@ class TrackVisit
             && ! $request->routeIs('admin.*')
             && ! $request->is('livewire/*')
             && ! $request->is('storage/*')
+            && ! $request->routeIs('uploads.show')
             && ! $request->is('build/*')
             && ! $request->is('up')
             && ! $request->is('vcard/*/photo');

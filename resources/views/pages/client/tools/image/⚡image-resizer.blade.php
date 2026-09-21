@@ -235,6 +235,8 @@ new #[Title('Image Resizer')] class extends Component {
 
     private function resizeSingle($image): array
     {
+        $workspace = new \App\Services\LocalFileWorkspace;
+
         try {
             $originalName = $image->getClientOriginalName();
             $originalSize = (int) $image->getSize();
@@ -288,9 +290,9 @@ new #[Title('Image Resizer')] class extends Component {
 
             $uniqueId = Str::random(20);
             $storagePath = 'temp/resizer/' . $uniqueId . '.' . $outputFormat;
-            $outputFullPath = Storage::disk('public')->path($storagePath);
+            $outputFullPath = $workspace->disk()->path($storagePath);
 
-            Storage::disk('public')->makeDirectory('temp/resizer');
+            $workspace->disk()->makeDirectory('temp/resizer');
 
             $srcImage = $this->createImageFromSource($sourcePath, $origType);
 
@@ -365,10 +367,12 @@ new #[Title('Image Resizer')] class extends Component {
                 $note = 'Resized from ' . $origWidth . '×' . $origHeight . ' to ' . $dimensions . '.';
             }
 
+            $workspace->publish(Storage::disk('public'), $storagePath);
+
             if ($this->is_premium_user) {
                 $persistentPath = 'resized/users/' . auth()->id() . '/' . $uniqueId . '.' . $outputFormat;
 
-                Storage::disk('public')->writeStream($persistentPath, Storage::disk('public')->readStream($storagePath));
+                Storage::disk('public')->copy($storagePath, $persistentPath);
 
                 UserResizedImage::query()->create([
                     'user_id' => auth()->id(),
@@ -410,6 +414,8 @@ new #[Title('Image Resizer')] class extends Component {
                 'resized_note' => 'Resize failed: ' . $e->getMessage(),
                 'status' => 'error',
             ];
+        } finally {
+            $workspace->cleanup();
         }
     }
 
@@ -468,11 +474,7 @@ new #[Title('Image Resizer')] class extends Component {
             $fileName = pathinfo($result['original_name'], PATHINFO_FILENAME);
             $extension = $result['resized_ext'] ?: pathinfo($result['original_name'], PATHINFO_EXTENSION);
             $downloadName = $fileName . '_resized.' . $extension;
-            $filePath = Storage::disk('public')->path($result['resized_path']);
-
-            if (is_file($filePath)) {
-                $zip->addFile($filePath, $downloadName);
-            }
+            $zip->addFromString($downloadName, Storage::disk('public')->get($result['resized_path']));
         }
 
         $zip->close();

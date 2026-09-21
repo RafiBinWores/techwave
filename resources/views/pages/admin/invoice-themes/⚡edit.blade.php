@@ -216,7 +216,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                                 <img src="{{ $preview->temporaryUrl() }}"
                                     class="aspect-[4/3] w-full rounded-lg object-cover" alt="New theme preview">
                             @elseif ($invoiceTheme->preview_image)
-                                <img src="{{ Storage::url($invoiceTheme->preview_image) }}"
+                                <img src="{{ \App\Services\UploadStorage::url($invoiceTheme->preview_image) }}"
                                     class="aspect-[4/3] w-full rounded-lg object-cover"
                                     alt="{{ $invoiceTheme->name }} preview">
                             @else
@@ -269,7 +269,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                                 <img src="{{ $pdf_background->temporaryUrl() }}"
                                     class="aspect-[210/297] w-full object-cover" alt="New PDF background">
                             @elseif ($invoiceTheme->pdf_background_image)
-                                <img src="{{ Storage::url($invoiceTheme->pdf_background_image) }}"
+                                <img src="{{ \App\Services\UploadStorage::url($invoiceTheme->pdf_background_image) }}"
                                     class="aspect-[210/297] w-full object-cover"
                                     alt="{{ $invoiceTheme->name }} PDF background">
                             @else
