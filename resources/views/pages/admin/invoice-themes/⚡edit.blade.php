@@ -214,13 +214,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                             class="flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
                             @if ($preview)
                                 <img src="{{ $preview->temporaryUrl() }}"
-                                    class="aspect-[4/3] w-full rounded-lg object-cover" alt="New theme preview">
+                                    class="aspect-4/3 w-full rounded-lg object-cover" alt="New theme preview">
                             @elseif ($invoiceTheme->preview_image)
                                 <img src="{{ \App\Services\UploadStorage::url($invoiceTheme->preview_image) }}"
-                                    class="aspect-[4/3] w-full rounded-lg object-cover"
+                                    class="aspect-4/3 w-full rounded-lg object-cover"
                                     alt="{{ $invoiceTheme->name }} preview">
                             @else
-                                <div class="flex aspect-[4/3] flex-col items-center justify-center">
+                                <div class="flex aspect-4/3 flex-col items-center justify-center">
                                     <span class="material-symbols-outlined mb-2 text-5xl text-outline">
                                         add_photo_alternate
                                     </span>
@@ -267,13 +267,13 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                             class="flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface transition-colors hover:bg-surface-container">
                             @if ($pdf_background)
                                 <img src="{{ $pdf_background->temporaryUrl() }}"
-                                    class="aspect-[210/297] w-full object-cover" alt="New PDF background">
+                                    class="aspect-210/297 w-full object-cover" alt="New PDF background">
                             @elseif ($invoiceTheme->pdf_background_image)
                                 <img src="{{ \App\Services\UploadStorage::url($invoiceTheme->pdf_background_image) }}"
-                                    class="aspect-[210/297] w-full object-cover"
+                                    class="aspect-210/297 w-full object-cover"
                                     alt="{{ $invoiceTheme->name }} PDF background">
                             @else
-                                <div class="flex aspect-[210/297] w-full flex-col items-center justify-center p-5 text-center">
+                                <div class="flex aspect-210/297 w-full flex-col items-center justify-center p-5 text-center">
                                     <span class="material-symbols-outlined mb-2 text-5xl text-outline">
                                         picture_as_pdf
                                     </span>
@@ -363,7 +363,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice Theme')] class extends 
                             <input type="checkbox" wire:model.live="is_active" class="peer sr-only">
 
                             <div
-                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100">
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100">
                             </div>
                         </label>
                     </div>

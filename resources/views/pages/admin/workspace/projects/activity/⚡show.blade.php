@@ -719,7 +719,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
                                 <div class="mt-3 flex flex-wrap gap-1.5">
                                     @foreach ($this->activityFiles as $index => $file)
                                     <span wire:key="activity-file-{{ $index }}" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400">insert_drive_file</span>
+                                        <span class="material-symbols-outlined text-3.25 text-slate-400">insert_drive_file</span>
                                         <span class="truncate">{{ $file->getClientOriginalName() }}</span>
                                         <button
                                             type="button"
@@ -739,7 +739,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
                                         @enderror
 
                                         <label class="flex h-7 cursor-pointer items-center gap-1 rounded-md px-2 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100">
-                                            <span class="material-symbols-outlined text-[13px]">attach_file</span>
+                                            <span class="material-symbols-outlined text-3.25">attach_file</span>
                                             Attach
                                             <input type="file" wire:model="activityFiles" multiple class="sr-only" />
                                         </label>
@@ -770,7 +770,7 @@ new #[Layout('layouts.admin-app')] #[Title('Project Activity')] class extends Co
             </form>
             @endif
 
-            <div class="relative space-y-5 before:absolute before:bottom-3 before:left-[13px] before:top-3 before:w-px before:bg-slate-200">
+            <div class="relative space-y-5 before:absolute before:bottom-3 before:left-3.25 before:top-3 before:w-px before:bg-slate-200">
                 @foreach ($this->activityThreads() as $node)
                 <div wire:key="activity-node-{{ $node['update']->id }}">
                     @include('pages.admin.workspace.projects.activity._activity-item', ['node' => $node, 'depth' => 0])

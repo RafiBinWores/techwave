@@ -470,7 +470,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Project')] class extends Compon
                         </button>
                     </div>
 
-                    <div class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                    <div class="flex min-h-15 flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
                         @forelse ($technologies as $index => $item)
                             <div wire:key="technology-{{ $index }}"
                                 class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">
@@ -616,7 +616,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Project')] class extends Compon
                         <label class="relative inline-flex cursor-pointer items-center">
                             <input type="checkbox" wire:model.live="is_active" class="peer sr-only" />
                             <div
-                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-.5 after:top-.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                             </div>
                         </label>
                     </div>
@@ -633,7 +633,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Project')] class extends Compon
                         <label class="relative inline-flex cursor-pointer items-center">
                             <input type="checkbox" wire:model.live="is_featured" class="peer sr-only" />
                             <div
-                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-.5 after:top-.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white">
                             </div>
                         </label>
                     </div>

@@ -213,7 +213,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" wire:model.live="hero.enabled" class="peer sr-only">
                                     <div
-                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                     </div>
                                 </label>
                             </div>
@@ -366,7 +366,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                                             <input type="checkbox" wire:model.live="hero.show_trusted_logos"
                                                 class="peer sr-only">
                                             <div
-                                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                                class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                             </div>
                                         </label>
                                     </div>
@@ -389,7 +389,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" wire:model.live="services.enabled" class="peer sr-only">
                                     <div
-                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                     </div>
                                 </label>
                             </div>
@@ -534,7 +534,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" wire:model.live="about.enabled" class="peer sr-only">
                                     <div
-                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white">
                                     </div>
                                 </label>
                             </div>
@@ -608,7 +608,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                         <div class="bg-slate-100 p-4">
                             @if ($activeTab === 'hero')
                                 <div
-                                    class="relative min-h-[540px] overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-6 text-white">
+                                    class="relative min-h-135 overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-6 text-white">
                                     @if (!($hero['enabled'] ?? true))
                                         <div
                                             class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/90">
@@ -637,7 +637,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                                                 @endif
                                             </div>
                                         </div>
-                                        <div class="relative mx-auto h-[300px] w-full max-w-[250px]">
+                                        <div class="relative mx-auto h-75 w-full max-w-62.5">
                                             {{-- Main hero image --}}
                                             <div
                                                 class="absolute left-1/2 top-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1.5 shadow-[0_12px_35px_rgba(0,0,0,0.35)]">
@@ -763,7 +763,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
                                     $dashboardPreview = FeaturedServiceGrid::isDashboardStyle($previewStyle);
                                 @endphp
                                 <div
-                                    class="relative min-h-[540px] overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-5 text-white {{ $previewStyle === 'stats_board' ? 'lg:min-h-[650px]' : '' }}">
+                                    class="relative min-h-135 overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-5 text-white {{ $previewStyle === 'stats_board' ? 'lg:min-h-162.5' : '' }}">
                                     @if (!($services['enabled'] ?? true))
                                         <div
                                             class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/90">
@@ -833,7 +833,7 @@ new #[Layout('layouts.admin-app')] #[Title('Home Page Settings')] class extends 
 
                             @if ($activeTab === 'about')
                                 <div
-                                    class="relative min-h-[540px] overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-7 text-white">
+                                    class="relative min-h-135 overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-7 text-white">
                                     @if (!($about['enabled'] ?? true))
                                         <div
                                             class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/90">

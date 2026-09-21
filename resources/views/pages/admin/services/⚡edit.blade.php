@@ -749,7 +749,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                     <div class="flex flex-col items-center justify-center rounded-lg bg-blue-50/50 p-5 text-center">
                         <span class="material-symbols-outlined mb-2 text-4xl text-primary-container">info</span>
 
-                        <p class="max-w-[220px] text-xs font-body-sm text-on-secondary-container">
+                        <p class="max-w-55 text-xs font-body-sm text-on-secondary-container">
                             Audience data helps your service page show clearer value to specific user groups.
                         </p>
                     </div>
@@ -1046,7 +1046,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         </div>
 
                         <div
-                            class="flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
+                            class="flex min-h-15 flex-wrap gap-2 rounded-lg border border-slate-100 bg-surface p-4">
                             @forelse ($tags as $index => $serviceTag)
                                 <div wire:key="service-tag-{{ $index }}"
                                     class="flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 shadow-sm">

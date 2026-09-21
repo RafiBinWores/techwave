@@ -636,7 +636,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="hero.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -783,7 +783,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                             </div>
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="who_we_are.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -844,7 +844,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                             </div>
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="mission_vision.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -937,7 +937,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                             </div>
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="why_choose_us.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -987,7 +987,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                             </div>
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="expertise.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -1165,7 +1165,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                             </div>
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="timeline.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -1232,7 +1232,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                             </div>
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="leadership.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -1301,7 +1301,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                             </div>
                             <label class="relative inline-flex cursor-pointer items-center">
                                 <input type="checkbox" wire:model.live="experts.enabled" class="peer sr-only">
-                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                             </label>
                         </div>
 
@@ -1385,7 +1385,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                         </div>
 
                         <div class="bg-slate-100 p-4">
-                            <div class="relative min-h-[330px] overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-3 text-white">
+                            <div class="relative min-h-82.5 overflow-hidden rounded-xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-950 p-3 text-white">
                                 {{-- Disabled overlay --}}
                                 @if (! $this->previewSectionEnabled())
                                 <div class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/90">
@@ -1398,8 +1398,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                                 {{-- Hero Preview --}}
                                 @if ($activeTab === 'hero')
-                                <div class="relative h-[560px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-140 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="relative overflow-hidden py-20 sm:py-24 lg:py-30">
                                             <div class="absolute inset-0 pointer-events-none">
                                                 <div class="absolute left-[6%] top-10 h-52 w-52 rounded-full bg-cyan-400/10 blur-3xl"></div>
@@ -1420,7 +1420,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                                         <p class="mt-6 max-w-2xl text-sm leading-7 text-blue-100/72 sm:text-base sm:leading-8">{{ $hero['description'] ?? '' }}</p>
                                                         <div class="mt-8 flex flex-wrap gap-4">
                                                             @if (filled($hero['primary_button_text'] ?? null))
-                                                            <span class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30">{{ $hero['primary_button_text'] }}</span>
+                                                            <span class="inline-flex items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30">{{ $hero['primary_button_text'] }}</span>
                                                             @endif
                                                             @if (filled($hero['secondary_button_text'] ?? null))
                                                             <span class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3.5 font-semibold text-white backdrop-blur-xl">{{ $hero['secondary_button_text'] }}</span>
@@ -1432,10 +1432,10 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                                             <div class="absolute left-8 top-8 h-24 w-24 rounded-full bg-cyan-400/12 blur-3xl"></div>
                                                             <div class="absolute bottom-8 right-8 h-32 w-32 rounded-full bg-blue-500/12 blur-3xl"></div>
                                                             <div class="grid grid-cols-2 gap-4">
-                                                                <img src="{{ $this->previewImage('top_left_image', 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1000&q=80') }}" class="h-52 w-full rounded-[24px] object-cover sm:h-64" alt="">
-                                                                <img src="{{ $this->previewImage('top_right_image', 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1000&q=80') }}" class="h-52 w-full rounded-[24px] object-cover sm:h-64" alt="">
-                                                                <img src="{{ $this->previewImage('bottom_left_image', 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1000&q=80') }}" class="h-52 w-full rounded-[24px] object-cover sm:h-64" alt="">
-                                                                <div class="flex h-52 flex-col justify-center rounded-[24px] border border-white/10 bg-white/8 p-6 backdrop-blur-xl sm:h-64">
+                                                                <img src="{{ $this->previewImage('top_left_image', 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1000&q=80') }}" class="h-52 w-full rounded-3xl object-cover sm:h-64" alt="">
+                                                                <img src="{{ $this->previewImage('top_right_image', 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1000&q=80') }}" class="h-52 w-full rounded-3xl object-cover sm:h-64" alt="">
+                                                                <img src="{{ $this->previewImage('bottom_left_image', 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1000&q=80') }}" class="h-52 w-full rounded-3xl object-cover sm:h-64" alt="">
+                                                                <div class="flex h-52 flex-col justify-center rounded-3xl border border-white/10 bg-white/8 p-6 backdrop-blur-xl sm:h-64">
                                                                     <p class="text-xs uppercase tracking-[0.22em] text-blue-100/45">{{ $hero['info_eyebrow'] ?? '' }}</p>
                                                                     <h3 class="mt-4 text-2xl font-bold text-white">{{ $hero['info_title'] ?? '' }}</h3>
                                                                     <p class="mt-3 text-sm leading-7 text-blue-100/65">{{ $hero['info_description'] ?? '' }}</p>
@@ -1452,8 +1452,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                                 {{-- Stats Preview --}}
                                 @if ($activeTab === 'stats')
-                                <div class="relative h-[330px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-82.5 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="relative overflow-hidden py-20">
                                             <div class="absolute inset-0 pointer-events-none">
                                                 <div class="absolute left-[6%] top-10 h-52 w-52 rounded-full bg-cyan-400/10 blur-3xl"></div>
@@ -1476,8 +1476,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                                 {{-- Who We Are Preview --}}
                                 @if ($activeTab === 'who_we_are')
-                                <div class="relative h-[420px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-105 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="py-20">
                                             <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
                                                 <div class="about-panel">
@@ -1493,7 +1493,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                                             @endforeach
                                                         </div>
                                                         <div class="rounded-[30px] border border-white/10 bg-white/6 p-4 backdrop-blur-2xl">
-                                                            <img src="{{ $this->whoWeArePreviewImage() }}" class="h-[340px] w-full rounded-[24px] object-cover" alt="Who we are">
+                                                            <img src="{{ $this->whoWeArePreviewImage() }}" class="h-85 w-full rounded-3xl object-cover" alt="Who we are">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1505,8 +1505,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                                 {{-- Mission & Vision Preview --}}
                                 @if ($activeTab === 'mission_vision')
-                                <div class="relative h-[360px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-90 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="py-20">
                                             <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
                                                 <div class="grid gap-6 lg:grid-cols-2">
@@ -1551,8 +1551,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                                 {{-- Why Choose Us Preview --}}
                                 @if ($activeTab === 'why_choose_us')
-                                <div class="relative h-[410px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-102.5 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="py-20">
                                             <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
                                                 <div class="text-center mb-12">
@@ -1589,8 +1589,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                 ];
                                 $previewExpertiseIcons = ['support_agent', 'shield_lock', 'code', 'cloud'];
                                 @endphp
-                                <div class="relative h-[650px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-162.5 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="relative overflow-hidden py-20">
                                             <div class="relative mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
                                                 <div class="mx-auto mb-12 max-w-3xl text-center">
@@ -1610,10 +1610,10 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                                     $previewTags = array_values($item['tags'] ?? []);
                                                     @endphp
                                                     <article class="group relative overflow-hidden rounded-[30px] border border-white/10 bg-slate-950/45 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-2xl sm:p-8 {{ $previewExpertiseLayout[$index] ?? 'xl:col-span-4' }}">
-                                                        <div class="absolute inset-0 bg-linear-to-br from-white/9 via-white/[0.025] to-transparent"></div>
+                                                        <div class="absolute inset-0 bg-linear-to-br from-white/9 via-white/2.5 to-transparent"></div>
                                                         <div class="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-cyan-400/14 blur-3xl"></div>
                                                         <div class="absolute -left-10 bottom-8 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl"></div>
-                                                        <div class="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:30px_30px] [mask-image:radial-gradient(circle_at_top_right,black,transparent_72%)]"></div>
+                                                        <div class="absolute inset-0 opacity-[0.07] [background-image:linear-linear(rgba(255,255,255,0.7)_1px,transparent_1px),linear-linear(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] bg-size-[30px_30px] mask-[radial-linear(circle_at_top_right,black,transparent_72%)]"></div>
 
                                                         <div class="relative flex h-full flex-col">
                                                             <div class="flex items-start justify-between gap-5">
@@ -1631,7 +1631,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                                             <p class="mt-5 max-w-2xl text-sm leading-7 text-blue-100/65 sm:text-base">{{ $item['description'] ?? '' }}</p>
 
                                                             @if ($index === 0)
-                                                            <div class="mt-7 flex flex-1 flex-col rounded-[24px] border border-white/10 bg-black/20 p-5 shadow-inner shadow-black/20 sm:p-6">
+                                                            <div class="mt-7 flex flex-1 flex-col rounded-3xl border border-white/10 bg-black/20 p-5 shadow-inner shadow-black/20 sm:p-6">
                                                                 <div class="flex flex-wrap items-center justify-between gap-4">
                                                                     <div>
                                                                         <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-100/45">{{ $item['panel_title'] ?? 'Operations overview' }}</p>
@@ -1699,7 +1699,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                                                 <div class="relative grid grid-cols-2 gap-3 sm:grid-cols-4">
                                                                     <div class="absolute left-[12%] right-[12%] top-1/2 hidden h-px -translate-y-1/2 bg-linear-to-r from-cyan-300/0 via-cyan-300/30 to-cyan-300/0 sm:block"></div>
                                                                     @foreach (array_slice($previewFeatures, 0, 4) as $feature)
-                                                                    <div class="relative rounded-[20px] border border-white/10 bg-slate-950/65 p-4 text-center shadow-[0_12px_28px_rgba(0,0,0,0.22)]"><span class="material-symbols-outlined text-[24px] text-cyan-200">{{ $feature['icon'] ?? 'cloud' }}</span>
+                                                                    <div class="relative rounded-[20px] border border-white/10 bg-slate-950/65 p-4 text-center shadow-[0_12px_28px_rgba(0,0,0,0.22)]"><span class="material-symbols-outlined text-3xl text-cyan-200">{{ $feature['icon'] ?? 'cloud' }}</span>
                                                                         <p class="mt-2 text-xs font-semibold text-white">{{ $feature['title'] ?? '' }}</p>
                                                                     </div>
                                                                     @endforeach
@@ -1718,8 +1718,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                                 {{-- Timeline Preview --}}
                                 @if ($activeTab === 'timeline')
-                                <div class="relative h-[560px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-140 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="py-20">
                                             <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
                                                 <div class="text-center mb-12">
@@ -1727,7 +1727,7 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                                     @if (filled($timeline['subtitle'] ?? null))<p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-100/60 sm:text-base">{{ $timeline['subtitle'] }}</p>@endif
                                                 </div>
                                                 <div class="relative">
-                                                    <div class="absolute left-5 top-0 h-full w-px bg-gradient-to-b from-cyan-300/0 via-cyan-300/25 to-cyan-300/0 sm:left-1/2 sm:-translate-x-1/2"></div>
+                                                    <div class="absolute left-5 top-0 h-full w-px bg-linear-to-b from-cyan-300/0 via-cyan-300/25 to-cyan-300/0 sm:left-1/2 sm:-translate-x-1/2"></div>
                                                     <div class="space-y-6">
                                                         @foreach ($timeline['items'] ?? [] as $i => $item)
                                                         <div @class(['timeline-card sm:mr-auto sm:max-w-[48%]'=> $i % 2 === 0, 'timeline-card sm:ml-auto sm:max-w-[48%]' => $i % 2 !== 0])><div class="timeline-dot"></div>
@@ -1746,13 +1746,13 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
 
                                 {{-- Leadership Preview --}}
                                 @if ($activeTab === 'leadership')
-                                <div class="relative h-[430px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="pointer-events-none absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-107.5 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="pointer-events-none absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="py-20">
                                             <div class="mx-auto max-w-350 px-4 sm:px-6 lg:px-8">
                                                 <div class="about-panel">
                                                     <div class="grid gap-10 lg:grid-cols-[300px_1fr] items-center">
-                                                        <div class="rounded-[30px] border border-white/10 bg-white/6 p-4 backdrop-blur-2xl"><img src="{{ $this->leadershipPreviewImage() }}" class="h-[340px] w-full rounded-[24px] object-cover" alt="CEO"></div>
+                                                        <div class="rounded-[30px] border border-white/10 bg-white/6 p-4 backdrop-blur-2xl"><img src="{{ $this->leadershipPreviewImage() }}" class="h-85 w-full rounded-3xl object-cover" alt="CEO"></div>
                                                         <div>
                                                             <p class="text-xs uppercase tracking-[0.22em] text-blue-100/45">{{ $leadership['badge'] ?? '' }}</p>
                                                             <h2 class="mt-4 text-3xl font-bold sm:text-4xl">{{ $leadership['title'] ?? '' }}</h2>
@@ -1773,8 +1773,8 @@ new #[Layout('layouts.admin-app')] #[Title('About Page Settings')] class extends
                                 {{-- Experts Preview --}}
                                 @if ($activeTab === 'experts')
                                 @php $previewExperts = array_values($experts['items'] ?? []); @endphp
-                                <div class="relative h-[500px] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-                                    <div class="absolute left-0 top-0 w-[960px] origin-top-left scale-[0.48]">
+                                <div class="relative h-125 overflow-hidden rounded-xl border border-white/10 bg-slate-950">
+                                    <div class="absolute left-0 top-0 w-240 origin-top-left scale-[0.48]">
                                         <section class="relative overflow-hidden py-20">
                                             <div class="pointer-events-none absolute inset-0">
                                                 <div class="absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/8 blur-3xl"></div>
