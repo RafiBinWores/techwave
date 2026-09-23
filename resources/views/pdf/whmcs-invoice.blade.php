@@ -435,6 +435,10 @@ $companyWebsiteDisplay = rtrim(
         Invoice #{{ $invoiceId }}
     </title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <style>
 
         @page {
@@ -450,9 +454,9 @@ $companyWebsiteDisplay = rtrim(
             padding: 0;
             background: #ffffff;
             color: #0f172a;
-            font-family: DejaVu Sans, Arial, Helvetica, sans-serif;
+            font-family: 'Poppins', 'DejaVu Sans', Arial, Helvetica, sans-serif;
             font-size: 11px;
-            line-height: 1.45;
+            line-height: 1.35;
         }
 
         .invoice-wrapper {
@@ -465,7 +469,7 @@ $companyWebsiteDisplay = rtrim(
         }
 
         .currency {
-            font-family: DejaVu Sans, Arial, Helvetica, sans-serif;
+            font-family: 'Poppins', 'DejaVu Sans', Arial, Helvetica, sans-serif;
             white-space: nowrap;
         }
 
@@ -549,10 +553,10 @@ $companyWebsiteDisplay = rtrim(
         }
 
         .company-info {
-            margin-top: 14px;
+            margin-top: 10px;
             color: #64748b;
             font-size: 10px;
-            line-height: 16px;
+            line-height: 14px;
         }
 
         /*
@@ -562,10 +566,10 @@ $companyWebsiteDisplay = rtrim(
         */
 
         .invoice-heading {
-            margin: 0 0 12px;
+            margin: 0 0 8px;
             color: {{ $brandColor }};
             font-size: 26px;
-            line-height: 30px;
+            line-height: 28px;
             font-weight: 900;
             text-align: right;
         }
@@ -577,7 +581,7 @@ $companyWebsiteDisplay = rtrim(
         }
 
         .meta-table td {
-            padding: 2px 0;
+            padding: 1px 0;
             border: 0;
             text-align: right;
         }
@@ -601,8 +605,8 @@ $companyWebsiteDisplay = rtrim(
         */
 
         .bill-box {
-            margin: 0 24px 12px;
-            padding: 15px;
+            margin: 0 24px 10px;
+            padding: 12px;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
         }
@@ -630,10 +634,10 @@ $companyWebsiteDisplay = rtrim(
         }
 
         .label {
-            margin: 0 0 7px;
+            margin: 0 0 4px;
             color: #94a3b8;
             font-size: 9px;
-            line-height: 13px;
+            line-height: 12px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -642,7 +646,7 @@ $companyWebsiteDisplay = rtrim(
         .bill-text {
             color: #475569;
             font-size: 11px;
-            line-height: 18px;
+            line-height: 15px;
         }
 
         .bill-text strong {
@@ -650,24 +654,24 @@ $companyWebsiteDisplay = rtrim(
         }
 
         .company-client-name {
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             color: #0f172a;
             font-size: 12px;
             font-weight: 800;
         }
 
         .client-person {
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             color: #334155;
             font-weight: 600;
         }
 
         .address-block {
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .payment-method {
-            margin-top: 8px;
+            margin-top: 5px;
         }
 
         /*

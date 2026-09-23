@@ -129,6 +129,43 @@ new class extends Component {
                 </span>
             </a>
 
+            {{-- WHMCS Dropdown --}}
+            <div x-data="{ open: {{ request()->routeIs('admin.whmcs.*') ? 'true' : 'false' }} }" class="space-y-1">
+                <button type="button" @click="open = !open"
+                    class="flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined shrink-0">credit_card</span>
+
+                        <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">
+                            WHMCS
+                        </span>
+                    </div>
+
+                    <span x-show="!sidebarCollapsed"
+                        class="material-symbols-outlined text-lg transition-transform duration-200"
+                        :class="open ? 'rotate-180' : ''">
+                        expand_more
+                    </span>
+                </button>
+
+                <div x-show="open && !sidebarCollapsed" x-collapse
+                    class="ml-4 space-y-1 border-l border-slate-200 pl-3">
+                    <a href="{{ route('admin.whmcs.dashboard') }}" wire:navigate
+                        wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                        class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">account_balance</span>
+                        <span class="font-manrope text-sm font-medium">Dashboard</span>
+                    </a>
+
+                    <a href="{{ route('admin.whmcs.invoices') }}" wire:navigate
+                        wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                        class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
+                        <span class="material-symbols-outlined shrink-0 text-[20px]">receipt_long</span>
+                        <span class="font-manrope text-sm font-medium">Invoices</span>
+                    </a>
+                </div>
+            </div>
+
             {{-- Visitors Dropdown --}}
             <div x-data="{ open: {{ request()->routeIs('admin.visitors.*') ? 'true' : 'false' }} }" class="space-y-1">
                 <button type="button" @click="open = !open"
@@ -500,7 +537,7 @@ new class extends Component {
                 <a href="{{ route('admin.whmcs-accounts.index') }}" wire:navigate
                     wire:current="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
                     class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900">
-                    <span class="material-symbols-outlined shrink-0 text-[20px]">account_balance</span>
+                    <span class="material-symbols-outlined shrink-0 text-[20px]">link</span>
                     <span class="font-manrope text-sm font-medium">WHMCS Accounts</span>
                 </a>
 

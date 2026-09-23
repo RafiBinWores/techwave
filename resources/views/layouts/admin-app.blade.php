@@ -45,6 +45,9 @@
             display: none !important;
         }
     </style>
+    
+
+    @stack('styles')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
@@ -77,6 +80,7 @@
 
         <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/quill-table-better@1.2.3/dist/quill-table-better.js"></script>
+        
         @stack('scripts')
         @livewireScripts
     </div>

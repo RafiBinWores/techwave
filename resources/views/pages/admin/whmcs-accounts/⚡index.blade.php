@@ -24,7 +24,6 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
     public string $linkEmail = '';
     public string $userSearch = '';
     public bool $showUserDropdown = false;
-    public bool $isLinking = false;
     public ?User $selectedUser = null;
 
     public function updatedSearch(): void
@@ -54,7 +53,6 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
         $this->linkEmail = '';
         $this->userSearch = '';
         $this->selectedUser = null;
-        $this->isLinking = false;
         $this->resetValidation();
     }
 
@@ -64,7 +62,6 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
         $this->linkEmail = '';
         $this->userSearch = '';
         $this->selectedUser = null;
-        $this->isLinking = false;
         $this->resetValidation();
     }
 
@@ -98,14 +95,11 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
             'linkEmail' => ['required', 'email', 'max:190'],
         ]);
 
-        $this->isLinking = true;
-
         /** @var User $user */
         $user = $this->selectedUser;
 
         if ($user->whmcsAccount) {
             $this->addError('linkEmail', 'This user already has a linked WHMCS account. Please unlink it first.');
-            $this->isLinking = false;
 
             return;
         }
@@ -118,14 +112,12 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
             $whmcsUser = $api->findUserByEmail($email);
         } catch (WhmcsApiException $exception) {
             $this->addError('linkEmail', $exception->getMessage());
-            $this->isLinking = false;
 
             return;
         }
 
         if (! $whmcsUser) {
             $this->addError('linkEmail', 'No billing account was found for this email address.');
-            $this->isLinking = false;
 
             return;
         }
@@ -134,7 +126,6 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Accounts')] class extends Comp
 
         if (WhmcsAccount::query()->where('whmcs_user_id', $whmcsUserId)->where('user_id', '!=', $user->id)->exists()) {
             $this->addError('linkEmail', 'This billing account is already linked to another portal account.');
-            $this->isLinking = false;
 
             return;
         }

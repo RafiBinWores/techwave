@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -235,6 +236,362 @@ class WhmcsApi
 
         /** @var array<int, array<string, mixed>> */
         return $domains;
+    }
+
+    /**
+     * Fetch global business performance statistics.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws WhmcsApiException
+     */
+    public function getStats(?int $timelineDays = null): array
+    {
+        $payload = $timelineDays !== null ? ['timeline_days' => $timelineDays] : [];
+
+        return $this->request('GetStats', $payload);
+    }
+
+    /**
+     * Fetch the most recently created clients and the total client count.
+     *
+     * @return array{items: array<int, array<string, mixed>>, total: int}
+     *
+     * @throws WhmcsApiException
+     */
+    public function getRecentClients(int $limit = 5): array
+    {
+        $data = $this->request('GetClients', ['limitnum' => $limit]);
+
+        $clients = data_get($data, 'clients.client', []);
+
+        if (is_array($clients) && ! array_is_list($clients)) {
+            $clients = [$clients];
+        }
+
+        /** @var array<int, array<string, mixed>> $clients */
+        return [
+            'items' => $clients,
+            'total' => (int) data_get($data, 'totalresults', 0),
+        ];
+    }
+
+    /**
+     * Fetch all clients as an id => profile map.
+     *
+     * Invoice rows only carry the client id and name; emails come from
+     * this read-only GetClients directory so invoice lists can enrich
+     * client cells without one API call per row.
+     *
+     * @return array<string, array{firstname: string, lastname: string, email: string, companyname: string}>
+     *
+     * @throws WhmcsApiException
+     */
+    public function getClientDirectory(): array
+    {
+        $map = [];
+        $startNumber = 0;
+        $limitNum = 100;
+        $maxPages = 20;
+        $page = 0;
+        $totalResults = 0;
+        $clients = [];
+
+        do {
+            $data = $this->request('GetClients', [
+                'limitstart' => $startNumber,
+                'limitnum' => $limitNum,
+            ]);
+
+            $clients = data_get($data, 'clients.client', []);
+
+            if (is_array($clients) && ! array_is_list($clients)) {
+                $clients = [$clients];
+            }
+
+            $totalResults = (int) data_get($data, 'totalresults', 0);
+
+            foreach ($clients as $client) {
+                $id = (string) data_get($client, 'id', '');
+
+                if ($id === '') {
+                    continue;
+                }
+
+                $map[$id] = [
+                    'firstname' => (string) data_get($client, 'firstname', ''),
+                    'lastname' => (string) data_get($client, 'lastname', ''),
+                    'email' => (string) data_get($client, 'email', ''),
+                    'companyname' => (string) data_get($client, 'companyname', ''),
+                ];
+            }
+
+            $startNumber += $limitNum;
+            $page++;
+        } while ($startNumber < $totalResults && $page < $maxPages && $clients !== []);
+
+        return $map;
+    }
+
+    /**
+     * Fetch the most recently created invoices and the total invoice count.
+     *
+     * @return array{items: array<int, array<string, mixed>>, total: int}
+     *
+     * @throws WhmcsApiException
+     */
+    public function getRecentInvoices(int $limit = 5): array
+    {
+        $data = $this->request('GetInvoices', [
+            'limitnum' => $limit,
+            'orderby' => 'date',
+            'order' => 'desc',
+        ]);
+
+        $invoices = data_get($data, 'invoices.invoice', []);
+
+        if (is_array($invoices) && ! array_is_list($invoices)) {
+            $invoices = [$invoices];
+        }
+
+        /** @var array<int, array<string, mixed>> $invoices */
+        return [
+            'items' => $invoices,
+            'total' => (int) data_get($data, 'totalresults', 0),
+        ];
+    }
+
+    /**
+     * Fetch every invoice from WHMCS, paging through the API.
+     *
+     * Uses the read-only GetInvoices action ordered by date descending,
+     * which never triggers WHMCS login or anti-brute-force protections.
+     *
+     * @return array{items: array<int, array<string, mixed>>, total: int}
+     *
+     * @throws WhmcsApiException
+     */
+    public function getAllInvoices(): array
+    {
+        $items = [];
+        $startNumber = 0;
+        $limitNum = 100;
+        $maxPages = 50;
+        $page = 0;
+        $totalResults = 0;
+        $invoices = [];
+
+        do {
+            $data = $this->request('GetInvoices', [
+                'limitstart' => $startNumber,
+                'limitnum' => $limitNum,
+                'orderby' => 'date',
+                'order' => 'desc',
+            ]);
+
+            /** @var array<int, array<string, mixed>> $invoices */
+            $invoices = data_get($data, 'invoices.invoice', []);
+
+            if (is_array($invoices) && ! array_is_list($invoices)) {
+                $invoices = [$invoices];
+            }
+
+            $totalResults = (int) data_get($data, 'totalresults', 0);
+
+            foreach ($invoices as $invoice) {
+                $items[] = $invoice;
+            }
+
+            $startNumber += $limitNum;
+            $page++;
+        } while ($startNumber < $totalResults && $page < $maxPages && $invoices !== []);
+
+        return [
+            'items' => $items,
+            'total' => $totalResults,
+        ];
+    }
+
+    /**
+     * Fetch activated payment methods as a module => display name map.
+     *
+     * Invoice rows only carry the gateway module key (e.g. "mailin"); the
+     * friendly name configured in WHMCS (e.g. "bKash Payment") comes from
+     * this read-only GetPaymentMethods action.
+     *
+     * @return array<string, string>
+     *
+     * @throws WhmcsApiException
+     */
+    public function getPaymentMethods(): array
+    {
+        $data = $this->request('GetPaymentMethods');
+
+        $methods = data_get($data, 'paymentmethods.paymentmethod', []);
+
+        if (is_array($methods) && ! array_is_list($methods)) {
+            $methods = [$methods];
+        }
+
+        $map = [];
+
+        foreach ($methods as $method) {
+            if (! is_array($method)) {
+                continue;
+            }
+
+            $module = trim((string) data_get($method, 'module', ''));
+
+            if ($module === '') {
+                continue;
+            }
+
+            $map[$module] = trim((string) data_get($method, 'displayname', ''));
+        }
+
+        return $map;
+    }
+
+    /**
+     * Aggregate paid invoice revenue and invoice counts per day and per month.
+     *
+     * Uses the read-only GetInvoices action with the "Paid" status filter, which
+     * never triggers WHMCS login or anti-brute-force protections. Invoices are
+     * fetched in pages of 100 and bucketed by their issue date so the result can
+     * power the dashboard billing trend chart.
+     *
+     * @return array{
+     *     daily: array{labels: array<int, string>, revenue: array<int, float>, invoices: array<int, int>},
+     *     monthly: array{labels: array<int, string>, revenue: array<int, float>, invoices: array<int, int>}
+     * }
+     *
+     * @throws WhmcsApiException
+     */
+    public function getBillingTrend(int $months = 12, int $days = 30): array
+    {
+        $dailyBuckets = [];
+        $monthlyBuckets = [];
+        $startNumber = 0;
+        $limitNum = 100;
+        $maxPages = 30;
+        $page = 0;
+        $totalResults = 0;
+
+        do {
+            $data = $this->request('GetInvoices', [
+                'limitstart' => $startNumber,
+                'limitnum' => $limitNum,
+                'orderby' => 'date',
+                'order' => 'desc',
+                'status' => 'Paid',
+            ]);
+
+            /** @var array<int, array<string, mixed>> $invoices */
+            $invoices = data_get($data, 'invoices.invoice', []);
+
+            if (is_array($invoices) && ! array_is_list($invoices)) {
+                $invoices = [$invoices];
+            }
+
+            $totalResults = (int) data_get($data, 'totalresults', 0);
+
+            foreach ($invoices as $invoice) {
+                $date = (string) data_get($invoice, 'date', '');
+
+                if ($date === '' || str_starts_with($date, '0000-00-00')) {
+                    continue;
+                }
+
+                $dayKey = substr($date, 0, 10);
+                $monthKey = substr($date, 0, 7);
+
+                if ($dayKey === '' || $monthKey === '') {
+                    continue;
+                }
+
+                $amount = $this->normalizeAmount((string) data_get($invoice, 'total', '0'));
+
+                $daily = $dailyBuckets[$dayKey] ?? ['revenue' => 0.0, 'count' => 0];
+                $daily['revenue'] += $amount;
+                $daily['count']++;
+                $dailyBuckets[$dayKey] = $daily;
+
+                $monthly = $monthlyBuckets[$monthKey] ?? ['revenue' => 0.0, 'count' => 0];
+                $monthly['revenue'] += $amount;
+                $monthly['count']++;
+                $monthlyBuckets[$monthKey] = $monthly;
+            }
+
+            $startNumber += $limitNum;
+            $page++;
+        } while ($startNumber < $totalResults && $page < $maxPages);
+
+        $dailyLabels = [];
+        $dailyRevenue = [];
+        $dailyInvoiceCounts = [];
+
+        $today = Carbon::today();
+
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $day = $today->copy()->subDays($i);
+            $bucket = $dailyBuckets[$day->toDateString()] ?? ['revenue' => 0.0, 'count' => 0];
+
+            $dailyLabels[] = $day->format('M d');
+            $dailyRevenue[] = round($bucket['revenue'], 2);
+            $dailyInvoiceCounts[] = (int) $bucket['count'];
+        }
+
+        $monthlyLabels = [];
+        $monthlyRevenue = [];
+        $monthlyInvoiceCounts = [];
+
+        $cursor = Carbon::today()->startOfMonth();
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $month = $cursor->copy()->subMonths($i);
+            $bucket = $monthlyBuckets[$month->format('Y-m')] ?? ['revenue' => 0.0, 'count' => 0];
+
+            $monthlyLabels[] = $month->format('M y');
+            $monthlyRevenue[] = round($bucket['revenue'], 2);
+            $monthlyInvoiceCounts[] = (int) $bucket['count'];
+        }
+
+        return [
+            'daily' => [
+                'labels' => $dailyLabels,
+                'revenue' => $dailyRevenue,
+                'invoices' => $dailyInvoiceCounts,
+            ],
+            'monthly' => [
+                'labels' => $monthlyLabels,
+                'revenue' => $monthlyRevenue,
+                'invoices' => $monthlyInvoiceCounts,
+            ],
+        ];
+    }
+
+    /**
+     * Normalize a WHMCS money string into a float.
+     */
+    private function normalizeAmount(string $amount): float
+    {
+        $amount = trim($amount);
+
+        if (preg_match('/([0-9][0-9.,]*)/', $amount, $matches) === 1) {
+            $amount = $matches[1];
+        }
+
+        return (float) str_replace(',', '', $amount);
+    }
+
+    /**
+     * Get the full WHMCS admin area URL.
+     */
+    public function adminUrl(): string
+    {
+        $adminPath = (string) config('services.whmcs.admin_path', 'admin');
+
+        return rtrim((string) config('services.whmcs.url'), '/').'/'.ltrim($adminPath, '/');
     }
 
     /**

@@ -45,6 +45,7 @@ return [
         'url' => env('WHMCS_URL'),
         'identifier' => env('WHMCS_API_IDENTIFIER'),
         'secret' => env('WHMCS_API_SECRET'),
+         'admin_path' => env('WHMCS_ADMIN_PATH', 'admin'),
     ],
 
 ];

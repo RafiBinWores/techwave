@@ -52,6 +52,29 @@ class WhmcsInvoiceController extends Controller
             ]);
         }
 
+        return $this->renderInvoicePdf($invoiceId, (string) $clientId, 'download');
+    }
+
+    /**
+     * Serve a WHMCS invoice PDF to admins: inline for viewing, as an
+     * attachment with ?download=1. Route middleware enforces admin roles,
+     * so no linked-account ownership check is applied.
+     */
+    public function adminPdf(string $invoiceId): Response
+    {
+        $disposition = request()->boolean('download') ? 'download' : 'stream';
+
+        return $this->renderInvoicePdf($invoiceId, null, $disposition);
+    }
+
+    /**
+     * Fetch, enrich and render a WHMCS invoice as a PDF response.
+     *
+     * @param  string|null  $expectedClientId  When set (client flow), the invoice must belong to this WHMCS client id.
+     * @param  string  $disposition  "download" for an attachment, "stream" for inline viewing.
+     */
+    private function renderInvoicePdf(string $invoiceId, ?string $expectedClientId, string $disposition): Response
+    {
         $api = app(WhmcsApi::class);
 
         /*
@@ -72,7 +95,7 @@ class WhmcsInvoiceController extends Controller
                 'WHMCS GetInvoice failed.',
                 [
                     'invoice_id' => $invoiceId,
-                    'techwave_user_id' => $user->id,
+                    'techwave_user_id' => Auth::id(),
                     'message' => $e->getMessage(),
                 ]
             );
@@ -93,19 +116,20 @@ class WhmcsInvoiceController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | Verify Invoice Ownership
+    | Verify Invoice Ownership (client flow only)
     |--------------------------------------------------------------------------
     */
 
         if (
-            (string) ($invoice['userid'] ?? '')
-            !== (string) $clientId
+            $expectedClientId !== null
+            && (string) ($invoice['userid'] ?? '')
+            !== $expectedClientId
         ) {
             logger()->warning(
                 'Unauthorized WHMCS invoice access attempt.',
                 [
-                    'techwave_user_id' => $user->id,
-                    'whmcs_client_id' => $clientId,
+                    'techwave_user_id' => Auth::id(),
+                    'whmcs_client_id' => $expectedClientId,
                     'invoice_userid' => $invoice['userid'] ?? null,
                     'invoice_id' => $invoiceId,
                 ]
@@ -116,21 +140,23 @@ class WhmcsInvoiceController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | Get WHMCS Client Details
+    | WHMCS Client Id For Enrichment
     |--------------------------------------------------------------------------
     */
 
-        $billingEmail =
-            $account->whmcs_email
-            ?? $account->email
-            ?? $user->email;
+        $clientId = $expectedClientId ?? (string) ($invoice['userid'] ?? '');
+
+        /*
+    |--------------------------------------------------------------------------
+    | Get WHMCS Client Details
+    |--------------------------------------------------------------------------
+    */
 
         $clientData = null;
 
         try {
             $clientResponse = $api->getClientDetails(
-                $clientId,
-                $billingEmail,
+                $clientId !== '' ? $clientId : null,
             );
 
             if (is_array($clientResponse)) {
@@ -479,59 +505,9 @@ class WhmcsInvoiceController extends Controller
 
         if ($paymentMethodModule !== '') {
             try {
-                $paymentMethodsResponse =
-                    $api->request(
-                        'GetPaymentMethods'
-                    );
-
-                $paymentMethods = data_get(
-                    $paymentMethodsResponse,
-                    'paymentmethods.paymentmethod',
-                    []
+                $paymentMethodName = trim(
+                    $api->getPaymentMethods()[$paymentMethodModule] ?? ''
                 );
-
-                /*
-            |--------------------------------------------------------------------------
-            | Normalize Single Payment Method
-            |--------------------------------------------------------------------------
-            */
-
-                if (
-                    is_array($paymentMethods)
-                    && isset($paymentMethods['module'])
-                ) {
-                    $paymentMethods = [
-                        $paymentMethods,
-                    ];
-                }
-
-                if (is_array($paymentMethods)) {
-                    foreach ($paymentMethods as $method) {
-                        if (! is_array($method)) {
-                            continue;
-                        }
-
-                        $module = trim(
-                            (string) (
-                                $method['module']
-                                ?? ''
-                            )
-                        );
-
-                        if ($module !== $paymentMethodModule) {
-                            continue;
-                        }
-
-                        $paymentMethodName = trim(
-                            (string) (
-                                $method['displayname']
-                                ?? ''
-                            )
-                        );
-
-                        break;
-                    }
-                }
             } catch (WhmcsApiException $e) {
                 logger()->warning(
                     'WHMCS payment methods could not be retrieved.',
@@ -605,8 +581,10 @@ class WhmcsInvoiceController extends Controller
     |--------------------------------------------------------------------------
     */
 
-        return $pdf->download(
-            'invoice-'.$invoiceId.'.pdf'
-        );
+        $filename = 'invoice-'.$invoiceId.'.pdf';
+
+        return $disposition === 'download'
+            ? $pdf->download($filename)
+            : $pdf->stream($filename);
     }
 }

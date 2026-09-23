@@ -423,6 +423,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // Internal chat
     Route::livewire('/chats', 'pages::admin.chats.index')->name('chats.index');
 
+    // WHMCS dashboard
+    Route::livewire('/whmcs', 'pages::admin.whmcs.dashboard')->name('whmcs.dashboard');
+
+    // WHMCS invoices
+    Route::livewire('/whmcs/invoices', 'pages::admin.whmcs.invoices')->name('whmcs.invoices');
+    Route::get('/whmcs/invoices/{invoiceId}/pdf', [WhmcsInvoiceController::class, 'adminPdf'])->whereNumber('invoiceId')->name('whmcs.invoices.pdf');
+    Route::livewire('/whmcs/invoices/{invoiceId}/view', 'pages::admin.whmcs.invoice-view')->whereNumber('invoiceId')->name('whmcs.invoices.view');
+
     // WHMCS billing accounts
     Route::livewire('/whmcs-accounts', 'pages::admin.whmcs-accounts.index')->name('whmcs-accounts.index');
 
