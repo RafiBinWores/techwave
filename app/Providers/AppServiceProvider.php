@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\SiteSetting;
+use App\Services\Storage\DualStorageDriver;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -22,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+
+        Storage::extend('dual', function ($app, array $config) {
+            return DualStorageDriver::make($config);
+        });
+
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }

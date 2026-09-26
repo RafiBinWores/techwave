@@ -346,6 +346,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/site-settings', 'pages::admin.settings.site-setting')->name('settings.site-setting');
     Route::livewire('/invoice-templates', 'pages::admin.settings.invoice-template')->name('settings.invoice-templates');
     Route::livewire('/proposal-templates', 'pages::admin.settings.proposal-template')->name('settings.proposal-templates');
+    Route::livewire('/storage', 'pages::admin.settings.storage')->name('settings.storage');
 
     // Order management
     Route::livewire('/orders', 'pages::admin.orders.index')->name('orders.index');

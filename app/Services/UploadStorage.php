@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Services\Storage\DualFilesystemAdapter;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -37,8 +38,12 @@ class UploadStorage
     public static function ensureDirectory(string $diskName, string $directory): void
     {
         $disk = Storage::disk($diskName);
+        $adapter = $disk->getAdapter();
 
-        if ($disk->getAdapter() instanceof LocalFilesystemAdapter) {
+        $hasLocalTarget = $adapter instanceof LocalFilesystemAdapter
+            || ($adapter instanceof DualFilesystemAdapter && $adapter->hasLocalTarget());
+
+        if ($hasLocalTarget) {
             $disk->makeDirectory($directory);
         }
     }

@@ -19,6 +19,35 @@ if (! in_array($uploadsDisk, ['local', 's3'], true)) {
     throw new InvalidArgumentException('UPLOADS_DISK must be local or s3.');
 }
 
+/*
+|--------------------------------------------------------------------------
+| Legacy disks (pre dual-storage)
+|--------------------------------------------------------------------------
+|
+| These mirror the original env-driven disks. The dual driver embeds them as
+| a read/delete fallback until every file has been backfilled to the clouds
+| with `php artisan storage:sync-existing`.
+|
+*/
+
+$legacyPublic = $uploadsDisk === 's3' ? [...$s3, 'root' => 'uploads'] : [
+    'driver' => 'local',
+    'root' => storage_path('app/public'),
+    'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+    'visibility' => 'public',
+    'throw' => true,
+    'report' => false,
+];
+
+$legacyDocuments = $uploadsDisk === 's3' ? [...$s3, 'root' => 'documents'] : [
+    'driver' => 'local',
+    'root' => storage_path('app/private'),
+    'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/private-documents',
+    'serve' => true,
+    'throw' => true,
+    'report' => false,
+];
+
 return [
 
     /*
@@ -57,21 +86,23 @@ return [
             'report' => false,
         ],
 
-        /* Logical disks keep existing callers independent of the storage provider. */
-        'public' => $uploadsDisk === 's3' ? [...$s3, 'root' => 'uploads'] : [
-            'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
-            'visibility' => 'public',
+        /* Logical disks fan every write out to AWS S3 and Cloudflare R2 (when
+           configured via the admin Storage page) and serve from the selected
+           render source, falling back to the legacy disk for old files. */
+        'public' => [
+            'driver' => 'dual',
+            'disk_name' => 'public',
+            'root' => 'uploads',
+            'legacy' => $legacyPublic,
             'throw' => true,
             'report' => false,
         ],
 
-        'documents' => $uploadsDisk === 's3' ? [...$s3, 'root' => 'documents'] : [
-            'driver' => 'local',
-            'root' => storage_path('app/private'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/private-documents',
-            'serve' => true,
+        'documents' => [
+            'driver' => 'dual',
+            'disk_name' => 'documents',
+            'root' => 'documents',
+            'legacy' => $legacyDocuments,
             'throw' => true,
             'report' => false,
         ],
