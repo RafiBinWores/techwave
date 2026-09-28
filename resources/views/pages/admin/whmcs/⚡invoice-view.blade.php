@@ -301,11 +301,6 @@ new #[Layout('layouts.admin-app')] #[Title('WHMCS Invoice')] class extends Compo
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-            @if (($status = (string) data_get($this->invoice, 'status', '')) !== '')
-                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $this->statusBadgeClass($status) }}">
-                    {{ ucfirst($status) }}
-                </span>
-            @endif
 
             <a href="{{ route('admin.whmcs.invoices.pdf', $this->invoiceId) }}?download=1" target="_blank" rel="noopener"
                 class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-label-md font-label-md text-on-primary transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98]">

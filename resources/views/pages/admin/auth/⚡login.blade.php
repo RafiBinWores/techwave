@@ -47,34 +47,29 @@ new #[Layout('layouts.admin-auth')] class extends Component {
 
         <div class="relative z-10 flex min-h-screen w-full flex-col justify-between p-10 xl:p-14">
             <div>
-                <a href="{{ route('home') }}" class="inline-flex items-center gap-3">
+                <div class="inline-flex items-center gap-3">
                     <div
                         class="flex h-14 w-14 p-0.5 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/10 backdrop-blur-xl">
                         @php
-                            use App\Models\SiteSetting;
+                        use App\Models\SiteSetting;
 
-                            $siteSetting = SiteSetting::current();
+                        $siteSetting = SiteSetting::current();
 
-                            $logo = $siteSetting->logo
-                                ? \App\Services\UploadStorage::url($siteSetting->favicon)
-                                : asset('assets/images/logo/logo.png');
+                        $logo = $siteSetting->logo
+                        ? \App\Services\UploadStorage::url($siteSetting->logo)
+                        : asset('assets/images/logo/logo.png');
                         @endphp
 
-                        <img src="{{ $logo }}" alt="">
+                        <img src="{{ $logo }}" alt="logo">
                     </div>
                     <div>
                         <p class="text-lg font-semibold tracking-wide text-white">Techwave Admin</p>
                         <p class="text-sm text-slate-300">Management Portal</p>
                     </div>
-                </a>
+                </div>
             </div>
 
             <div class="max-w-md">
-                <div
-                    class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-blue-100 backdrop-blur-xl">
-                    <span class="h-2 w-2 rounded-full bg-cyan-300"></span>
-                    Secure admin access
-                </div>
 
                 <h1 class="text-4xl font-bold leading-tight text-white xl:text-5xl">
                     Welcome back to your
@@ -91,7 +86,7 @@ new #[Layout('layouts.admin-auth')] class extends Component {
             </div>
 
             <div class="text-sm text-slate-400">
-                © {{ now()->year }} TechWave. All rights reserved.
+                © {{ now()->year }} Techwave. All rights reserved.
             </div>
         </div>
     </section>
@@ -100,18 +95,17 @@ new #[Layout('layouts.admin-auth')] class extends Component {
     <section class="relative flex min-h-screen flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
         <div class="w-full max-w-117.5">
             <div class="mb-8 text-center lg:hidden">
-                <a href="{{ route('home') }}" class="inline-flex items-center gap-3">
+                <div class="inline-flex items-center gap-3">
                     <div
-                        class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-600/25">
-                        <svg viewBox="0 0 32 32" class="h-6 w-6 fill-white">
-                            <path d="M16 3l10 6v14l-10 6L6 23V9l10-6zm0 3.3L9 10.2v11.6l7 3.9 7-3.9V10.2l-7-3.9z" />
-                        </svg>
+                        class="flex h-14 w-14 p-0.5 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/10 backdrop-blur-xl">
+
+                        <img src="{{ $logo }}" alt="logo">
                     </div>
                     <div class="text-left">
-                        <p class="text-lg font-semibold text-slate-900 dark:text-white">TechWave Admin</p>
+                        <p class="text-lg font-semibold text-slate-900 dark:text-white">Techwave Admin</p>
                         <p class="text-sm text-slate-500 dark:text-slate-400">Management Portal</p>
                     </div>
-                </a>
+                </div>
             </div>
 
             <div
@@ -146,7 +140,7 @@ new #[Layout('layouts.admin-auth')] class extends Component {
                         </div>
 
                         @error('email')
-                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -198,7 +192,7 @@ new #[Layout('layouts.admin-auth')] class extends Component {
                         </div>
 
                         @error('password')
-                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -241,26 +235,6 @@ new #[Layout('layouts.admin-auth')] class extends Component {
                         </span>
                     </button>
                 </form>
-
-                {{-- <div class="mt-8">
-                    <div class="relative py-2">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-slate-200 dark:border-white/10"></div>
-                        </div>
-                        <div class="relative flex justify-center">
-                            <span class="bg-white px-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:bg-[#111827]">
-                                secure access
-                            </span>
-                        </div>
-                    </div>
-
-                    <p class="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                        Need admin access?
-                        <a href="{{ route('home') }}" class="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400">
-                            Contact super admin
-                        </a>
-                    </p>
-                </div> --}}
             </div>
         </div>
     </section>

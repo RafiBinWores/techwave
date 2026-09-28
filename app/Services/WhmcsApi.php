@@ -334,6 +334,55 @@ class WhmcsApi
     }
 
     /**
+     * Fetch every client from WHMCS, paging through the API.
+     *
+     * Uses the read-only GetClients action, which never triggers WHMCS
+     * login or anti-brute-force protections.
+     *
+     * @return array{items: array<int, array<string, mixed>>, total: int}
+     *
+     * @throws WhmcsApiException
+     */
+    public function getAllClients(): array
+    {
+        $items = [];
+        $startNumber = 0;
+        $limitNum = 100;
+        $maxPages = 20;
+        $page = 0;
+        $totalResults = 0;
+        $clients = [];
+
+        do {
+            $data = $this->request('GetClients', [
+                'limitstart' => $startNumber,
+                'limitnum' => $limitNum,
+            ]);
+
+            /** @var array<int, array<string, mixed>> $clients */
+            $clients = data_get($data, 'clients.client', []);
+
+            if (is_array($clients) && ! array_is_list($clients)) {
+                $clients = [$clients];
+            }
+
+            $totalResults = (int) data_get($data, 'totalresults', 0);
+
+            foreach ($clients as $client) {
+                $items[] = $client;
+            }
+
+            $startNumber += $limitNum;
+            $page++;
+        } while ($startNumber < $totalResults && $page < $maxPages && $clients !== []);
+
+        return [
+            'items' => $items,
+            'total' => $totalResults,
+        ];
+    }
+
+    /**
      * Fetch the most recently created invoices and the total invoice count.
      *
      * @return array{items: array<int, array<string, mixed>>, total: int}

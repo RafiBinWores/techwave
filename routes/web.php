@@ -432,6 +432,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::get('/whmcs/invoices/{invoiceId}/pdf', [WhmcsInvoiceController::class, 'adminPdf'])->whereNumber('invoiceId')->name('whmcs.invoices.pdf');
     Route::livewire('/whmcs/invoices/{invoiceId}/view', 'pages::admin.whmcs.invoice-view')->whereNumber('invoiceId')->name('whmcs.invoices.view');
 
+    
+    // WHMCS users
+    Route::livewire('/whmcs/users', 'pages::admin.whmcs.users')->name('whmcs.users');
+    Route::livewire('/whmcs/users/{userId}', 'pages::admin.whmcs.user-view')->whereNumber('userId')->name('whmcs.users.view');
+
     // WHMCS billing accounts
     Route::livewire('/whmcs-accounts', 'pages::admin.whmcs-accounts.index')->name('whmcs-accounts.index');
 
