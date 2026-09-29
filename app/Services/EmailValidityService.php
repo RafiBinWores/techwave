@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+
 class EmailValidityService
 {
     public const STATUS_VALID = 'valid';
@@ -17,6 +20,18 @@ class EmailValidityService
     private const SMTP_TIMEOUT_SECONDS = 4;
 
     private const MAX_MX_HOSTS = 2;
+
+    /**
+     * Community maintained list of throwaway email domains (~75k entries).
+     */
+    private const DISPOSABLE_LIST_URL = 'https://raw.githubusercontent.com/disposable/disposable-email-domains/master/domains.txt';
+
+    private const DISPOSABLE_CACHE_KEY = 'email-validator.disposable-domains';
+
+    /**
+     * Newline delimited copy of the disposable domain list for this request.
+     */
+    private ?string $disposableList = null;
 
     /**
      * Domains that generate throwaway, disposable mailboxes.
@@ -338,7 +353,93 @@ class EmailValidityService
 
     private function isDisposable(string $domain): bool
     {
-        return in_array($domain, self::DISPOSABLE_DOMAINS, true);
+        if ($domain === '') {
+            return false;
+        }
+
+        if ($this->inDisposableList($domain)) {
+            return true;
+        }
+
+        $labels = explode('.', $domain);
+
+        while (count($labels) > 2) {
+            array_shift($labels);
+
+            if ($this->inDisposableList(implode('.', $labels))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function inDisposableList(string $domain): bool
+    {
+        return str_contains($this->disposableList(), "\n".$domain."\n");
+    }
+
+    /**
+     * Newline wrapped, lowercased disposable domain list (built-in fallback merged in).
+     */
+    private function disposableList(): string
+    {
+        if ($this->disposableList !== null) {
+            return $this->disposableList;
+        }
+
+        $cached = Cache::get(self::DISPOSABLE_CACHE_KEY);
+
+        if (! is_string($cached) || $cached === '') {
+            $remote = $this->fetchDisposableList();
+
+            if ($remote !== null) {
+                $cached = $remote;
+
+                Cache::put(self::DISPOSABLE_CACHE_KEY, $cached, now()->addDay());
+            } else {
+                $cached = implode("\n", self::DISPOSABLE_DOMAINS);
+
+                Cache::put(self::DISPOSABLE_CACHE_KEY, $cached, now()->addHour());
+            }
+        }
+
+        $normalized = strtolower(str_replace("\r", '', $cached));
+
+        return $this->disposableList = "\n".trim($normalized)."\n";
+    }
+
+    /**
+     * Download the maintained disposable domain list, merged with the built-in fallback.
+     */
+    private function fetchDisposableList(): ?string
+    {
+        try {
+            $response = Http::timeout(8)
+                ->withHeaders(['User-Agent' => 'TechWave-EmailValidator/1.0'])
+                ->get(self::DISPOSABLE_LIST_URL);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $domains = preg_split('/\R+/', strtolower($response->body())) ?: [];
+
+            $domains = array_values(array_filter(
+                $domains,
+                fn (string $line) => $line !== ''
+                    && ! str_starts_with($line, '#')
+                    && str_contains($line, '.'),
+            ));
+
+            if (count($domains) < 500) {
+                return null;
+            }
+
+            return implode("\n", array_unique(array_merge(self::DISPOSABLE_DOMAINS, $domains)));
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function riskyLocalPart(string $email): bool
