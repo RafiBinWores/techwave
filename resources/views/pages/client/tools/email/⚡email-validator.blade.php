@@ -464,11 +464,11 @@ new #[Title('Email Validity Checker')] class extends Component {
                             <p class="mt-1 text-xs leading-5 text-blue-100/55">{{ $result['summary'] }}</p>
                         </div>
 
-                        <span
+                        {{-- <span
                             class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider {{ $meta['classes'] }}">
                             <span class="material-symbols-outlined text-sm">{{ $meta['icon'] }}</span>
                             {{ $meta['label'] }}
-                        </span>
+                        </span> --}}
                     </div>
 
                     {{-- Classification --}}
@@ -478,7 +478,7 @@ new #[Title('Email Validity Checker')] class extends Component {
                                 class="w-24 shrink-0 text-[10px] font-bold uppercase tracking-wider text-blue-100/45">Classification</span>
 
                             <span
-                                class="rounded-full border px-2 py-px text-[10px] font-bold uppercase tracking-wider {{ $meta['classes'] }}">
+                                class="rounded-full border px-2 py-px text-[10px] font-bold  tracking-wider {{ $meta['classes'] }}">
                                 {{ $result['classification']['label'] }}
                             </span>
                         </div>
