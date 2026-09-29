@@ -123,6 +123,9 @@ Route::livewire('/tools/pdf-compressor', 'pages::client.tools.pdf.pdf-compressor
 Route::livewire('/tools/pdf-merger', 'pages::client.tools.pdf.pdf-merger')->name('client.tools.pdf-merger');
 Route::livewire('/tools/pdf-splitter', 'pages::client.tools.pdf.pdf-splitter')->name('client.tools.pdf-splitter');
 
+// Email tools
+Route::livewire('/tools/email-validator', 'pages::client.tools.email.email-validator')->name('client.tools.email-validator');
+
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');
 Route::livewire('/blogs/{slug}', 'pages::client.blogs.details')->name('client.blogs.details');

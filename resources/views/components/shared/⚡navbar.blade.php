@@ -402,7 +402,7 @@ new class extends Component {
                         <div class="max-h-125 overflow-y-auto p-6">
                             <p class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40">All Tools</p>
 
-                            <div class="grid grid-cols-3 gap-x-6 gap-y-5">
+                            <div class="grid grid-cols-4 gap-x-6 gap-y-5">
                                 @forelse ($toolCategories as $category)
                                 <div>
                                     <div class="mb-2.5 flex items-center gap-2">
@@ -422,7 +422,7 @@ new class extends Component {
                                     </div>
                                 </div>
                                 @empty
-                                <div class="col-span-3 text-center text-sm text-blue-100/40">
+                                <div class="col-span-4 text-center text-sm text-blue-100/40">
                                     No tools available yet.
                                 </div>
                                 @endforelse
