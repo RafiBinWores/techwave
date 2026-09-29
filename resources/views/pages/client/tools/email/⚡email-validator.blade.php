@@ -2,20 +2,47 @@
 
 use App\Models\ToolCategory;
 use App\Models\ToolPlan;
+use App\Services\EmailListParser;
+use App\Services\EmailReportCsv;
 use App\Services\EmailValidityService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new #[Title('Email Validity Checker')] class extends Component {
-    public string $input = '';
+    use WithFileUploads;
 
-    public array $results = [];
+    public string $input = '';
 
     public bool $hasChecked = false;
 
+    public string $resultsKey = '';
+
+    public bool $isProcessing = false;
+
+    public int $processedCount = 0;
+
+    public int $totalCount = 0;
+
+    public ?TemporaryUploadedFile $importFile = null;
+
     private ?ToolCategory $category = null;
 
+    private ?array $resultsPayload = null;
+
     private const FALLBACK_MAX_EMAILS = 5;
+
+    private const BULK_DEEP_LIMIT = 100;
+
+    private const CHUNK_LIMIT = 20;
+
+    private const CHUNK_SECONDS = 12;
+
+    private const RESULTS_CACHE_PREFIX = 'email-validator.results.';
 
     public function boot(): void
     {
@@ -49,14 +76,13 @@ new #[Title('Email Validity Checker')] class extends Component {
 
     public function check(EmailValidityService $service): void
     {
-        set_time_limit(300);
-
         $maxEmails = $this->maxEmails();
 
         $this->validate([
-            'input' => ['required', 'string', 'max:20000'],
+            'input' => ['required', 'string', 'max:' . ($maxEmails * 300 + 2000)],
         ], [
             'input.required' => 'Paste at least one email address to check.',
+            'input.max' => 'That input is too long for ' . $maxEmails . ' email addresses.',
         ]);
 
         $emails = $this->parseEmails();
@@ -80,21 +106,226 @@ new #[Title('Email Validity Checker')] class extends Component {
             return;
         }
 
-        $this->results = array_map(
-            fn(string $email) => $service->check($email),
-            $emails,
+        $this->resultsKey = (string) Str::uuid();
+        $this->resultsPayload = [
+            'owner' => auth()->id(),
+            'pending' => $emails,
+            'results' => [],
+            'started_at' => microtime(true),
+        ];
+
+        Cache::put(self::RESULTS_CACHE_PREFIX . $this->resultsKey, $this->resultsPayload, now()->addHours(2));
+
+        $this->processedCount = 0;
+        $this->totalCount = count($emails);
+        $this->hasChecked = false;
+        $this->isProcessing = true;
+
+        $this->processChunk($service);
+    }
+
+    /**
+     * Verify the next slice of the pending queue. Keeps each HTTP request short so
+     * the gateway never times out; the UI polls this until the queue is drained.
+     */
+    public function processChunk(EmailValidityService $service): void
+    {
+        if (! $this->isProcessing) {
+            return;
+        }
+
+        set_time_limit(60);
+
+        $payload = $this->runPayload();
+
+        if ($payload === null) {
+            $this->isProcessing = false;
+
+            return;
+        }
+
+        if ($payload['pending'] === []) {
+            $this->finishRun($payload);
+
+            return;
+        }
+
+        $deadline = microtime(true) + self::CHUNK_SECONDS;
+        $processedInCall = 0;
+
+        while ($payload['pending'] !== []) {
+            if (
+                $processedInCall >= self::CHUNK_LIMIT
+                || ($processedInCall > 0 && microtime(true) >= $deadline)
+            ) {
+                break;
+            }
+
+            $email = array_shift($payload['pending']);
+            $payload['results'][] = $service->check($email);
+            $processedInCall++;
+            $this->processedCount++;
+        }
+
+        $this->resultsPayload = $payload;
+
+        Cache::put(self::RESULTS_CACHE_PREFIX . $this->resultsKey, $payload, now()->addHours(2));
+
+        if ($payload['pending'] === []) {
+            $this->finishRun($payload);
+        }
+    }
+
+    private function finishRun(array $payload): void
+    {
+        $this->isProcessing = false;
+        $this->hasChecked = true;
+        $this->processedCount = count($payload['results']);
+        $this->totalCount = count($payload['results']) + count($payload['pending'] ?? []);
+    }
+
+    private function runPayload(): ?array
+    {
+        if ($this->resultsKey === '') {
+            return null;
+        }
+
+        $payload = Cache::get(self::RESULTS_CACHE_PREFIX . $this->resultsKey);
+
+        if (! is_array($payload) || ($payload['owner'] ?? null) !== auth()->id()) {
+            return null;
+        }
+
+        return $payload;
+    }
+
+    public function getProgressProperty(): array
+    {
+        $processed = $this->processedCount;
+        $total = $this->totalCount;
+
+        $etaMinutes = null;
+
+        if ($processed > 0 && $total > $processed && isset($this->resultsPayload['started_at'])) {
+            $elapsed = microtime(true) - $this->resultsPayload['started_at'];
+            $etaMinutes = max(1, (int) ceil(($elapsed / $processed) * ($total - $processed) / 60));
+        }
+
+        return [
+            'processed' => $processed,
+            'total' => $total,
+            'percent' => $total > 0 ? (int) floor($processed / $total * 100) : 0,
+            'eta_minutes' => $etaMinutes,
+        ];
+    }
+
+    public function updatedImportFile(): void
+    {
+        $this->validate([
+            'importFile' => ['required', 'file', 'max:2048', 'extensions:csv,txt,xlsx'],
+        ], [
+            'importFile.required' => 'Choose a CSV or Excel file to import.',
+            'importFile.file' => 'The import must be a valid file.',
+            'importFile.max' => 'The import file is too large (2 MB max).',
+            'importFile.extensions' => 'Supported formats: CSV, TXT, or XLSX.',
+        ]);
+
+        $emails = app(EmailListParser::class)->fromFile(
+            (string) $this->importFile->getRealPath(),
+            $this->importFile->getClientOriginalExtension(),
         );
 
-        $this->hasChecked = true;
+        if ($emails === []) {
+            $this->dispatch('toast', message: 'No email addresses found in that file.', type: 'error');
+
+            return;
+        }
+
+        $limit = $this->maxEmails();
+        $merged = array_values(array_unique([...$this->parseEmails(), ...$emails]));
+
+        if (count($merged) > $limit) {
+            $merged = array_slice($merged, 0, $limit);
+
+            $this->dispatch(
+                'toast',
+                message: 'Imported ' . number_format(count($emails)) . ' emails — your list was capped at the plan limit of ' . number_format($limit) . '.',
+                type: 'warning',
+            );
+        } else {
+            $this->dispatch(
+                'toast',
+                message: 'Imported ' . number_format(count($emails)) . ' email' . (count($emails) === 1 ? '' : 's') . ' (' . number_format(count($merged)) . ' total).',
+                type: 'success',
+            );
+        }
+
+        $this->input = implode("\n", $merged);
+        $this->importFile = null;
+        $this->resetValidation('importFile');
+    }
+
+    public function downloadReport(): ?StreamedResponse
+    {
+        $results = $this->results;
+
+        if ($results === []) {
+            $this->dispatch('toast', message: 'Run a check before downloading the report.', type: 'error');
+
+            return null;
+        }
+
+        $csv = app(EmailReportCsv::class)->build($results);
+
+        return response()->streamDownload(
+            static fn() => print($csv),
+            'email-validity-report-' . now()->format('Ymd-His') . '.csv',
+            ['Content-Type' => 'text/csv; charset=UTF-8'],
+        );
     }
 
     public function resetChecker(): void
     {
+        if ($this->resultsKey !== '') {
+            Cache::forget(self::RESULTS_CACHE_PREFIX . $this->resultsKey);
+        }
+
         $this->input = '';
-        $this->results = [];
         $this->hasChecked = false;
+        $this->isProcessing = false;
+        $this->processedCount = 0;
+        $this->totalCount = 0;
+        $this->resultsKey = '';
+        $this->resultsPayload = null;
+        $this->importFile = null;
 
         $this->resetValidation();
+    }
+
+    public function getResultsProperty(): array
+    {
+        if ($this->resultsPayload !== null) {
+            return $this->resultsPayload['results'];
+        }
+
+        if ($this->resultsKey === '') {
+            return [];
+        }
+
+        $payload = Cache::get(self::RESULTS_CACHE_PREFIX . $this->resultsKey);
+
+        if (! is_array($payload) || ($payload['owner'] ?? null) !== auth()->id()) {
+            return [];
+        }
+
+        $this->resultsPayload = $payload;
+
+        return $payload['results'] ?? [];
+    }
+
+    public function getBulkModeProperty(): bool
+    {
+        return count($this->parseEmails()) > self::BULK_DEEP_LIMIT;
     }
 
     public function getEmailCountProperty(): int
@@ -229,10 +460,31 @@ new #[Title('Email Validity Checker')] class extends Component {
                             <h2 class="text-xl font-extrabold text-white">Paste email addresses</h2>
                         </div>
 
-                        <span class="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-100/60">
-                            {{ $this->email_count }} / {{ $this->maxEmails() }} emails
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <label for="email-import"
+                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition hover:border-cyan-400/30 hover:bg-white/12">
+                                <!-- <span wire:loading.remove wire:target="importFile"
+                                    class="material-symbols-outlined text-xs">upload_file</span> -->
+                                <span wire:loading wire:target="importFile"
+                                    class="material-symbols-outlined h-4 w-4 animate-spin text-center text-sm leading-4">progress_activity</span>
+                                Import CSV / Excel
+                            </label>
+                            <input type="file" id="email-import" class="hidden" wire:model.live="importFile"
+                                accept=".csv,.txt,.xlsx">
+
+                            <span
+                                class="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-100/60">
+                                {{ $this->email_count }} / {{ $this->maxEmails() }} emails
+                            </span>
+                        </div>
                     </div>
+
+                    @error('importFile')
+                    <p class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-300">
+                        <span class="material-symbols-outlined text-sm">error</span>
+                        {{ $message }}
+                    </p>
+                    @enderror
 
                     <textarea wire:model="input" rows="7"
                         placeholder="jane@gmail.com&#10;support@company.com&#10;not-an-email"
@@ -246,22 +498,12 @@ new #[Title('Email Validity Checker')] class extends Component {
                     @enderror
 
                     <p class="mt-2 text-xs text-blue-100/45">
-                        Separate multiple addresses with a comma, space, or new line. Maximum
-                        {{ $this->maxEmails() }} per run.
+                        Separate addresses with a comma, space, or new line — or import a CSV / Excel file with the
+                        button above. Maximum {{ $this->maxEmails() }} per run.
                     </p>
 
                     {{-- Plan limit --}}
-                    @if ($this->is_premium_user)
-                    <div
-                        class="mt-5 flex items-start gap-2 rounded-xl border border-emerald-300/20 bg-emerald-400/8 px-4 py-3 text-xs leading-5 text-emerald-200/90">
-                        <span class="material-symbols-outlined mt-0.5 text-sm text-emerald-300">workspace_premium</span>
-                        <p>
-                            Premium active — you can check up to
-                            <span class="font-bold">{{ $this->maxEmails() }}</span> emails at a time.
-                        </p>
-                    </div>
-
-                    @elseif ($this->upgrade_plan)
+                    @if (! $this->is_premium_user && $this->upgrade_plan)
                     <div
                         class="mt-5 flex flex-col gap-3 rounded-xl border border-cyan-300/20 bg-cyan-400/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-start gap-2">
@@ -312,16 +554,36 @@ new #[Title('Email Validity Checker')] class extends Component {
                         </span>
                     </div> -->
 
+                    {{-- Bulk run notice --}}
+                    @if ($this->bulk_mode)
+                    <div
+                        class="mt-5 flex items-start gap-2 rounded-xl border border-amber-300/20 bg-amber-400/8 px-4 py-3 text-xs leading-5 text-amber-100/85">
+                        <span class="material-symbols-outlined mt-0.5 text-sm text-amber-300">bolt</span>
+                        <p>
+                            <span class="font-bold">Bulk mode</span> — {{ number_format($this->email_count) }}
+                            addresses queued. Every address gets a live SMTP probe, so this run can take several
+                            minutes — keep this tab open.
+                        </p>
+                    </div>
+                    @endif
+
                     {{-- Actions --}}
                     <div class="mt-5 flex flex-col gap-3 sm:flex-row">
                         <button type="button" wire:click="check" wire:loading.attr="disabled"
+                            @disabled($isProcessing)
                             class="group relative flex flex-1 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
                             <span
                                 class="absolute inset-y-0 -left-1/2 w-1/2 skew-x-[-20deg] bg-white/20 transition-all duration-700 group-hover:left-full"></span>
 
                             <span wire:loading.remove wire:target="check" class="relative flex items-center gap-2">
+                                @if ($isProcessing)
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
+                                Processing...
+                                @else
                                 <span class="material-symbols-outlined text-base">fact_check</span>
                                 Check Email{{ $this->email_count > 1 ? 's' : '' }}
+                                @endif
                             </span>
 
                             <span wire:loading wire:target="check" class="relative flex items-center gap-2">
@@ -339,14 +601,47 @@ new #[Title('Email Validity Checker')] class extends Component {
                         @endif
                     </div>
 
+                    {{-- Chunked progress (polls until the queue is drained) --}}
+                    @if ($isProcessing)
+                    <div wire:poll.500ms="processChunk"
+                        class="mt-4 rounded-xl border border-cyan-300/20 bg-cyan-400/8 px-4 py-3.5">
+                        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-cyan-100/85">
+                            <span class="flex items-center gap-2 font-semibold">
+                                <span
+                                    class="h-4 w-4 animate-spin rounded-full border-2 border-cyan-200/30 border-t-cyan-200"></span>
+                                Verifying {{ number_format($this->progress['processed']) }} of
+                                {{ number_format($this->progress['total']) }} addresses...
+                                @if ($this->progress['eta_minutes'] !== null)
+                                <span class="font-normal text-cyan-100/55">about
+                                    {{ $this->progress['eta_minutes'] }} min left</span>
+                                @endif
+                            </span>
+
+                            <span class="font-black text-cyan-300">{{ $this->progress['percent'] }}%</span>
+                        </div>
+
+                        <div class="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                            <div class="h-full rounded-full bg-linear-to-r from-cyan-400 to-blue-500 transition-all duration-500"
+                                style="width: {{ $this->progress['percent'] }}%"></div>
+                        </div>
+                    </div>
+                    @endif
+
                     <div wire:loading wire:target="check"
                         class="mt-4 flex items-start gap-2 rounded-xl border border-cyan-300/20 bg-cyan-400/8 px-4 py-3 text-xs leading-5 text-cyan-100/85">
                         <span class="material-symbols-outlined text-sm">hourglass_top</span>
+                        @if ($this->bulk_mode)
+                        <p>
+                            Bulk run in progress — deep checking every mailbox with a live SMTP conversation for
+                            {{ number_format($this->email_count) }} addresses. This can take several minutes, keep
+                            this tab open.
+                        </p>
+                        @else
                         <p>
                             Probing mail servers... Deep checks open a real SMTP conversation and can take a few
-                            seconds per address. If port 25 is blocked on this server, results fall back to
-                            domain-level checks.
+                            seconds per address.
                         </p>
+                        @endif
                     </div>
                 </div>
             </section>
@@ -445,11 +740,25 @@ new #[Title('Email Validity Checker')] class extends Component {
                     <span class="material-symbols-outlined text-sm">help</span>
                     {{ $this->stats['unknown'] }} unknown
                 </span>
+
+                <button type="button" wire:click="downloadReport" wire:loading.attr="disabled"
+                    class="ml-auto inline-flex cursor-pointer items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-cyan-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
+                    <span wire:loading.remove wire:target="downloadReport" class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">download</span>
+                        Download CSV report
+                    </span>
+
+                    <span wire:loading wire:target="downloadReport" class="flex items-center gap-1.5">
+                        <span
+                            class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-cyan-200/30 border-t-cyan-200"></span>
+                        Preparing...
+                    </span>
+                </button>
             </div>
 
             {{-- Result cards --}}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                @foreach ($results as $result)
+                @foreach ($this->results as $result)
                 @php $meta = $this->statusMeta($result['status']); @endphp
 
                 <article
@@ -466,8 +775,8 @@ new #[Title('Email Validity Checker')] class extends Component {
 
                         {{-- <span
                             class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider {{ $meta['classes'] }}">
-                            <span class="material-symbols-outlined text-sm">{{ $meta['icon'] }}</span>
-                            {{ $meta['label'] }}
+                        <span class="material-symbols-outlined text-sm">{{ $meta['icon'] }}</span>
+                        {{ $meta['label'] }}
                         </span> --}}
                     </div>
 
