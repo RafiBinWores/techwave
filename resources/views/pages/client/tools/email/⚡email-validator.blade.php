@@ -221,6 +221,15 @@ new #[Title('Email Validity Checker')] class extends Component {
 
     public function updatedImportFile(): void
     {
+        try {
+            $this->importUploadedEmails();
+        } finally {
+            $this->dispatch('import-finished');
+        }
+    }
+
+    private function importUploadedEmails(): void
+    {
         $this->validate([
             'importFile' => ['required', 'file', 'max:2048', 'extensions:csv,txt,xlsx'],
         ], [
@@ -460,14 +469,21 @@ new #[Title('Email Validity Checker')] class extends Component {
                             <h2 class="text-xl font-extrabold text-white">Paste email addresses</h2>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2" x-data="{ importing: false }"
+                            x-on:livewire-upload-start.window="if ($event.detail.property === 'importFile') importing = true"
+                            x-on:livewire-upload-error.window="if ($event.detail.property === 'importFile') importing = false"
+                            x-on:import-finished.window="importing = false">
                             <label for="email-import"
-                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition hover:border-cyan-400/30 hover:bg-white/12">
-                                <!-- <span wire:loading.remove wire:target="importFile"
-                                    class="material-symbols-outlined text-xs">upload_file</span> -->
-                                <span wire:loading wire:target="importFile"
-                                    class="material-symbols-outlined h-4 w-4 animate-spin text-center text-sm leading-4">progress_activity</span>
-                                Import CSV / Excel
+                                class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition hover:border-cyan-400/30 hover:bg-white/12">
+                                <span x-show="!importing" x-cloak class="inline-flex items-center gap-1">
+                                    Import CSV / Excel
+                                </span>
+
+                                <span x-show="importing" x-cloak class="inline-flex items-center gap-1">
+                                    <span
+                                        class="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
+                                    Importing...
+                                </span>
                             </label>
                             <input type="file" id="email-import" class="hidden" wire:model.live="importFile"
                                 accept=".csv,.txt,.xlsx">
@@ -488,7 +504,7 @@ new #[Title('Email Validity Checker')] class extends Component {
 
                     <textarea wire:model="input" rows="7"
                         placeholder="jane@gmail.com&#10;support@company.com&#10;not-an-email"
-                        class="mt-4 w-full resize-y rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm leading-6 text-white placeholder:text-blue-100/35 focus:border-cyan-300/40 focus:ring-0 focus:outline-none"></textarea>
+                        class="mt-4 w-full resize-y rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm leading-6 text-white placeholder:text-blue-100/35 focus:border-cyan-300/40 focus:ring-0 focus:outline-none [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:rounded-full [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-white/35"></textarea>
 
                     @error('input')
                     <p class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-300">
