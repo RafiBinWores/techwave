@@ -457,11 +457,13 @@ class EmailValidityService
                 return ['status' => 'unknown', 'detail' => $host.' refused the session ('.$banner['code'].').'];
             }
 
-            $this->write($socket, 'EHLO localhost');
+            $helloName = $this->helloName();
+
+            $this->write($socket, 'EHLO '.$helloName);
             $hello = $this->readReply($socket);
 
             if ($hello['code'] !== 250) {
-                $this->write($socket, 'HELO localhost');
+                $this->write($socket, 'HELO '.$helloName);
                 $hello = $this->readReply($socket);
 
                 if ($hello['code'] !== 250) {
@@ -469,11 +471,24 @@ class EmailValidityService
                 }
             }
 
-            $this->write($socket, 'MAIL FROM:<verify@techwave.test>');
-            $from = $this->readReply($socket);
+            $fromCodes = [];
 
-            if ($from['code'] !== 250) {
-                return ['status' => 'unknown', 'detail' => $host.' blocked the probe sender ('.$from['code'].').'];
+            foreach ($this->probeSenders() as $sender) {
+                $this->write($socket, 'MAIL FROM:<'.$sender.'>');
+                $from = $this->readReply($socket);
+                $fromCodes[] = $from['code'];
+
+                if ($from['code'] === 250) {
+                    break;
+                }
+
+                if ($from['code'] === 0) {
+                    return ['status' => 'unknown', 'detail' => $host.' lost the connection while verifying the probe sender.'];
+                }
+            }
+
+            if (! in_array(250, $fromCodes, true)) {
+                return ['status' => 'unknown', 'detail' => $host.' blocked the probe sender ('.implode('/', $fromCodes).').'];
             }
 
             $this->write($socket, 'RCPT TO:<'.$email.'>');
@@ -504,6 +519,52 @@ class EmailValidityService
                 fclose($socket);
             }
         }
+    }
+
+    /**
+     * Hostname announced during the EHLO/HELO handshake.
+     *
+     * Strict servers reject "localhost", so prefer a real FQDN.
+     */
+    private function helloName(): string
+    {
+        $host = gethostname();
+
+        if (is_string($host) && str_contains($host, '.')) {
+            return $host;
+        }
+
+        $domain = parse_url((string) config('app.url'), PHP_URL_HOST);
+
+        if (is_string($domain) && $domain !== '') {
+            return $domain;
+        }
+
+        return 'localhost';
+    }
+
+    /**
+     * Probe senders in order of preference.
+     *
+     * The first is a real, resolvable domain (passes sender-existence checks);
+     * the second is the null reverse-path MAIL FROM:<>, accepted universally
+     * because it is the bounce address and needs no verification.
+     *
+     * @return list<string>
+     */
+    private function probeSenders(): array
+    {
+        $senders = [];
+
+        $domain = parse_url((string) config('app.url'), PHP_URL_HOST);
+
+        if (is_string($domain) && $domain !== '') {
+            $senders[] = 'verify@'.$domain;
+        }
+
+        $senders[] = '';
+
+        return $senders;
     }
 
     /**
