@@ -498,8 +498,9 @@ new #[Title('Email Validity Checker')] class extends Component {
                     @enderror
 
                     <p class="mt-2 text-xs text-blue-100/45">
-                        Separate addresses with a comma, space, or new line — or import a CSV / Excel file with the
-                        button above. Maximum {{ $this->maxEmails() }} per run.
+                        Separate addresses with a comma, space, or new line — or write them in a CSV / Excel file
+                        (one email per row) and import it with the button above. Maximum
+                        {{ $this->maxEmails() }} per run.
                     </p>
 
                     {{-- Plan limit --}}
