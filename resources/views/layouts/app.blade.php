@@ -32,6 +32,9 @@
     {{-- Toast Notifications --}}
     <livewire:shared.font-toast-notification />
 
+    {{-- Confirm / Alert Dialog --}}
+    <livewire:common.confirm-alert />
+
     {{-- Full Website Background Video --}}
     <div class="fixed inset-0 -z-20">
         <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/images/matrix.webp') }}"

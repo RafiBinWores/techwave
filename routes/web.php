@@ -125,6 +125,7 @@ Route::livewire('/tools/pdf-splitter', 'pages::client.tools.pdf.pdf-splitter')->
 
 // Email tools
 Route::livewire('/tools/email-validator', 'pages::client.tools.email.email-validator')->name('client.tools.email-validator');
+Route::livewire('/tools/temp-mail', 'pages::client.tools.email.temp-mail')->name('client.tools.temp-mail');
 
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');
