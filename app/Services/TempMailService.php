@@ -151,7 +151,7 @@ class TempMailService
     /**
      * Full message body, normalized for the reader view.
      *
-     * @return array{id: string, from: string, from_name: string, to: string, subject: string, text: string, html: string, created_at: string, has_attachments: bool}|null
+     * @return array{id: string, from: string, from_name: string, to: string, subject: string, text: string, html: string, created_at: string, has_attachments: bool, attachments: list<array{id: string, filename: string, content_type: string, disposition: string, related: bool, size: int}>}|null
      */
     public function message(string $token, string $id): ?array
     {
@@ -191,6 +191,49 @@ class TempMailService
             'html' => $html,
             'created_at' => (string) ($message['createdAt'] ?? ''),
             'has_attachments' => (bool) ($message['hasAttachments'] ?? false),
+            'attachments' => $this->attachments($message['attachments'] ?? []),
+        ];
+    }
+
+    /**
+     * Raw bytes of a single attachment — the provider requires the mailbox
+     * bearer token, so every download has to be proxied through this server.
+     *
+     * @return array{content: string, content_type: string}|null
+     */
+    public function attachment(string $token, string $messageId, string $attachmentId): ?array
+    {
+        if (
+            ! preg_match('/^[A-Za-z0-9_-]{6,64}$/', $messageId)
+            || ! preg_match('/^[A-Za-z0-9_.-]{1,64}$/', $attachmentId)
+        ) {
+            $this->lastError = 'unavailable';
+
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(self::TIMEOUT)
+                ->withHeaders([
+                    'User-Agent' => 'TechWave-TempMail/1.0',
+                    'Authorization' => 'Bearer '.$token,
+                ])
+                ->get(self::BASE_URL.'/messages/'.$messageId.'/attachment/'.$attachmentId);
+        } catch (\Throwable) {
+            $this->lastError = 'unavailable';
+
+            return null;
+        }
+
+        $this->lastError = $this->errorForStatus($response->status());
+
+        if ($this->lastError !== null) {
+            return null;
+        }
+
+        return [
+            'content' => $response->body(),
+            'content_type' => (string) $response->header('Content-Type', 'application/octet-stream'),
         ];
     }
 
@@ -266,6 +309,53 @@ class TempMailService
         return 'temp-mail.inbox.'.hash('sha256', $token);
     }
 
+    /**
+     * Normalize the attachment descriptors embedded in a message payload.
+     * Sizes arrive in kilobytes from the provider.
+     *
+     * @return list<array{id: string, filename: string, content_type: string, disposition: string, related: bool, size: int}>
+     */
+    private function attachments(mixed $attachments): array
+    {
+        if (! is_array($attachments)) {
+            return [];
+        }
+
+        return collect($attachments)
+            ->filter(fn ($attachment) => is_array($attachment) && ($attachment['id'] ?? '') !== '')
+            ->map(fn (array $attachment) => [
+                'id' => (string) $attachment['id'],
+                'filename' => $this->attachmentFilename($attachment['filename'] ?? ''),
+                'content_type' => (string) ($attachment['contentType'] ?? 'application/octet-stream'),
+                'disposition' => (string) ($attachment['disposition'] ?? ''),
+                'related' => (bool) ($attachment['related'] ?? false),
+                'size' => (int) ($attachment['size'] ?? 0),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function attachmentFilename(mixed $filename): string
+    {
+        $filename = str_replace(['/', '\\'], '_', trim((string) $filename));
+        $filename = trim(preg_replace('/[\x00-\x1F\x7F"]/', '', $filename) ?? '');
+
+        return $filename !== '' ? $filename : 'attachment';
+    }
+
+    /**
+     * 'auth' | 'rate' | 'unavailable' for a failing status, or null on success.
+     */
+    private function errorForStatus(int $status): ?string
+    {
+        return match (true) {
+            in_array($status, [401, 403], true) => 'auth',
+            $status === 429 => 'rate',
+            $status >= 200 && $status < 300 => null,
+            default => 'unavailable',
+        };
+    }
+
     private function subject(mixed $subject): string
     {
         $subject = trim(strip_tags((string) $subject));
@@ -294,12 +384,7 @@ class TempMailService
             return null;
         }
 
-        $this->lastError = match (true) {
-            in_array($response->status(), [401, 403], true) => 'auth',
-            $response->status() === 429 => 'rate',
-            ! $response->successful() => 'unavailable',
-            default => null,
-        };
+        $this->lastError = $this->errorForStatus($response->status());
 
         return $this->lastError === null ? $response : null;
     }

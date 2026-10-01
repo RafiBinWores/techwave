@@ -5,10 +5,12 @@ use App\Models\ToolPlan;
 use App\Services\TempMailService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Temp Mail')] class extends Component {
+new #[Title('Temp Mail')] class extends Component
+{
     public string $address = '';
 
     public bool $isCreating = false;
@@ -22,7 +24,7 @@ new #[Title('Temp Mail')] class extends Component {
 
     public ?string $openMessageId = null;
 
-    /** @var array{id: string, from: string, from_name: string, to: string, subject: string, text: string, html: string, created_at: string, has_attachments: bool}|null */
+    /** @var array{id: string, from: string, from_name: string, to: string, subject: string, text: string, html: string, created_at: string, has_attachments: bool, attachments: list<array{id: string, filename: string, content_type: string, disposition: string, related: bool, size: int}>, link_expires_at?: int}|null */
     public ?array $openMessage = null;
 
     /** @var list<string> */
@@ -33,6 +35,10 @@ new #[Title('Temp Mail')] class extends Component {
     private const SESSION_KEY = 'temp_mail';
 
     private const MESSAGE_CACHE_PREFIX = 'temp-mail.message.';
+
+    private const TOKEN_CACHE_PREFIX = 'temp-mail.token.';
+
+    private const ATTACHMENT_LINK_HOURS = 6;
 
     private const FREE_MESSAGE_LIMIT = 5;
 
@@ -47,8 +53,9 @@ new #[Title('Temp Mail')] class extends Component {
 
     public function mount(): void
     {
-        if ($this->mailbox() !== null) {
-            $this->address = $this->mailbox()['address'];
+        if ($mailbox = $this->mailbox()) {
+            $this->address = $mailbox['address'];
+            $this->rememberMailboxToken($mailbox);
             $this->refreshInbox(app(TempMailService::class));
 
             return;
@@ -92,7 +99,267 @@ new #[Title('Temp Mail')] class extends Component {
 
     public function getUnreadCountProperty(): int
     {
-        return count(array_filter($this->messages, fn(array $message) => ! ($message['seen'] ?? false)));
+        return count(array_filter($this->messages, fn (array $message) => ! ($message['seen'] ?? false)));
+    }
+
+    /**
+     * Signed inline links for the open message's attachments, keyed by id.
+     * The expiry is stamped once per opened message so every re-render emits
+     * the same URL and the body iframe never reloads.
+     *
+     * @return array<string, string>
+     */
+    public function getAttachmentUrlsProperty(): array
+    {
+        return $this->signedAttachmentUrls();
+    }
+
+    /**
+     * Signed links that force a download when an attachment is clicked,
+     * keyed by id.
+     *
+     * @return array<string, string>
+     */
+    public function getAttachmentDownloadUrlsProperty(): array
+    {
+        return $this->signedAttachmentUrls(['download' => 1]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     * @return array<string, string>
+     */
+    private function signedAttachmentUrls(array $extra = []): array
+    {
+        $mailbox = $this->mailbox();
+        $attachments = $this->openMessage['attachments'] ?? [];
+
+        if ($mailbox === null || $attachments === [] || $this->openMessage === null) {
+            return [];
+        }
+
+        $expiresAt = Carbon::createFromTimestamp(
+            $this->openMessage['link_expires_at'] ?? now()->addHours(self::ATTACHMENT_LINK_HOURS)->getTimestamp()
+        );
+
+        return collect($attachments)
+            ->mapWithKeys(fn (array $attachment) => [
+                $attachment['id'] => URL::temporarySignedRoute('client.tools.temp-mail.attachment', $expiresAt, array_merge([
+                    'mailbox' => $mailbox['id'],
+                    'message' => $this->openMessage['id'],
+                    'attachment' => $attachment['id'],
+                    'name' => $attachment['filename'],
+                ], $extra)),
+            ])
+            ->all();
+    }
+
+    /**
+     * The message body with provider attachment references (attachment:/cid:)
+     * rewritten to links this server can serve, and standalone images wrapped
+     * in download anchors so they can be saved straight from the reader.
+     */
+    public function getRenderedHtmlProperty(): string
+    {
+        return $this->bodyRewrite()['html'];
+    }
+
+    /**
+     * Attachments already linked for download inside the body — they do not
+     * need to be repeated in the list below the message.
+     *
+     * @return list<string>
+     */
+    public function getLinkedBodyAttachmentIdsProperty(): array
+    {
+        return $this->bodyRewrite()['linked'];
+    }
+
+    /** @var array{html: string, linked: list<string>}|null */
+    private ?array $bodyRewrite = null;
+
+    private ?string $bodyRewriteFor = null;
+
+    /**
+     * @return array{html: string, linked: list<string>}
+     */
+    private function bodyRewrite(): array
+    {
+        $key = $this->openMessage['id'] ?? null;
+
+        if ($key === null) {
+            return ['html' => '', 'linked' => []];
+        }
+
+        if ($this->bodyRewrite !== null && $this->bodyRewriteFor === $key) {
+            return $this->bodyRewrite;
+        }
+
+        $this->bodyRewriteFor = $key;
+
+        $html = $this->openMessage['html'] ?? '';
+
+        if ($html === '') {
+            return $this->bodyRewrite = ['html' => '', 'linked' => []];
+        }
+
+        $inlineUrls = $this->attachment_urls;
+        $downloadUrls = $this->attachment_download_urls;
+        $replacements = [];
+        $images = [];
+
+        foreach ($inlineUrls as $id => $url) {
+            $replacements['attachment:'.$id] = $url;
+            $replacements['cid:'.$id] = $url;
+
+            $images[$url] = [
+                'id' => $id,
+                'download' => $downloadUrls[$id] ?? $url,
+                'filename' => $this->attachmentFilename($id),
+            ];
+        }
+
+        if ($replacements !== []) {
+            $html = strtr($html, $replacements);
+        }
+
+        return $this->bodyRewrite = $this->wrapStandaloneImages($html, $images);
+    }
+
+    /**
+     * Wrap images that sit outside any anchor in a link to their download URL.
+     * Images already inside a link keep the sender's destination and are left
+     * for the attachments list instead.
+     *
+     * @param  array<string, array{id: string, download: string, filename: string}>  $images  keyed by inline URL
+     * @return array{html: string, linked: list<string>}
+     */
+    private function wrapStandaloneImages(string $html, array $images): array
+    {
+        if ($images === []) {
+            return ['html' => $html, 'linked' => []];
+        }
+
+        preg_match_all('/<a\b[^>]*>|<\/a\s*>|<img\b[^>]*>/i', $html, $matches, PREG_OFFSET_CAPTURE);
+
+        $wraps = [];
+        $linked = [];
+        $depth = 0;
+
+        foreach ($matches[0] as [$tag, $offset]) {
+            if (preg_match('/^<a\b/i', $tag) === 1) {
+                $depth++;
+
+                continue;
+            }
+
+            if (str_starts_with($tag, '</')) {
+                $depth = max(0, $depth - 1);
+
+                continue;
+            }
+
+            if ($depth > 0) {
+                continue;
+            }
+
+            $source = $this->imageSource($tag);
+
+            if ($source === null || ! isset($images[$source])) {
+                continue;
+            }
+
+            $image = $images[$source];
+
+            $wraps[] = [
+                'offset' => $offset,
+                'length' => strlen($tag),
+                'value' => sprintf(
+                    '<a href="%s" download="%s">%s</a>',
+                    e($image['download']),
+                    e($image['filename']),
+                    $tag,
+                ),
+            ];
+
+            $linked[] = $image['id'];
+        }
+
+        if ($wraps === []) {
+            return ['html' => $html, 'linked' => $linked];
+        }
+
+        usort($wraps, fn (array $a, array $b) => $b['offset'] <=> $a['offset']);
+
+        foreach ($wraps as $wrap) {
+            $html = substr_replace($html, $wrap['value'], $wrap['offset'], $wrap['length']);
+        }
+
+        return ['html' => $html, 'linked' => array_values(array_unique($linked))];
+    }
+
+    private function imageSource(string $tag): ?string
+    {
+        if (preg_match('/\bsrc\s*=\s*(?:"([^"]*)"|\'([^\']*)\')/i', $tag, $match) !== 1) {
+            return null;
+        }
+
+        $source = ($match[1] ?? '') !== '' ? $match[1] : ($match[2] ?? '');
+
+        return $source !== '' ? $source : null;
+    }
+
+    private function attachmentFilename(string $id): string
+    {
+        foreach ($this->openMessage['attachments'] ?? [] as $attachment) {
+            if (($attachment['id'] ?? '') === $id) {
+                return $attachment['filename'];
+            }
+        }
+
+        return 'attachment';
+    }
+
+    /**
+     * Attachments that are not already linked for download inside the body.
+     *
+     * @return list<array{id: string, filename: string, content_type: string, size: string, url: string, download_url: string}>
+     */
+    public function getOpenAttachmentsProperty(): array
+    {
+        $urls = $this->attachment_urls;
+
+        if ($urls === []) {
+            return [];
+        }
+
+        $downloadUrls = $this->attachment_download_urls;
+        $linkedIds = $this->linked_body_attachment_ids;
+
+        return collect($this->openMessage['attachments'] ?? [])
+            ->map(function (array $attachment) use ($urls, $downloadUrls, $linkedIds) {
+                $url = $urls[$attachment['id']] ?? null;
+
+                if ($url === null) {
+                    return null;
+                }
+
+                if (($attachment['disposition'] ?? '') === 'inline' && in_array($attachment['id'], $linkedIds, true)) {
+                    return null;
+                }
+
+                return [
+                    'id' => $attachment['id'],
+                    'filename' => $attachment['filename'],
+                    'content_type' => $attachment['content_type'],
+                    'size' => $this->formatAttachmentSize($attachment['size']),
+                    'url' => $url,
+                    'download_url' => $downloadUrls[$attachment['id']] ?? $url,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function messagesLimit(): int
@@ -136,6 +403,7 @@ new #[Title('Temp Mail')] class extends Component {
     {
         if ($existing = $this->mailbox()) {
             $service->deleteMailbox($existing['token'], $existing['id']);
+            Cache::forget(self::TOKEN_CACHE_PREFIX.$existing['id']);
         }
 
         $mailbox = $service->createMailbox();
@@ -145,6 +413,7 @@ new #[Title('Temp Mail')] class extends Component {
         }
 
         session([self::SESSION_KEY => $mailbox]);
+        $this->rememberMailboxToken($mailbox);
 
         $this->resetInbox();
         $this->address = $mailbox['address'];
@@ -221,6 +490,8 @@ new #[Title('Temp Mail')] class extends Component {
             Cache::put($cacheKey, $message, now()->addMinutes(30));
         }
 
+        $message['link_expires_at'] = now()->addHours(self::ATTACHMENT_LINK_HOURS)->getTimestamp();
+
         $this->openMessage = $message;
         $this->openMessageId = $id;
 
@@ -259,7 +530,7 @@ new #[Title('Temp Mail')] class extends Component {
         Cache::forget($this->messageCacheKey($mailbox['id'], $id));
 
         $this->messages = collect($this->messages)
-            ->reject(fn(array $message) => $message['id'] === $id)
+            ->reject(fn (array $message) => $message['id'] === $id)
             ->values()
             ->all();
 
@@ -332,10 +603,45 @@ new #[Title('Temp Mail')] class extends Component {
 
     private function forgetMailbox(): void
     {
+        if ($mailbox = $this->mailbox()) {
+            Cache::forget(self::TOKEN_CACHE_PREFIX.$mailbox['id']);
+        }
+
         session()->forget(self::SESSION_KEY);
 
         $this->address = '';
         $this->resetInbox();
+    }
+
+    /**
+     * Keep the provider token reachable for signed attachment links, which are
+     * fetched from the sandboxed body without the session cookie.
+     *
+     * @param  array{address: string, password: string, id: string, token: string, created_at: string}  $mailbox
+     */
+    private function rememberMailboxToken(array $mailbox): void
+    {
+        Cache::put(
+            self::TOKEN_CACHE_PREFIX.$mailbox['id'],
+            $mailbox['token'],
+            now()->addHours(self::ATTACHMENT_LINK_HOURS * 2),
+        );
+    }
+
+    /**
+     * Attachment sizes arrive from the provider in kilobytes.
+     */
+    private function formatAttachmentSize(int $sizeInKilobytes): string
+    {
+        if ($sizeInKilobytes <= 0) {
+            return '';
+        }
+
+        if ($sizeInKilobytes < 1024) {
+            return $sizeInKilobytes.' KB';
+        }
+
+        return round($sizeInKilobytes / 1024, 1).' MB';
     }
 
     /**
@@ -359,7 +665,7 @@ new #[Title('Temp Mail')] class extends Component {
 
     private function messageCacheKey(string $mailboxId, string $messageId): string
     {
-        return self::MESSAGE_CACHE_PREFIX . $mailboxId . '.' . $messageId;
+        return self::MESSAGE_CACHE_PREFIX.$mailboxId.'.'.$messageId;
     }
 };
 ?>
@@ -439,20 +745,12 @@ new #[Title('Temp Mail')] class extends Component {
                             </span>
                         </div>
 
-                        @if ($this->openMessage['has_attachments'])
-                        <div class="flex items-start gap-2">
-                            <span class="w-20 shrink-0 font-bold uppercase tracking-wider text-blue-100/45">Attachments</span>
-                            <span class="inline-flex items-center gap-1 text-amber-300">
-                                <span class="material-symbols-outlined text-sm">attach_file</span>
-                                Included
-                            </span>
-                        </div>
-                        @endif
                     </div>
 
-                    @if ($this->openMessage['html'] !== '')
-                    <iframe sandbox="" title="Message body"
-                        srcdoc="{{ $this->openMessage['html'] . '<style>:root{color-scheme:dark}html,body{background:#0f172a !important;color:#e2e8f0 !important}html{scrollbar-width:thin;scrollbar-color:rgb(148 163 184 / 0.45) transparent}*::-webkit-scrollbar{width:5px}*::-webkit-scrollbar-track{background:transparent}*::-webkit-scrollbar-thumb{background:rgb(148 163 184 / 0.45);border-radius:999px}</style>' }}"
+                    @if ($this->rendered_html !== '')
+                    <iframe sandbox="allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-navigation-by-user-activation"
+                        title="Message body"
+                        srcdoc="{{ $this->rendered_html . '<style>:root{color-scheme:dark}html,body{background:#0f172a !important;color:#e2e8f0 !important}html{scrollbar-width:thin;scrollbar-color:rgb(148 163 184 / 0.45) transparent}*::-webkit-scrollbar{width:5px}*::-webkit-scrollbar-track{background:transparent}*::-webkit-scrollbar-thumb{background:rgb(148 163 184 / 0.45);border-radius:999px}a[download]{position:relative}a[download]::before{content:"";position:absolute;inset:0;border-radius:6px;background:rgb(15 23 42 / 0.7);opacity:0;pointer-events:none}a[download]::after{content:"";position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border:2.5px solid rgb(103 232 249 / 0.3);border-top-color:rgb(103 232 249);border-radius:50%;opacity:0;pointer-events:none}a[download]:focus::before,a[download]:focus::after{opacity:1}a[download]:focus::before{animation:dl-hide .4s ease 2.6s forwards}a[download]:focus::after{animation:dl-spin .9s linear infinite,dl-hide .4s ease 2.6s forwards}a[download]:active::before,a[download]:active::after{opacity:1}a[download]:active::before{animation:none}a[download]:active::after{animation:dl-spin .9s linear infinite}@keyframes dl-spin{to{transform:rotate(360deg)} }@keyframes dl-hide{to{opacity:0} }</style>' }}"
                         class="mt-4 h-[460px] w-full rounded-xl border border-white/10 bg-[#0f172a]">
                     </iframe>
                     @elseif ($this->openMessage['text'] !== '')
@@ -463,6 +761,73 @@ new #[Title('Temp Mail')] class extends Component {
                         class="mt-4 flex items-start gap-2 rounded-xl border border-white/10 bg-white/4 px-4 py-3 text-xs leading-5 text-blue-100/55">
                         <span class="material-symbols-outlined text-sm text-cyan-300">draft</span>
                         <p>This message has no readable content.</p>
+                    </div>
+                    @endif
+
+                    @if ($this->openMessage['has_attachments'])
+                    <div class="mt-4 rounded-xl border border-white/8 bg-slate-950/35 px-4 py-3 text-xs">
+                        <p class="mb-2 text-blue-100/70">Attachments</p>
+
+                        @if ($this->open_attachments !== [])
+                        <ul class="flex flex-col gap-2">
+                            @foreach ($this->open_attachments as $attachment)
+                            <li wire:key="attachment-{{ $attachment['id'] }}" x-data="{ saving: false, percent: 0 }">
+                                <a href="{{ $attachment['download_url'] }}" download="{{ $attachment['filename'] }}"
+                                    x-on:click="
+                                        if (saving) { $event.preventDefault(); return; }
+                                        if (typeof tempMailDownload !== 'function') { return; }
+                                        $event.preventDefault();
+                                        saving = true;
+                                        percent = 0;
+                                        tempMailDownload($el.href, $el.download, (value) => percent = value)
+                                            .then((ok) => {
+                                                saving = false;
+                                                if (! ok) {
+                                                    $dispatch('toast', { message: 'The download could not be prepared. Please try again.', type: 'error' });
+                                                }
+                                            });
+                                    "
+                                    class="group relative flex items-center gap-3 rounded-lg border border-white/8 bg-white/4 px-3 py-2 transition hover:border-cyan-300/30 hover:bg-white/8">
+                                    @if (str_starts_with($attachment['content_type'], 'image/'))
+                                    <span
+                                        class="relative block h-10 w-10 shrink-0 overflow-hidden rounded-md border border-white/10 bg-slate-950/60">
+                                        <img src="{{ $attachment['url'] }}" alt="{{ $attachment['filename'] }}"
+                                            loading="lazy" class="h-10 w-10 object-cover" />
+                                        <span
+                                            class="absolute inset-0 flex items-center justify-center rounded-md bg-slate-950/75 text-cyan-200 opacity-0 transition group-hover:opacity-100">
+                                            <span class="material-symbols-outlined text-base">download</span>
+                                        </span>
+                                    </span>
+                                    @else
+                                    <span class="material-symbols-outlined shrink-0 text-cyan-300">description</span>
+                                    @endif
+
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block truncate text-xs font-bold text-white">
+                                            {{ $attachment['filename'] }}
+                                        </span>
+                                        <span class="block truncate text-[11px] text-blue-100/50">
+                                            {{ trim($attachment['size'] . ' · ' . $attachment['content_type'], ' ·') }}
+                                        </span>
+                                    </span>
+
+                                    <span x-show="saving" x-cloak aria-hidden="true"
+                                        class="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-lg bg-slate-950/85">
+                                        <span
+                                            class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-cyan-300/30 border-t-cyan-300"></span>
+                                        <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-100"
+                                            x-text="percent > 0 ? 'Saving ' + percent + '%' : 'Preparing download…'"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            @endforeach
+                        </ul>
+                        @else
+                        <span class="inline-flex items-center gap-1 text-amber-300">
+                            <span class="material-symbols-outlined text-sm">attach_file</span>
+                            Embedded in the message body
+                        </span>
+                        @endif
                     </div>
                     @endif
 
@@ -781,3 +1146,70 @@ new #[Title('Temp Mail')] class extends Component {
         </div>
     </div>
 </section>
+
+<script>
+    window.tempMailDownload = async function (url, filename, onProgress) {
+        const save = (blob) => {
+            const href = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+
+            anchor.href = href;
+            anchor.download = filename || 'attachment';
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+
+            setTimeout(() => URL.revokeObjectURL(href), 60000);
+        };
+
+        try {
+            const response = await fetch(url);
+
+            if (! response.ok) {
+                throw new Error('Request failed with status ' + response.status);
+            }
+
+            const type = response.headers.get('Content-Type') || 'application/octet-stream';
+
+            if (! response.body || typeof response.body.getReader !== 'function') {
+                save(await response.blob());
+
+                if (onProgress) {
+                    onProgress(100);
+                }
+
+                return true;
+            }
+
+            const total = parseInt(response.headers.get('Content-Length') || '0', 10) || 0;
+            const reader = response.body.getReader();
+            const chunks = [];
+            let received = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    break;
+                }
+
+                chunks.push(value);
+                received += value.length;
+
+                if (onProgress && total > 0) {
+                    onProgress(Math.min(99, Math.round((received / total) * 100)));
+                }
+            }
+
+            save(new Blob(chunks, { type }));
+
+            if (onProgress) {
+                onProgress(100);
+            }
+
+            return true;
+        } catch (error) {
+            return false;
+        }
+    };
+</script>

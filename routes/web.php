@@ -9,6 +9,7 @@ use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
 use App\Http\Controllers\SubscriptionInvoiceController;
+use App\Http\Controllers\TempMailAttachmentController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\WhmcsInvoiceController;
 use App\Http\Controllers\WhmcsSsoController;
@@ -126,6 +127,14 @@ Route::livewire('/tools/pdf-splitter', 'pages::client.tools.pdf.pdf-splitter')->
 // Email tools
 Route::livewire('/tools/email-validator', 'pages::client.tools.email.email-validator')->name('client.tools.email-validator');
 Route::livewire('/tools/temp-mail', 'pages::client.tools.email.temp-mail')->name('client.tools.temp-mail');
+Route::get('/tools/temp-mail/{mailbox}/{message}/{attachment}', TempMailAttachmentController::class)
+    ->where([
+        'mailbox' => '[A-Za-z0-9_-]{6,64}',
+        'message' => '[A-Za-z0-9_-]{6,64}',
+        'attachment' => '[A-Za-z0-9_.-]{1,64}',
+    ])
+    ->middleware('signed')
+    ->name('client.tools.temp-mail.attachment');
 
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');
