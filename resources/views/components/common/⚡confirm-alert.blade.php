@@ -95,7 +95,7 @@ new class extends Component {
                     class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition"
                     :class="danger
                         ? 'border border-red-300/30 bg-red-500 text-white hover:bg-red-400'
-                        : 'border border-white/15 bg-white/8 text-white hover:bg-white/12'">
+                        : 'bg-primary text-white hover:opacity-90'">
                     <span x-text="confirmText"></span>
                 </button>
             </div>

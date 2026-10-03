@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class TempMailService
@@ -219,8 +220,13 @@ class TempMailService
                     'Authorization' => 'Bearer '.$token,
                 ])
                 ->get(self::BASE_URL.'/messages/'.$messageId.'/attachment/'.$attachmentId);
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
             $this->lastError = 'unavailable';
+
+            Log::warning('Temp mail attachment download failed.', [
+                'uri' => self::BASE_URL.'/messages/'.$messageId.'/attachment/'.$attachmentId,
+                'exception' => $exception::class.': '.$exception->getMessage(),
+            ]);
 
             return null;
         }
@@ -228,6 +234,11 @@ class TempMailService
         $this->lastError = $this->errorForStatus($response->status());
 
         if ($this->lastError !== null) {
+            Log::warning('Temp mail attachment download rejected.', [
+                'status' => $response->status(),
+                'reason' => $this->lastError,
+            ]);
+
             return null;
         }
 
@@ -378,13 +389,29 @@ class TempMailService
                 'DELETE' => $client->delete(self::BASE_URL.$uri),
                 default => $client->get(self::BASE_URL.$uri),
             };
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
             $this->lastError = 'unavailable';
+
+            Log::warning('Temp mail provider request failed.', [
+                'method' => $method,
+                'uri' => self::BASE_URL.$uri,
+                'exception' => $exception::class.': '.$exception->getMessage(),
+            ]);
 
             return null;
         }
 
         $this->lastError = $this->errorForStatus($response->status());
+
+        if ($this->lastError !== null) {
+            Log::warning('Temp mail provider rejected a request.', [
+                'method' => $method,
+                'uri' => self::BASE_URL.$uri,
+                'status' => $response->status(),
+                'reason' => $this->lastError,
+                'body' => Str::limit($response->body(), 500),
+            ]);
+        }
 
         return $this->lastError === null ? $response : null;
     }

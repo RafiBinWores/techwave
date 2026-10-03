@@ -99,7 +99,7 @@ new #[Title('Temp Mail')] class extends Component
 
     public function getUnreadCountProperty(): int
     {
-        return count(array_filter($this->messages, fn (array $message) => ! ($message['seen'] ?? false)));
+        return count(array_filter($this->messages, fn(array $message) => ! ($message['seen'] ?? false)));
     }
 
     /**
@@ -143,7 +143,7 @@ new #[Title('Temp Mail')] class extends Component
         );
 
         return collect($attachments)
-            ->mapWithKeys(fn (array $attachment) => [
+            ->mapWithKeys(fn(array $attachment) => [
                 $attachment['id'] => URL::temporarySignedRoute('client.tools.temp-mail.attachment', $expiresAt, array_merge([
                     'mailbox' => $mailbox['id'],
                     'message' => $this->openMessage['id'],
@@ -209,8 +209,8 @@ new #[Title('Temp Mail')] class extends Component
         $images = [];
 
         foreach ($inlineUrls as $id => $url) {
-            $replacements['attachment:'.$id] = $url;
-            $replacements['cid:'.$id] = $url;
+            $replacements['attachment:' . $id] = $url;
+            $replacements['cid:' . $id] = $url;
 
             $images[$url] = [
                 'id' => $id,
@@ -289,7 +289,7 @@ new #[Title('Temp Mail')] class extends Component
             return ['html' => $html, 'linked' => $linked];
         }
 
-        usort($wraps, fn (array $a, array $b) => $b['offset'] <=> $a['offset']);
+        usort($wraps, fn(array $a, array $b) => $b['offset'] <=> $a['offset']);
 
         foreach ($wraps as $wrap) {
             $html = substr_replace($html, $wrap['value'], $wrap['offset'], $wrap['length']);
@@ -403,7 +403,7 @@ new #[Title('Temp Mail')] class extends Component
     {
         if ($existing = $this->mailbox()) {
             $service->deleteMailbox($existing['token'], $existing['id']);
-            Cache::forget(self::TOKEN_CACHE_PREFIX.$existing['id']);
+            Cache::forget(self::TOKEN_CACHE_PREFIX . $existing['id']);
         }
 
         $mailbox = $service->createMailbox();
@@ -530,7 +530,7 @@ new #[Title('Temp Mail')] class extends Component
         Cache::forget($this->messageCacheKey($mailbox['id'], $id));
 
         $this->messages = collect($this->messages)
-            ->reject(fn (array $message) => $message['id'] === $id)
+            ->reject(fn(array $message) => $message['id'] === $id)
             ->values()
             ->all();
 
@@ -604,7 +604,7 @@ new #[Title('Temp Mail')] class extends Component
     private function forgetMailbox(): void
     {
         if ($mailbox = $this->mailbox()) {
-            Cache::forget(self::TOKEN_CACHE_PREFIX.$mailbox['id']);
+            Cache::forget(self::TOKEN_CACHE_PREFIX . $mailbox['id']);
         }
 
         session()->forget(self::SESSION_KEY);
@@ -622,7 +622,7 @@ new #[Title('Temp Mail')] class extends Component
     private function rememberMailboxToken(array $mailbox): void
     {
         Cache::put(
-            self::TOKEN_CACHE_PREFIX.$mailbox['id'],
+            self::TOKEN_CACHE_PREFIX . $mailbox['id'],
             $mailbox['token'],
             now()->addHours(self::ATTACHMENT_LINK_HOURS * 2),
         );
@@ -638,10 +638,10 @@ new #[Title('Temp Mail')] class extends Component
         }
 
         if ($sizeInKilobytes < 1024) {
-            return $sizeInKilobytes.' KB';
+            return $sizeInKilobytes . ' KB';
         }
 
-        return round($sizeInKilobytes / 1024, 1).' MB';
+        return round($sizeInKilobytes / 1024, 1) . ' MB';
     }
 
     /**
@@ -665,7 +665,7 @@ new #[Title('Temp Mail')] class extends Component
 
     private function messageCacheKey(string $mailboxId, string $messageId): string
     {
-        return self::MESSAGE_CACHE_PREFIX.$mailboxId.'.'.$messageId;
+        return self::MESSAGE_CACHE_PREFIX . $mailboxId . '.' . $messageId;
     }
 };
 ?>
@@ -861,8 +861,15 @@ new #[Title('Temp Mail')] class extends Component
                                 Copy
                             </button>
 
-                            <button type="button" wire:click="createMailbox" wire:loading.attr="disabled"
-                                wire:confirm="Replace this address with a new one? The old mailbox will be deleted."
+                            <button type="button"
+                                x-on:click="confirmAlert({
+                                    title: 'Replace this address?',
+                                    message: 'The old mailbox will be deleted. Create a new address instead?',
+                                    confirmText: 'Replace',
+                                    danger: false,
+                                }).then(confirmed => confirmed &amp;&amp; $wire.createMailbox())"
+                                wire:loading.attr="disabled"
+                                wire:target="createMailbox"
                                 class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/8 px-2.5 py-2 text-[11px] font-bold uppercase tracking-wider text-white transition hover:border-cyan-400/30 hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-2 sm:px-4 sm:py-3 sm:text-xs">
                                 <span wire:loading.remove.flex wire:target="createMailbox"
                                     class="flex h-4 w-4 shrink-0 items-center justify-center">
@@ -1057,7 +1064,7 @@ new #[Title('Temp Mail')] class extends Component
                         <div class="flex items-start gap-3">
                             <span class="material-symbols-outlined text-emerald-300">add_circle</span>
                             <div>
-                                <p class="text-sm font-bold text-white">1. Address ready</p>
+                                <p class="text-sm font-bold text-white">Address ready</p>
                                 <p class="text-xs leading-5 text-blue-100/55">A fresh address is created
                                     the moment this page opens — nothing to fill in.</p>
                             </div>
@@ -1066,7 +1073,7 @@ new #[Title('Temp Mail')] class extends Component
                         <div class="flex items-start gap-3">
                             <span class="material-symbols-outlined text-emerald-300">mark_email_read</span>
                             <div>
-                                <p class="text-sm font-bold text-white">2. Receive</p>
+                                <p class="text-sm font-bold text-white">Receive</p>
                                 <p class="text-xs leading-5 text-blue-100/55">Incoming messages appear in
                                     the inbox within seconds — the page refreshes itself.</p>
                             </div>
@@ -1075,7 +1082,7 @@ new #[Title('Temp Mail')] class extends Component
                         <div class="flex items-start gap-3">
                             <span class="material-symbols-outlined text-emerald-300">visibility</span>
                             <div>
-                                <p class="text-sm font-bold text-white">3. Read</p>
+                                <p class="text-sm font-bold text-white">Read</p>
                                 <p class="text-xs leading-5 text-blue-100/55">Open any message to read the
                                     full content, then delete what you no longer need.</p>
                             </div>
@@ -1084,7 +1091,7 @@ new #[Title('Temp Mail')] class extends Component
                         <div class="flex items-start gap-3">
                             <span class="material-symbols-outlined text-amber-300">do_not_disturb_on</span>
                             <div>
-                                <p class="text-sm font-bold text-white">4. Dispose</p>
+                                <p class="text-sm font-bold text-white">Dispose</p>
                                 <p class="text-xs leading-5 text-blue-100/55">Delete the mailbox when you
                                     are done. Nothing is tied to your account.</p>
                             </div>
@@ -1134,21 +1141,11 @@ new #[Title('Temp Mail')] class extends Component
                 </div>
             </aside>
         </div>
-
-        <div
-            class="mt-6 flex w-full items-start gap-2 rounded-2xl border border-white/10 bg-white/4 px-5 py-4 text-xs leading-5 text-blue-100/55">
-            <span class="material-symbols-outlined text-sm text-cyan-300">shield_lock</span>
-            <p>
-                Messages are fetched over a secure connection and tied to this browser session only. Temp
-                addresses are public by design — never use one for sensitive accounts, password resets, or
-                anything private.
-            </p>
-        </div>
     </div>
 </section>
 
 <script>
-    window.tempMailDownload = async function (url, filename, onProgress) {
+    window.tempMailDownload = async function(url, filename, onProgress) {
         const save = (blob) => {
             const href = URL.createObjectURL(blob);
             const anchor = document.createElement('a');
@@ -1165,13 +1162,13 @@ new #[Title('Temp Mail')] class extends Component
         try {
             const response = await fetch(url);
 
-            if (! response.ok) {
+            if (!response.ok) {
                 throw new Error('Request failed with status ' + response.status);
             }
 
             const type = response.headers.get('Content-Type') || 'application/octet-stream';
 
-            if (! response.body || typeof response.body.getReader !== 'function') {
+            if (!response.body || typeof response.body.getReader !== 'function') {
                 save(await response.blob());
 
                 if (onProgress) {
@@ -1187,7 +1184,10 @@ new #[Title('Temp Mail')] class extends Component
             let received = 0;
 
             while (true) {
-                const { done, value } = await reader.read();
+                const {
+                    done,
+                    value
+                } = await reader.read();
 
                 if (done) {
                     break;
@@ -1201,7 +1201,9 @@ new #[Title('Temp Mail')] class extends Component
                 }
             }
 
-            save(new Blob(chunks, { type }));
+            save(new Blob(chunks, {
+                type
+            }));
 
             if (onProgress) {
                 onProgress(100);
