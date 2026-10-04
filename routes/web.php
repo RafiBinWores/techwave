@@ -135,6 +135,7 @@ Route::get('/tools/temp-mail/{mailbox}/{message}/{attachment}', TempMailAttachme
     ])
     ->middleware('signed')
     ->name('client.tools.temp-mail.attachment');
+Route::livewire('/tools/header-analyzer', 'pages::client.tools.email.header-analyzer')->name('client.tools.header-analyzer');
 
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');
