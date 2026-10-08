@@ -10,3 +10,5 @@ window.ApexCharts = ApexCharts;
 import './echo';
 import './bg-remover';
 import './phone-input';
+
+window.loadSpeedTest = () => import('./speed-test');

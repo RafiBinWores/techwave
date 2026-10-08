@@ -137,6 +137,9 @@ Route::get('/tools/temp-mail/{mailbox}/{message}/{attachment}', TempMailAttachme
     ->name('client.tools.temp-mail.attachment');
 Route::livewire('/tools/header-analyzer', 'pages::client.tools.email.header-analyzer')->name('client.tools.header-analyzer');
 
+// Network tools
+Route::livewire('/tools/speed-test', 'pages::client.tools.network.speed-test')->name('client.tools.speed-test');
+
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');
 Route::livewire('/blogs/{slug}', 'pages::client.blogs.details')->name('client.blogs.details');
