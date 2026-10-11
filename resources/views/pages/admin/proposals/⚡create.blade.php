@@ -7,6 +7,7 @@ use App\Models\Service;
 use App\Models\ServicePlan;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -427,11 +428,13 @@ new #[Layout('layouts.admin-app')] #[Title('Create Proposal')] class extends Com
 
     public function nextProposalNumber(): string
     {
-        $datePrefix = 'PROP-'.now()->format('Ymd');
-
         $lastNumber = (int) Proposal::query()
-            ->where('proposal_no', 'like', $datePrefix.'-%')
-            ->count();
+            ->where('proposal_no', 'like', 'PROP-%')
+            ->get('proposal_no')
+            ->map(fn (Proposal $proposal) => (int) Str::afterLast($proposal->proposal_no, '-'))
+            ->max();
+
+        $datePrefix = 'PROP-'.now()->format('Ymd');
 
         do {
             $lastNumber++;
