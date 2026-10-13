@@ -61,14 +61,14 @@ class Invoice extends Model
 
     public static function generateInvoiceNumber(): string
     {
-        $datePrefix = 'INV-'.now()->format('Ymd');
+        $datePrefix = 'INV-' . now()->format('Ymd');
 
-        $lastNumber = static::lastSequenceNumber($datePrefix);
+        $lastNumber = static::lastSequenceNumber();
 
         do {
             $lastNumber++;
             $number = str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
-            $candidate = $datePrefix.'-'.$number;
+            $candidate = $datePrefix . '-' . $number;
         } while (
             static::query()->where('invoice_no', $candidate)->exists()
             || Order::query()->where('order_no', $candidate)->exists()
@@ -77,26 +77,17 @@ class Invoice extends Model
         return $candidate;
     }
 
-    private static function lastSequenceNumber(string $datePrefix): int
+    private static function lastSequenceNumber(): int
     {
-        $invoiceNumber = (int) static::query()
-            ->where('invoice_no', 'like', $datePrefix.'-%')
-            ->get('invoice_no')
-            ->map(fn ($invoice) => (int) Str::afterLast($invoice->invoice_no, '-'))
+        return (int) static::query()
+            ->pluck('invoice_no')
+            ->map(fn(string $invoiceNo) => (int) Str::afterLast($invoiceNo, '-'))
             ->max();
-
-        $orderNumber = (int) Order::query()
-            ->where('order_no', 'like', $datePrefix.'-%')
-            ->get('order_no')
-            ->map(fn ($order) => (int) Str::afterLast($order->order_no, '-'))
-            ->max();
-
-        return max($invoiceNumber, $orderNumber);
     }
 
     public function subtotal(): float
     {
-        return $this->items->sum(fn ($item) => (float) $item->quantity * (float) $item->unit_price);
+        return $this->items->sum(fn($item) => (float) $item->quantity * (float) $item->unit_price);
     }
 
     public function discountAmount(): float
