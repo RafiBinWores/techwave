@@ -546,7 +546,7 @@ new #[Layout('layouts::vcard')] class extends Component {
         <div
             class="relative min-h-screen w-full border-0 bg-transparent p-0 shadow-none ring-0 sm:min-h-0 sm:rounded-[2.35rem] sm:border sm:border-white/15 sm:bg-white/10 sm:p-2 sm:shadow-2xl sm:ring-1 sm:ring-white/15 sm:backdrop-blur-2xl">
             <div x-data="{ showLoader: @js((bool) ($data['loadingScreenEnabled'] ?? false)), seconds: {{ (int) ($data['loadingTime'] ?? 2) }}, init() { if (this.showLoader) setTimeout(() => this.showLoader = false, this.seconds * 1000) } }"
-                class="relative min-h-screen w-full overflow-visible rounded-none sm:min-h-0 sm:overflow-hidden sm:rounded-[1.9rem]"
+                class="relative min-h-screen w-full overflow-hidden rounded-none sm:min-h-0 sm:rounded-[1.9rem]"
                 style="{{ $isWaterGlass ? 'background:radial-gradient(circle at 18% 0%,rgba(125,211,252,.50),transparent 34%),radial-gradient(circle at 90% 16%,rgba(34,211,238,.30),transparent 30%),linear-gradient(160deg,rgba(8,47,73,.96),rgba(15,23,42,.90));' : ($isGlass ? 'background:radial-gradient(circle at 20% 0%,rgba(56,189,248,.30),transparent 34%),radial-gradient(circle at 90% 12%,rgba(167,139,250,.32),transparent 30%),linear-gradient(160deg,rgba(15,23,42,.96),rgba(30,41,59,.90));' : 'background:' . $cardBg . ';') }}color:{{ $text }};">
 
                 @if ($data['loadingScreenEnabled'] ?? false)

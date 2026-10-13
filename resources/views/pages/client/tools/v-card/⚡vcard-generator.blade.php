@@ -1928,13 +1928,13 @@ new #[Title('VCard Generator')] class extends Component {
                                         </span> --}}
 
                                         <button type="button" x-on:click="slideTemplate(-1)"
-                                            class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-cyan-100 shadow-lg transition hover:bg-white/14"
+                                            class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-cyan-100 shadow-lg transition hover:bg-white/14 cursor-pointer"
                                             title="Previous templates" aria-label="Previous templates">
                                             <span class="material-symbols-outlined text-lg">chevron_left</span>
                                         </button>
 
                                         <button type="button" x-on:click="slideTemplate(1)"
-                                            class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-cyan-100 shadow-lg transition hover:bg-white/14"
+                                            class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-cyan-100 shadow-lg transition hover:bg-white/14 cursor-pointer"
                                             title="Next templates" aria-label="Next templates">
                                             <span class="material-symbols-outlined text-lg">chevron_right</span>
                                         </button>
@@ -1973,9 +1973,11 @@ new #[Title('VCard Generator')] class extends Component {
                                             @if (!$templateLocked) wire:click="selectTemplate('{{ $slug }}')" @endif
                                             class="relative w-[185px] shrink-0 overflow-hidden rounded-2xl border-2 bg-white p-2 text-center transition {{ $templateLocked ? '' : 'hover:-translate-y-1 hover:shadow-xl' }} {{ $isSelectedTemplate ? 'border-cyan-400 ring-4 ring-cyan-400/15' : 'border-slate-200 hover:border-cyan-300' }}">
                                             @if ($templateLocked)
-                                            <span class="absolute right-3 top-3 z-20">
-                                                <span
-                                                    class="material-symbols-outlined text-sm text-amber-400">crown</span>
+                                            <span class="absolute right-3 bg-amber-400/40 rounded-full p-1.5 top-3 z-20 border-amber-300/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crown preview-icon">
+                                                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                                                    <path d="M5 21h14" />
+                                                </svg>
                                             </span>
                                             @endif
 
@@ -2123,7 +2125,10 @@ new #[Title('VCard Generator')] class extends Component {
                             @if (!$this->isPremium)
                             <span
                                 class="inline-flex items-center justify-center rounded-full border border-amber-300/20 bg-amber-400/10 p-1.5">
-                                <span class="material-symbols-outlined text-sm text-amber-400">crown</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crown preview-icon">
+                                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                                    <path d="M5 21h14" />
+                                </svg>
                             </span>
                             @endif
                         </button>
@@ -2298,7 +2303,10 @@ new #[Title('VCard Generator')] class extends Component {
                             @if (!$this->isPremium)
                             <span
                                 class="inline-flex items-center justify-center rounded-full border border-amber-300/20 bg-amber-400/10 p-1.5">
-                                <span class="material-symbols-outlined text-sm text-amber-400">crown</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crown preview-icon">
+                                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                                    <path d="M5 21h14" />
+                                </svg>
                             </span>
                             @endif
                         </button>
@@ -2576,7 +2584,10 @@ new #[Title('VCard Generator')] class extends Component {
                             @if (!$this->isPremium)
                             <span
                                 class="inline-flex items-center justify-center rounded-full border border-amber-300/20 bg-amber-400/10 p-1.5">
-                                <span class="material-symbols-outlined text-sm text-amber-400">crown</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crown preview-icon">
+                                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                                    <path d="M5 21h14" />
+                                </svg>
                             </span>
                             @endif
                         </button>
@@ -3460,10 +3471,10 @@ new #[Title('VCard Generator')] class extends Component {
                             <h2 class="text-base font-black sm:text-lg">Live preview</h2>
                             <p class="mt-1 text-xs text-blue-100/45">Mobile digital card preview.</p>
                         </div>
-                        <span
+                        <!-- <span
                             class="rounded-full {{ $this->isPremium ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-400/10 text-amber-200' }} px-3 py-1.5 text-xs font-black">
                             {{ $this->isPremium ? 'Premium' : 'Free' }}
-                        </span>
+                        </span> -->
                     </div>
                 </div>
 

@@ -524,7 +524,10 @@ new #[Title('Email Validity Checker')] class extends Component {
                     <div
                         class="mt-5 flex flex-col gap-3 rounded-xl border border-cyan-300/20 bg-cyan-400/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-start gap-2">
-                            <span class="material-symbols-outlined mt-0.5 text-sm text-cyan-300">workspace_premium</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crown preview-icon">
+                                <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                                <path d="M5 21h14" />
+                            </svg>
 
                             <p class="text-xs leading-5 text-cyan-100/85">
                                 Free plan allows <span class="font-bold">{{ $this->maxEmails() }}</span> emails per
