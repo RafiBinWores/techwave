@@ -6,6 +6,8 @@ use App\Http\Controllers\CompressedImageController;
 use App\Http\Controllers\PlanOrderInvoiceController;
 use App\Http\Controllers\PricingCheckoutController;
 use App\Http\Controllers\ProposalPdfController;
+use App\Http\Controllers\QrPreviewController;
+use App\Http\Controllers\QrScanController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
 use App\Http\Controllers\SubscriptionInvoiceController;
@@ -111,6 +113,8 @@ Route::livewire('/tools/invoice-generator', 'pages::client.tools.invoice.invoice
 Route::livewire('/tools/invoice-generator/create/{invoiceTheme:slug}', 'pages::client.tools.invoice.invoice-generator')->name('client.tools.invoice-generator.create');
 
 // QR Code tools
+Route::get('/q/{token}', QrScanController::class)->where('token', '[a-f0-9]{40}')->name('qr.scan');
+Route::get('/tools/qr-code/preview/{token}/{version}', QrPreviewController::class)->where('token', '[A-Za-z0-9]{40}')->where('version', '[a-f0-9]{64}')->middleware('signed')->name('qr.preview');
 Route::livewire('/tools/qr-code-generator', 'pages::client.tools.qr-code.qr-code-generator')->name('client.tools.qr-code-generator');
 
 // Virtual Card tools
@@ -246,6 +250,9 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
 
     // virtual card management 
     Route::livewire('/account/vcards', 'pages::client.account.v-card.vcards')->name('account.vcards');
+
+    // QR Code management
+    Route::livewire('/account/qr-codes', 'pages::client.account.qr-code.qr-codes')->name('account.qr-codes');
 });
 
 Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])

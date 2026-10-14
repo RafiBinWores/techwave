@@ -1,12 +1,19 @@
 <?php
 
 use App\Models\SiteSetting;
-use App\Models\ToolCategory;
+use App\Support\QrCode\DesignGenerator;
+use App\Support\QrCode\FrameRenderer;
+use App\Support\QrCode\LogoPresets;
+use App\Support\QrCode\LogoOptimizer;
+use App\Support\QrCode\PreviewStore;
+use App\Support\QrCode\ScanTracker;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 new #[Title('QR Code Generator')] class extends Component {
     use WithFileUploads;
@@ -37,9 +44,11 @@ new #[Title('QR Code Generator')] class extends Component {
     public string $frameColor = '#111827';
     public string $frameText = 'SCAN ME';
     public string $frameTextColor = '#ffffff';
+    public string $frameFont = 'sans';
 
     public string $moduleStyle = 'square';
     public string $eyeStyle = 'square';
+    public string $eyeCenterStyle = 'square';
 
     public array $eyeInnerColors = ['#111827', '#111827', '#111827'];
     public array $eyeOuterColors = ['#111827', '#111827', '#111827'];
@@ -48,14 +57,24 @@ new #[Title('QR Code Generator')] class extends Component {
     public ?string $presetLogo = null;
     public $customLogo = null;
 
+    #[Locked]
+    public string $previewToken = '';
+
+    #[Locked]
+    public ?string $previewVersion = null;
+
+    #[Locked]
     public ?string $generatedQr = null;
+
+    public int $uiRevision = 0;
     public ?string $generatedFormat = null;
 
     public int $size = 420;
-    public int $margin = 2;
+    public int $margin = 4;
 
     public function mount(): void
     {
+        $this->previewToken = Str::random(40);
         $siteSetting = SiteSetting::current();
 
         $this->centerLogo = filled($siteSetting->logo) ? 'site' : null;
@@ -65,45 +84,28 @@ new #[Title('QR Code Generator')] class extends Component {
         $this->generatedFormat = null;
     }
 
+    private ?bool $premiumCache = null;
+    private bool $siteLogoResolved = false;
+    private ?array $siteLogoData = null;
+
     public function getIsPremiumProperty(): bool
     {
+        // Resolved once per request: the blade calls this on every tab/button,
+        // and each call used to hit the database twice.
+        if ($this->premiumCache !== null) {
+            return $this->premiumCache;
+        }
+
         if (!auth()->check()) {
-            return false;
+            return $this->premiumCache = false;
         }
 
-        $category = ToolCategory::query()->where('slug', 'business-tools')->first();
-
-        if (!$category) {
-            return false;
-        }
-
-        return auth()->user()?->hasActiveToolSubscription($category) ?? false;
+        return $this->premiumCache = app(ScanTracker::class)->premium(auth()->user());
     }
 
     public function getPresetIconsProperty(): array
     {
-        return [
-            'facebook' => [
-                'label' => 'Facebook',
-                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#1877F2"/><path fill="#fff" d="M38 22h5v-8h-6c-7 0-11 4-11 11v5h-6v8h6v16h9V38h7l1-8h-8v-4c0-3 1-4 3-4z"/></svg>',
-            ],
-            'instagram' => [
-                'label' => 'Instagram',
-                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" x2="1" y1="1" y2="0"><stop stop-color="#feda75"/><stop offset=".4" stop-color="#d62976"/><stop offset=".7" stop-color="#962fbf"/><stop offset="1" stop-color="#4f5bd5"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#g)"/><rect x="17" y="17" width="30" height="30" rx="9" fill="none" stroke="#fff" stroke-width="4"/><circle cx="32" cy="32" r="8" fill="none" stroke="#fff" stroke-width="4"/><circle cx="42" cy="22" r="3" fill="#fff"/></svg>',
-            ],
-            'whatsapp' => [
-                'label' => 'WhatsApp',
-                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#25D366"/><path fill="#fff" d="M32 14a18 18 0 0 0-15 28l-3 9 10-3a18 18 0 1 0 8-34zm9 27c-1 2-4 3-6 2-8-2-13-8-15-15 0-2 1-5 3-6 1-1 2 0 3 1l2 5c0 1 0 2-1 3l-1 1c2 4 4 6 8 8l2-2c1-1 2-1 3 0l4 2c1 0 1 1 0 1z"/></svg>',
-            ],
-            'wifi' => [
-                'label' => 'WiFi',
-                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#0f172a"/><path fill="#fff" d="M32 46a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm-14-12 6 6a12 12 0 0 1 16 0l6-6a20 20 0 0 0-28 0zm-8-9 6 6a28 28 0 0 1 32 0l6-6a36 36 0 0 0-44 0z"/></svg>',
-            ],
-            'scan' => [
-                'label' => 'Scan',
-                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#06b6d4"/><path fill="#fff" d="M16 16h14v14H16V16zm18 0h14v14H34V16zM16 34h14v14H16V34zm21 0h5v5h-5v-5zm7 7h4v7h-4v-7zm-10 3h7v4h-7v-4z"/></svg>',
-            ],
-        ];
+        return LogoPresets::all();
     }
 
     private function buildQrData(): ?string
@@ -164,8 +166,24 @@ new #[Title('QR Code Generator')] class extends Component {
 
     public function updated(mixed $property): void
     {
-        if ($property === 'customLogo' || $property === 'activeTab') {
+        if ($property === 'customLogo' || $property === 'activeTab' || $property === 'uiRevision') {
             return;
+        }
+
+        if ($property === 'framePreset') {
+            $plainCaption = in_array($this->framePreset, ['minimal-top', 'minimal-bottom'], true);
+            $captionBackground = $plainCaption ? $this->backgroundColor : $this->frameColor;
+            if (strcasecmp($this->frameTextColor, $captionBackground) === 0) {
+                [$red, $green, $blue] = $this->hexToRgb($captionBackground);
+                $this->frameTextColor = ($red * 299 + $green * 587 + $blue * 114) / 1000 > 128 ? '#111827' : '#ffffff';
+            }
+        }
+
+        // The shared color picker applies the same color to all three finder eyes.
+        if ($property === 'eyeOuterColors.0') {
+            $this->eyeOuterColors = array_fill(0, 3, $this->eyeOuterColors[0]);
+        } elseif ($property === 'eyeInnerColors.0') {
+            $this->eyeInnerColors = array_fill(0, 3, $this->eyeInnerColors[0]);
         }
 
         $this->refreshPreview(showErrors: false);
@@ -174,32 +192,58 @@ new #[Title('QR Code Generator')] class extends Component {
     private function refreshPreview(bool $showErrors = false): void
     {
         $data = $this->buildQrData();
-
-        if (!filled($data)) {
+        if (! filled($data)) {
             $this->generatedQr = null;
+            $this->previewVersion = null;
             $this->generatedFormat = null;
-
+            app(PreviewStore::class)->forgetPreview($this->previewToken);
             if ($showErrors) {
                 $this->addError('input', $this->contentErrorMessage());
             } else {
                 $this->resetErrorBag('input');
             }
-
+            $this->previewUpdated();
             return;
         }
-
         try {
             $svg = $this->buildQrSvg($data);
-
-            $this->generatedQr = 'data:image/svg+xml;base64,' . base64_encode($svg);
+            $preview = app(PreviewStore::class)->store($this->previewToken, $svg);
+            $this->generatedQr = $preview['url'];
+            $this->previewVersion = $preview['version'];
             $this->generatedFormat = 'svg';
-
             $this->resetErrorBag();
-        } catch (\Throwable $e) {
+            $this->previewUpdated();
+        } catch (ValidationException $e) {
             $this->generatedQr = null;
+            $this->previewVersion = null;
+            $this->generatedFormat = null;
+            $this->setErrorBag($e->errors());
+            $this->previewUpdated('QR generation is unavailable.');
+        } catch (\Throwable $e) {
+            report($e);
+            $this->generatedQr = null;
+            $this->previewVersion = null;
             $this->generatedFormat = null;
             $this->addError('input', 'QR generation failed. Please check your input and design settings.');
+            $this->previewUpdated('QR generation failed.');
         }
+    }
+
+    private function previewUpdated(?string $error = null): void
+    {
+        $this->dispatch('qr-preview-updated',
+            id: $this->getId(), revision: $this->uiRevision, url: $this->generatedQr,
+            choices: $this->uiChoices(), error: $error,
+        );
+    }
+
+    public function uiChoices(): array
+    {
+        return [
+            'framePreset' => $this->framePreset, 'moduleStyle' => $this->moduleStyle,
+            'eyeStyle' => $this->eyeStyle, 'eyeCenterStyle' => $this->eyeCenterStyle,
+            'logo' => $this->centerLogo === 'preset' ? 'preset:'.$this->presetLogo : ($this->centerLogo ?? 'none'),
+        ];
     }
 
     private function contentErrorMessage(): string
@@ -218,16 +262,25 @@ new #[Title('QR Code Generator')] class extends Component {
         [$fr, $fg, $fb] = $this->hexToRgb($this->foregroundColor);
         [$br, $bg, $bb] = $this->hexToRgb($this->backgroundColor);
 
-        $moduleStyle = in_array($this->moduleStyle, ['square', 'dot', 'round'], true) ? $this->moduleStyle : 'square';
-
-        $eyeStyle = in_array($this->eyeStyle, ['square', 'circle'], true) ? $this->eyeStyle : 'square';
-
-        $qr = QrCode::format('svg')
+        $premium = $this->isPremium;
+        if (! $premium) {
+            if (! $this->resolveSiteLogo()) {
+                throw ValidationException::withMessages(['input' => 'Free QR codes require a valid site logo. Please contact the site administrator to restore it.']);
+            }
+        }
+        $encodedData = app(ScanTracker::class)->link(
+            $this->previewToken, $this->inputType, $data, auth()->id(),
+        );
+        $qr = (new DesignGenerator)
+            ->format('svg')
             ->size(max(200, min(900, $this->size)))
-            ->margin(max(0, min(10, $this->margin)))
+            ->margin(max(4, min(10, $this->margin)))
             ->errorCorrection('H')
-            ->style($moduleStyle)
-            ->eye($eyeStyle)
+            ->design(
+                $premium ? $this->moduleStyle : 'square',
+                $premium ? $this->eyeStyle : 'square',
+                $premium ? $this->eyeCenterStyle : 'square',
+            )
             ->color($fr, $fg, $fb)
             ->backgroundColor($br, $bg, $bb);
 
@@ -247,7 +300,7 @@ new #[Title('QR Code Generator')] class extends Component {
             }
         }
 
-        $svg = (string) $qr->generate($data);
+        $svg = (string) $qr->generate($encodedData);
 
         $effectiveLogo = $this->isPremium ? $this->centerLogo : 'site';
 
@@ -266,19 +319,39 @@ new #[Title('QR Code Generator')] class extends Component {
         return $svg;
     }
 
+    private function resolveSiteLogo(): ?array
+    {
+        if ($this->siteLogoResolved) {
+            return $this->siteLogoData;
+        }
+        $this->siteLogoResolved = true;
+        $siteSetting = SiteSetting::current();
+        if (! $siteSetting->logo || ! Storage::disk('public')->exists($siteSetting->logo)) {
+            return null;
+        }
+        $contents = Storage::disk('public')->get($siteSetting->logo);
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($contents) ?: 'image/png';
+        try {
+            app(LogoOptimizer::class)->normalize($contents, $mime);
+        } catch (\InvalidArgumentException $e) {
+            return null;
+        }
+
+        return $this->siteLogoData = ['data' => base64_encode($contents), 'mime' => $mime];
+    }
+
     private function embedLogoSvg(string $svg): string
     {
-        $siteSetting = SiteSetting::current();
+        $logo = $this->resolveSiteLogo();
+        if (! $logo) {
+            if (! $this->isPremium) {
+                throw ValidationException::withMessages(['input' => 'Free QR codes require a valid site logo. Please contact the site administrator to restore it.']);
+            }
 
-        if (!$siteSetting->logo || !Storage::disk('public')->exists($siteSetting->logo)) {
             return $svg;
         }
 
-        $contents = Storage::disk('public')->get($siteSetting->logo);
-        $data = base64_encode($contents);
-        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($contents) ?: 'image/png';
-
-        return $data ? $this->insertCenterImage($svg, $data, $mime) : $svg;
+        return $this->insertCenterImage($svg, $logo['data'], $logo['mime']);
     }
 
     private function embedPresetLogoSvg(string $svg, string $preset): string
@@ -295,14 +368,17 @@ new #[Title('QR Code Generator')] class extends Component {
 
     private function embedCustomLogoSvg(string $svg): string
     {
-        if (!$this->customLogo) {
+        if (! $this->customLogo) {
             return $svg;
         }
+        $store = app(PreviewStore::class);
+        $logo = $store->logo($this->previewToken);
+        if (! $logo) {
+            $logo = app(LogoOptimizer::class)->normalize((string) $this->customLogo->get(), $this->customLogo->getMimeType());
+            $store->putLogo($this->previewToken, $logo);
+        }
 
-        $data = base64_encode((string) $this->customLogo->get());
-        $mime = $this->customLogo->getMimeType() ?: 'image/png';
-
-        return $data ? $this->insertCenterImage($svg, $data, $mime) : $svg;
+        return $this->insertCenterImage($svg, base64_encode($logo['contents']), $logo['mime']);
     }
 
     private function insertCenterImage(string $svg, string $base64Data, string $mime): string
@@ -340,58 +416,44 @@ new #[Title('QR Code Generator')] class extends Component {
 
     private function wrapWithFrame(string $qrSvg): string
     {
-        [$x0, $y0, $qrW, $qrH] = $this->svgViewBox($qrSvg);
+        return (new FrameRenderer)->render(
+            $qrSvg,
+            $this->framePreset,
+            $this->frameText,
+            $this->frameColor,
+            $this->frameTextColor,
+            $this->backgroundColor,
+            $this->frameFont,
+        );
+    }
 
-        $padding = 34;
-        $textHeight = filled($this->frameText) ? 62 : 26;
+    private ?array $designPreviewsCache = null;
 
-        $newW = $qrW + $padding * 2;
-        $newH = $qrH + $padding * 2 + $textHeight;
-
-        $qrX = $padding;
-        $qrY = $this->framePreset === 'scan-top' ? $padding + $textHeight : $padding;
-
-        $textY = $this->framePreset === 'scan-top' ? 43 : $qrY + $qrH + 43;
-
-        if ($this->framePreset === 'card') {
-            $newH = $qrH + 120;
-            $qrX = (int) round(($newW - $qrW) / 2);
-            $qrY = 34;
-            $textY = $qrY + $qrH + 48;
+    public function getDesignPreviewsProperty(): array
+    {
+        if ($this->designPreviewsCache !== null) {
+            return $this->designPreviewsCache;
         }
 
-        $qrData = base64_encode($qrSvg);
-        $safeFrameText = $this->xmlEscape($this->frameText ?: 'SCAN ME');
+        $toDataUri = fn (string $svg) => 'data:image/svg+xml;base64,' . base64_encode($svg);
+        $sample = (string) (new DesignGenerator)->format('svg')->size(96)->margin(4)->generate('QR');
+        $previews = ['frame' => [], 'module' => [], 'border' => [], 'center' => []];
+        foreach (FrameRenderer::layouts() as $key => $label) {
+            $previews['frame'][$key] = $key === 'none'
+                ? $toDataUri('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M22 22L42 42M42 22L22 42" stroke="#111827" stroke-width="9" stroke-linecap="round"/></svg>')
+                : $toDataUri((new FrameRenderer)->render($sample, $key));
+        }
+        foreach (DesignGenerator::MODULES as $key => $label) {
+            $previews['module'][$key] = $toDataUri((string) (new DesignGenerator)->format('svg')->size(96)->margin(4)->design($key, 'square', 'square')->generate('QR'));
+        }
+        foreach (DesignGenerator::BORDERS as $key => $label) {
+            $previews['border'][$key] = $toDataUri(DesignGenerator::eyePreview($key, true));
+        }
+        foreach (DesignGenerator::CENTERS as $key => $label) {
+            $previews['center'][$key] = $toDataUri(DesignGenerator::eyePreview($key, false));
+        }
 
-        return sprintf(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">
-                <rect width="%d" height="%d" rx="34" fill="%s"/>
-                <rect x="%d" y="%d" width="%d" height="%d" rx="24" fill="%s"/>
-                <image x="%d" y="%d" width="%d" height="%d" href="data:image/svg+xml;base64,%s" preserveAspectRatio="xMidYMid meet"/>
-                <text x="%d" y="%d" text-anchor="middle" fill="%s" font-size="28" font-family="Arial, sans-serif" font-weight="800" letter-spacing="3">%s</text>
-            </svg>',
-            $newW,
-            $newH,
-            $newW,
-            $newH,
-            $newW,
-            $newH,
-            $this->framePreset === 'card' ? '#ffffff' : $this->frameColor,
-            $qrX - 10,
-            $qrY - 10,
-            $qrW + 20,
-            $qrH + 20,
-            $this->backgroundColor,
-            $qrX,
-            $qrY,
-            $qrW,
-            $qrH,
-            $qrData,
-            (int) round($newW / 2),
-            $textY,
-            $this->framePreset === 'card' ? $this->frameColor : $this->frameTextColor,
-            $safeFrameText,
-        );
+        return $this->designPreviewsCache = $previews;
     }
 
     private function svgViewBox(string $svg): array
@@ -414,27 +476,36 @@ new #[Title('QR Code Generator')] class extends Component {
 
     public function updatedCustomLogo(): void
     {
-        if (!$this->isPremium) {
+        if (! $this->isPremium) {
             $this->customLogo = null;
             $this->centerLogo = 'site';
             $this->presetLogo = null;
-
             $this->refreshPreview(showErrors: false);
             return;
         }
-
-        $this->validate([
-            'customLogo' => ['image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
-        ]);
-
+        try {
+            $this->validate(['customLogo' => ['image:allow_svg', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048']]);
+            $logo = app(LogoOptimizer::class)->normalize((string) $this->customLogo->get(), $this->customLogo->getMimeType());
+            app(PreviewStore::class)->putLogo($this->previewToken, $logo);
+        } catch (ValidationException $e) {
+            $this->previewUpdated('The logo upload was rejected.');
+            throw $e;
+        } catch (\InvalidArgumentException $e) {
+            $this->addError('customLogo', $e->getMessage());
+            $this->previewUpdated($e->getMessage());
+            return;
+        }
         $this->centerLogo = 'custom';
         $this->presetLogo = null;
-
         $this->refreshPreview(showErrors: false);
     }
 
     public function selectPreset(string $preset): void
     {
+        if (!isset($this->presetIcons[$preset])) {
+            return;
+        }
+
         if (!$this->isPremium) {
             $this->centerLogo = 'site';
             $this->presetLogo = null;
@@ -444,6 +515,7 @@ new #[Title('QR Code Generator')] class extends Component {
             return;
         }
 
+        app(PreviewStore::class)->forgetLogo($this->previewToken);
         $this->presetLogo = $preset;
         $this->centerLogo = 'preset';
         $this->customLogo = null;
@@ -453,6 +525,7 @@ new #[Title('QR Code Generator')] class extends Component {
 
     public function selectSiteLogo(): void
     {
+        app(PreviewStore::class)->forgetLogo($this->previewToken);
         $this->centerLogo = 'site';
         $this->presetLogo = null;
         $this->customLogo = null;
@@ -471,6 +544,7 @@ new #[Title('QR Code Generator')] class extends Component {
             return;
         }
 
+        app(PreviewStore::class)->forgetLogo($this->previewToken);
         $this->centerLogo = null;
         $this->presetLogo = null;
         $this->customLogo = null;
@@ -484,22 +558,86 @@ new #[Title('QR Code Generator')] class extends Component {
             return null;
         }
 
-        $content = base64_decode(explode(',', $this->generatedQr)[1] ?? '');
+        $content = app(PreviewStore::class)->get($this->previewToken, $this->previewVersion);
+        if ($content === null) {
+            $this->generate();
+            $content = app(PreviewStore::class)->get($this->previewToken, $this->previewVersion);
+        }
+        if ($content === null) return null;
 
         return response()->streamDownload(fn() => print $content, 'techwave-qr-code.svg', ['Content-Type' => 'image/svg+xml']);
-    }
-
-    private function xmlEscape(string $text): string
-    {
-        return htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 };
 ?>
 
-<div class="min-h-screen overflow-x-hidden text-white">
+<div data-qr-tool wire:ignore.self class="min-h-screen overflow-x-hidden text-white"
+    x-data="qrDesigner({ id: @js($this->getId()), revision: @js($this->uiRevision), url: @js($this->generatedQr), choices: @js($this->uiChoices()) }, $wire)"
+    @input.capture="beginInput($event)"
+    @qr-preview-updated.window="receive($event.detail)"
+    x-on:livewire-upload-start="uploadStart()"
+    x-on:livewire-upload-progress="uploadProgress = $event.detail.progress"
+    x-on:livewire-upload-finish="uploading = false"
+    x-on:livewire-upload-error="uploadError()"
+    x-on:livewire-upload-cancel="uploadError()">
+    {{-- Tab state lives in Alpine only (no Livewire round trip), while data-active is rendered
+         server side as well so the right tab is styled/visible before Alpine boots. --}}
+    <style>
+        [data-qr-tool] [x-cloak] { display: none !important; }
+        .qr-design-option[data-active="yes"] {
+            background: rgb(6 182 212 / 0.2);
+            color: rgb(165 243 252);
+            box-shadow: 0 0 0 1px rgb(34 211 238 / 0.4);
+            border-color: rgb(103 232 249 / 0.5);
+        }
+        .qr-design-option[data-active="no"] { background: rgb(255 255 255 / 0.05); color: rgb(219 234 254 / 0.5); }
+        .qr-design-option[data-active="no"]:hover { background: rgb(255 255 255 / 0.1); }
+        .qr-logo-option[data-active="yes"] { border-color: rgb(34 211 238); background: rgb(236 254 255); box-shadow: 0 0 0 1px rgb(34 211 238 / 0.4); }
+        .qr-logo-option[data-active="no"] { border-color: rgb(226 232 240); background: white; }
+        .qr-logo-option[data-active="no"]:hover { border-color: rgb(103 232 249); }
+
+        .qr-frame-gallery {
+            scrollbar-width: thin;
+            scrollbar-color: rgb(103 232 249 / 0.4) rgb(255 255 255 / 0.05);
+        }
+
+        .qr-gen-tab[data-active="yes"] {
+            border-color: rgb(103 232 249);
+            color: rgb(207 250 254);
+        }
+
+        .qr-gen-tab[data-active="no"] {
+            border-color: transparent;
+            color: rgb(219 234 254 / 0.45);
+        }
+
+        .qr-gen-tab[data-active="no"]:hover {
+            color: rgb(207 250 254);
+        }
+
+        .qr-gen-panel[data-active="no"] {
+            display: none;
+        }
+
+        .qr-input-tab[data-active="yes"] {
+            border-color: rgb(103 232 249 / 0.4);
+            background: rgb(34 211 238 / 0.15);
+            color: rgb(207 250 254);
+            box-shadow: 0 10px 15px -3px rgb(6 182 212 / 0.1), 0 4px 6px -4px rgb(6 182 212 / 0.1);
+        }
+
+        .qr-input-tab[data-active="no"] {
+            border-color: rgb(255 255 255 / 0.1);
+            background: rgb(255 255 255 / 0.04);
+            color: rgb(219 234 254 / 0.55);
+        }
+
+        .qr-input-tab[data-active="no"]:hover {
+            background: rgb(255 255 255 / 0.08);
+        }
+    </style>
     <section class="mx-auto max-w-350 px-3 py-6 sm:px-6 lg:px-8">
         <div class="relative mb-6 text-center sm:mb-10">
-            <h1 class="mt-2 text-xl font-black tracking-tight sm:mt-4 sm:text-5xl">
+            <h1 class="mt-2 text-xl font-bold tracking-tight sm:mt-4 sm:text-5xl">
                 QR Code
                 <span class="bg-linear-to-r from-cyan-300 to-blue-400 bg-clip-text italic text-transparent">Generator</span>
             </h1>
@@ -510,7 +648,7 @@ new #[Title('QR Code Generator')] class extends Component {
 
         <div class="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div class="min-w-0 space-y-5">
-                <div
+                <div x-data="{ inputType: @js($this->inputType) }"
                     class="overflow-hidden rounded-3xl border border-white/10 bg-white/6 p-4 shadow-xl shadow-cyan-950/10 backdrop-blur-xl sm:p-5">
                     <div class="mb-4 flex items-center gap-3 sm:mb-5">
                         <div
@@ -518,14 +656,16 @@ new #[Title('QR Code Generator')] class extends Component {
                             <span class="material-symbols-outlined">edit_square</span>
                         </div>
                         <div class="min-w-0">
-                            <h2 class="text-base font-black sm:text-lg">1. Add your content</h2>
+                            <h2 class="text-base font-semibold sm:text-lg">1. Add your content</h2>
                             <p class="text-xs text-blue-100/45">
                                 QR code will generate only after valid content is added.
                             </p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 flex-warp overflow-x-auto">
+                    {{-- Tab switch happens in Alpine (instant); the Livewire $set runs in the
+                         background only to keep the server in sync for QR generation. --}}
+                    <div wire:ignore class="flex items-center gap-2 flex-warp overflow-x-auto">
                         @foreach ([
                         'url' => ['label' => 'URL', 'icon' => 'link'],
                         'text' => ['label' => 'Text', 'icon' => 'notes'],
@@ -533,18 +673,24 @@ new #[Title('QR Code Generator')] class extends Component {
                         'email' => ['label' => 'Email', 'icon' => 'mail'],
                         'phone' => ['label' => 'Phone', 'icon' => 'call'],
                         ] as $val => $cfg)
-                        <button type="button" wire:click="$set('inputType', '{{ $val }}')"
-                            class="group flex cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-1.5 text-center transition
-                                {{ $this->inputType === $val ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100 shadow-lg shadow-cyan-500/10' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
+                        <button type="button"
+                            data-active="{{ $this->inputType === $val ? 'yes' : 'no' }}"
+                            @click="if (inputType !== '{{ $val }}') { inputType = '{{ $val }}'; $wire.$set('inputType', '{{ $val }}'); }"
+                            :data-active="inputType === '{{ $val }}' ? 'yes' : 'no'"
+                            class="group qr-input-tab flex cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-1.5 text-center transition">
                             <span class="material-symbols-outlined">{{ $cfg['icon'] }}</span>
                             <span
-                                class="block text-xs md:font-medium uppercase tracking-wider">{{ $cfg['label'] }}</span>
+                                class="block text-xs font-medium uppercase tracking-wider">{{ $cfg['label'] }}</span>
                         </button>
                         @endforeach
                     </div>
 
                     <div class="mt-5">
-                        @if ($this->inputType === 'wifi')
+                        {{-- Every panel stays in the DOM so Alpine can switch instantly;
+                             wire:ignore.self keeps Livewire from resetting data-active. --}}
+                        <div class="qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->inputType === 'wifi' ? 'yes' : 'no' }}"
+                            :data-active="inputType === 'wifi' ? 'yes' : 'no'">
                         <div class="space-y-3">
                             <input wire:model.live.debounce.300ms="wifiSsid" type="text"
                                 placeholder="Network name / SSID"
@@ -569,7 +715,11 @@ new #[Title('QR Code Generator')] class extends Component {
                                 Hidden network
                             </label>
                         </div>
-                        @elseif ($this->inputType === 'email')
+                        </div>
+
+                        <div class="qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->inputType === 'email' ? 'yes' : 'no' }}"
+                            :data-active="inputType === 'email' ? 'yes' : 'no'">
                         <div class="space-y-3">
                             <input wire:model.live.debounce.300ms="email" type="email"
                                 placeholder="name@example.com"
@@ -582,32 +732,44 @@ new #[Title('QR Code Generator')] class extends Component {
                             <textarea wire:model.live.debounce.300ms="emailBody" rows="3" placeholder="Message"
                                 class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10"></textarea>
                         </div>
-                        @elseif ($this->inputType === 'phone')
+                        </div>
+
+                        <div class="qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->inputType === 'phone' ? 'yes' : 'no' }}"
+                            :data-active="inputType === 'phone' ? 'yes' : 'no'">
                         <input wire:model.live.debounce.300ms="phone" type="text" placeholder="+8801XXXXXXXXX"
                             class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
-                        @elseif ($this->inputType === 'text')
+                        </div>
+
+                        <div class="qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->inputType === 'text' ? 'yes' : 'no' }}"
+                            :data-active="inputType === 'text' ? 'yes' : 'no'">
                         <textarea wire:model.live.debounce.300ms="input" rows="4" placeholder="Write your text here..."
                             class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10"></textarea>
-                        @else
+                        </div>
+
+                        <div class="qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->inputType === 'url' ? 'yes' : 'no' }}"
+                            :data-active="inputType === 'url' ? 'yes' : 'no'">
                         <input wire:model.live.debounce.300ms="input" type="url"
                             placeholder="https://example.com"
                             class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition placeholder:text-blue-100/25 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/10">
-                        @endif
+                        </div>
 
                         @error('input')
                         <p class="mt-2 text-xs font-semibold text-red-300">{{ $message }}</p>
                         @enderror
 
-                        <p class="mt-3 flex items-center gap-2 text-xs font-semibold text-blue-100/40">
-                            <span class="material-symbols-outlined text-sm">bolt</span>
+                        <p class="mt-3 flex items-center gap-2 text-xs font-normal text-blue-100/40">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap preview-icon"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg>
                             QR code updates automatically when valid content is entered.
                         </p>
                     </div>
                 </div>
 
-                <div
+                <div x-data="{ activeTab: @js($this->activeTab) }"
                     class="overflow-hidden rounded-3xl border border-white/10 bg-white/6 shadow-xl shadow-cyan-950/10 backdrop-blur-xl">
-                    <div
+                    <div wire:ignore
                         class="flex items-center gap-1 overflow-x-auto border-b border-white/10 px-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         @foreach ([
                         'frame' => ['label' => 'Frame', 'icon' => 'dialogs', 'premium' => false],
@@ -618,10 +780,11 @@ new #[Title('QR Code Generator')] class extends Component {
                         @php $locked = $cfg['premium'] && !$this->isPremium; @endphp
 
                         <button type="button"
-                            wire:click="{{ $locked ? '' : '$set(\'activeTab\', \'' . $tab . '\')' }}"
-                            class="flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-3 py-3 text-[11px] font-black uppercase tracking-wider transition sm:text-xs
-                                {{ $locked ? 'cursor-not-allowed opacity-40' : 'hover:text-cyan-100' }}
-                                {{ $this->activeTab === $tab && !$locked ? 'border-cyan-300 text-cyan-100' : 'border-transparent text-blue-100/45' }}">
+                            data-active="{{ !$locked && $this->activeTab === $tab ? 'yes' : 'no' }}"
+                            @if (!$locked) @click="activeTab = '{{ $tab }}'"
+                            :data-active="activeTab === '{{ $tab }}' ? 'yes' : 'no'" @endif
+                            class="flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-3 py-3 text-[11px] font-medium uppercase tracking-wider transition sm:text-xs
+                                {{ $locked ? 'cursor-not-allowed border-transparent text-blue-100/45 opacity-40' : 'qr-gen-tab' }}">
                             <span class="material-symbols-outlined text-base">{{ $cfg['icon'] }}</span>
                             {{ $cfg['label'] }}
                             @if ($locked)
@@ -632,32 +795,59 @@ new #[Title('QR Code Generator')] class extends Component {
                     </div>
 
                     <div class="p-4 sm:p-5">
-                        @if ($this->activeTab === 'frame')
-                        <div class="space-y-5">
+                        <div class="space-y-5 qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->activeTab === 'frame' ? 'yes' : 'no' }}"
+                            :data-active="activeTab === 'frame' ? 'yes' : 'no'">
                             <div>
-                                <label class="mb-2 block text-xs font-bold text-blue-100/55">Layout</label>
-                                <div class="flex gap-2">
-                                    @foreach (['none' => 'None', 'scan-bottom' => 'Bottom', 'scan-top' => 'Top', 'card' => 'Card'] as $val => $label)
-                                    <button type="button"
-                                        wire:click="$set('framePreset', '{{ $val }}')"
-                                        class="flex-1 rounded-xl py-2.5 text-xs font-bold uppercase tracking-wider transition
-                                                    {{ $this->framePreset === $val ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-400/40' : 'bg-white/5 text-blue-100/50 hover:bg-white/10' }}">
-                                        {{ $label }}
-                                    </button>
-                                    @endforeach
+                                <div x-data="{}">
+                                    <div class="mb-3 flex items-center justify-between gap-3">
+                                        <span class="text-xs font-medium text-blue-100/55">Layout</span>
+                                        <div class="flex gap-2">
+                                            <button type="button" aria-label="Scroll frames left"
+                                                @click="$refs.frameGallery.scrollBy({ left: -300, behavior: 'smooth' })"
+                                                class="grid h-8 w-8 cursor-pointer place-items-center rounded-lg bg-white/5 text-blue-100/60 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-300">
+                                                <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
+                                            </button>
+                                            <button type="button" aria-label="Scroll frames right"
+                                                @click="$refs.frameGallery.scrollBy({ left: 300, behavior: 'smooth' })"
+                                                class="grid h-8 w-8 cursor-pointer place-items-center rounded-lg bg-white/5 text-blue-100/60 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-300">
+                                                <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div x-ref="frameGallery" class="qr-frame-gallery flex snap-x snap-proximity gap-3 overflow-x-auto px-1 py-2 pb-4"
+                                        role="group" aria-label="Frame layout">
+                                        @foreach (FrameRenderer::layouts() as $val => $label)
+                                        <x-qr.design-option wire:key="frame-option-{{ $val }}"
+                                            property="framePreset" :value="$val"
+                                            class="w-28 shrink-0 snap-start"
+                                            :label="$label" :selected="$this->framePreset === $val"
+                                            :preview="$this->designPreviews['frame'][$val]" />
+                                        @endforeach
+                                    </div>
                                 </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="qr-frame-font" class="mb-1 block text-xs font-medium text-blue-100/55">Phrase font</label>
+                                <select id="qr-frame-font" wire:model.live="frameFont"
+                                    class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
+                                    @foreach (FrameRenderer::FONTS as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                 <div>
-                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Frame
+                                    <label class="mb-1 block text-xs font-medium text-blue-100/55">Frame
                                         text</label>
-                                    <input wire:model.live.debounce.300ms="frameText" type="text"
+                                    <input wire:model.live.debounce.300ms="frameText" type="text" maxlength="48"
                                         class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Frame
+                                    <label class="mb-1 block text-xs font-medium text-blue-100/55">Frame
                                         color</label>
                                     <div class="flex gap-2">
                                         <input wire:model.live="frameColor" type="color"
@@ -668,7 +858,7 @@ new #[Title('QR Code Generator')] class extends Component {
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Text
+                                    <label class="mb-1 block text-xs font-medium text-blue-100/55">Text
                                         color</label>
                                     <div class="flex gap-2">
                                         <input wire:model.live="frameTextColor" type="color"
@@ -679,11 +869,12 @@ new #[Title('QR Code Generator')] class extends Component {
                                 </div>
                             </div>
                         </div>
-                        @elseif ($this->activeTab === 'colors')
-                        <div class="space-y-5">
+                        <div class="space-y-5 qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->activeTab === 'colors' ? 'yes' : 'no' }}"
+                            :data-active="activeTab === 'colors' ? 'yes' : 'no'">
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">QR color</label>
+                                    <label class="mb-1 block text-xs font-medium text-blue-100/55">QR color</label>
                                     <div class="flex gap-2">
                                         <input wire:model.live="foregroundColor" type="color"
                                             class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
@@ -693,7 +884,7 @@ new #[Title('QR Code Generator')] class extends Component {
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">QR
+                                    <label class="mb-1 block text-xs font-medium text-blue-100/55">QR
                                         background</label>
                                     <div class="flex gap-2">
                                         <input wire:model.live="backgroundColor" type="color"
@@ -706,15 +897,15 @@ new #[Title('QR Code Generator')] class extends Component {
 
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Size</label>
+                                    <label class="mb-1 block text-xs font-medium text-blue-100/55">Size</label>
                                     <input wire:model.live.debounce.300ms="size" type="number" min="200"
                                         max="900" step="20"
                                         class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-xs font-bold text-blue-100/55">Margin</label>
-                                    <input wire:model.live.debounce.300ms="margin" type="number" min="0"
+                                    <label class="mb-1 block text-xs font-medium text-blue-100/55">Margin</label>
+                                    <input wire:model.live.debounce.300ms="margin" type="number" min="4"
                                         max="10" step="1"
                                         class="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40">
                                 </div>
@@ -723,7 +914,7 @@ new #[Title('QR Code Generator')] class extends Component {
                             @if ($this->isPremium)
                             <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
                                 <label
-                                    class="mb-2 block text-xs font-black uppercase tracking-wider text-cyan-100">
+                                    class="mb-2 block text-xs font-medium uppercase tracking-wider text-cyan-100">
                                     Premium gradient
                                 </label>
 
@@ -739,31 +930,41 @@ new #[Title('QR Code Generator')] class extends Component {
                                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label
-                                            class="mb-1 block text-xs font-bold text-blue-100/55">Start</label>
-                                        <input wire:model.live="gradientStart" type="color"
-                                            class="h-10 w-full cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12">
+                                            class="mb-1 block text-xs font-medium text-blue-100/55">Start</label>
+                                        <div class="flex gap-2">
+                                            <input wire:model.live="gradientStart" type="color"
+                                                class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                            <input wire:model.live.debounce.300ms="gradientStart" type="text"
+                                                class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
+                                        </div>
                                     </div>
                                     <div>
                                         <label
-                                            class="mb-1 block text-xs font-bold text-blue-100/55">End</label>
-                                        <input wire:model.live="gradientEnd" type="color"
-                                            class="h-10 w-full cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12">
+                                            class="mb-1 block text-xs font-medium text-blue-100/55">End</label>
+                                        <div class="flex gap-2">
+                                            <input wire:model.live="gradientEnd" type="color"
+                                                class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                            <input wire:model.live.debounce.300ms="gradientEnd" type="text"
+                                                class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
+                                        </div>
                                     </div>
                                 </div>
                                 @endif
                             </div>
                             @endif
                         </div>
-                        @elseif ($this->activeTab === 'shape')
+                        <div class="qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->activeTab === 'shape' ? 'yes' : 'no' }}"
+                            :data-active="activeTab === 'shape' ? 'yes' : 'no'">
                         @if (!$this->isPremium)
                         <div class="py-10 text-center">
                             <span class="material-symbols-outlined text-5xl text-blue-100/25">lock</span>
-                            <h3 class="mt-3 text-lg font-black">Unlock QR shapes</h3>
+                            <h3 class="mt-3 text-lg font-semibold">Unlock QR shapes</h3>
                             <p class="mx-auto mt-2 max-w-sm text-sm text-blue-100/45">
                                 Upgrade to customize module shape and eye colors.
                             </p>
                             <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
-                                class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-cyan-500/20">
+                                class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20">
                                 <span class="material-symbols-outlined text-base">workspace_premium</span>
                                 Upgrade Now
                             </a>
@@ -771,51 +972,72 @@ new #[Title('QR Code Generator')] class extends Component {
                         @else
                         <div class="space-y-5">
                             <div>
-                                <label
-                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                    Module style
-                                </label>
-                                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-                                    @foreach (['square' => 'Square', 'dot' => 'Dot', 'round' => 'Round'] as $val => $label)
-                                    <button type="button"
-                                        wire:click="$set('moduleStyle', '{{ $val }}')"
-                                        class="rounded-2xl border px-4 py-3 text-xs font-black transition sm:py-4
-                                                    {{ $this->moduleStyle === $val ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                        {{ $label }}
-                                    </button>
+                                <label class="mb-2 block text-xs font-medium text-blue-100/55">Module style</label>
+                                <div class="flex gap-2 overflow-x-auto px-1 py-2 pb-3" role="group" aria-label="Module style">
+                                    @foreach (DesignGenerator::MODULES as $val => $label)
+                                    <x-qr.design-option wire:key="module-option-{{ $val }}"
+                                        property="moduleStyle" :value="$val" class="w-24 shrink-0"
+                                        :label="$label" :selected="$this->moduleStyle === $val"
+                                        :preview="$this->designPreviews['module'][$val]" />
                                     @endforeach
                                 </div>
                             </div>
-
                             <div>
-                                <label
-                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                    Eye style
-                                </label>
-                                <div class="grid grid-cols-2 gap-2 sm:gap-3">
-                                    @foreach (['square' => 'Square eye', 'circle' => 'Circle eye'] as $val => $label)
-                                    <button type="button"
-                                        wire:click="$set('eyeStyle', '{{ $val }}')"
-                                        class="rounded-2xl border px-4 py-3 text-xs font-black transition sm:py-4
-                                                    {{ $this->eyeStyle === $val ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                        {{ $label }}
-                                    </button>
+                                <label class="mb-2 block text-xs font-medium text-blue-100/55">Border style</label>
+                                <div class="flex gap-2 overflow-x-auto px-1 py-2 pb-3" role="group" aria-label="Border style">
+                                    @foreach (DesignGenerator::BORDERS as $val => $label)
+                                    <x-qr.design-option wire:key="border-option-{{ $val }}"
+                                        property="eyeStyle" :value="$val" class="w-24 shrink-0"
+                                        :label="$label" :selected="$this->eyeStyle === $val"
+                                        :preview="$this->designPreviews['border'][$val]" />
                                     @endforeach
+                                </div>
+                                <div class="mt-3">
+                                    <label for="qr-eye-border-color" class="mb-1 block text-xs font-medium text-blue-100/55">Border color</label>
+                                    <div class="flex gap-2">
+                                        <input id="qr-eye-border-color" wire:model.live="eyeOuterColors.0" type="color"
+                                            class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                        <input wire:model.live.debounce.300ms="eyeOuterColors.0" type="text" aria-label="Border color hex value"
+                                            class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-xs font-medium text-blue-100/55">Center style</label>
+                                <div class="flex gap-2 overflow-x-auto px-1 py-2 pb-3" role="group" aria-label="Center style">
+                                    @foreach (DesignGenerator::CENTERS as $val => $label)
+                                    <x-qr.design-option wire:key="center-option-{{ $val }}"
+                                        property="eyeCenterStyle" :value="$val" class="w-24 shrink-0"
+                                        :label="$label" :selected="$this->eyeCenterStyle === $val"
+                                        :preview="$this->designPreviews['center'][$val]" />
+                                    @endforeach
+                                </div>
+                                <div class="mt-3">
+                                    <label for="qr-eye-center-color" class="mb-1 block text-xs font-medium text-blue-100/55">Eye color</label>
+                                    <div class="flex gap-2">
+                                        <input id="qr-eye-center-color" wire:model.live="eyeInnerColors.0" type="color"
+                                            class="h-10 w-12 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-black/25 p-1 sm:h-12 sm:w-14">
+                                        <input wire:model.live.debounce.300ms="eyeInnerColors.0" type="text" aria-label="Eye color hex value"
+                                            class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-cyan-300/40 sm:px-4 sm:py-3">
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         @endif
-                        @elseif ($this->activeTab === 'logo')
+                        </div>
+                        <div class="qr-gen-panel" wire:ignore.self
+                            data-active="{{ $this->activeTab === 'logo' ? 'yes' : 'no' }}"
+                            :data-active="activeTab === 'logo' ? 'yes' : 'no'">
                         @if (!$this->isPremium)
                         <div class="py-10 text-center">
                             <span class="material-symbols-outlined text-5xl text-blue-100/25">lock</span>
-                            <h3 class="mt-3 text-lg font-black">Logo customization is premium</h3>
+                            <h3 class="mt-3 text-lg font-semibold">Logo customization is premium</h3>
                             <p class="mx-auto mt-2 max-w-sm text-sm text-blue-100/45">
                                 Free users will use the default site logo. Upgrade to remove logo, change icon,
                                 or upload custom logo.
                             </p>
                             <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
-                                class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-cyan-500/20">
+                                class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20">
                                 <span class="material-symbols-outlined text-base">workspace_premium</span>
                                 Upgrade Now
                             </a>
@@ -823,55 +1045,65 @@ new #[Title('QR Code Generator')] class extends Component {
                         @else
                         <div class="space-y-5">
                             <div>
-                                <label
-                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                    Center logo
-                                </label>
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" wire:click="removeLogo"
-                                        class="rounded-2xl border px-4 py-2.5 text-xs font-black transition
-                                                {{ $this->centerLogo === null ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                        None
+                                <label class="mb-3 block text-xs font-medium text-blue-100/55">Choose a logo</label>
+                                <div class="grid grid-cols-4 gap-2 sm:grid-cols-7 sm:gap-3" role="group" aria-label="Logo icons">
+                                    <button type="button" wire:ignore.self @click="chooseLogo('none', 'removeLogo')" data-active="{{ $this->centerLogo === null ? 'yes' : 'no' }}"
+                                        :data-active="choices.logo === 'none' ? 'yes' : 'no'" :aria-pressed="choices.logo === 'none' ? 'true' : 'false'" aria-label="No logo" title="No logo"
+                                        aria-pressed="{{ $this->centerLogo === null ? 'true' : 'false' }}"
+                                        class="qr-logo-option grid h-20 cursor-pointer place-items-center rounded-xl border-2 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 sm:h-24
+                                            {{ $this->centerLogo === null ? 'border-cyan-400 bg-cyan-50 ring-1 ring-cyan-400/40' : 'border-slate-200 bg-white hover:border-cyan-300' }}">
+                                        <svg viewBox="0 0 64 64" class="h-12 w-12" aria-hidden="true"><path d="M22 22L42 42M42 22L22 42" stroke="#111827" stroke-width="9" stroke-linecap="round"/></svg>
                                     </button>
-
-                                    <button type="button" wire:click="selectSiteLogo"
-                                        class="rounded-2xl border px-4 py-2.5 text-xs font-black transition
-                                                {{ $this->centerLogo === 'site' ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
-                                        Site Logo
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label
-                                    class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">
-                                    Preset icons
-                                </label>
-                                <div class="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
                                     @foreach ($this->presetIcons as $key => $icon)
-                                    <button type="button"
-                                        wire:click="selectPreset('{{ $key }}')"
-                                        class="rounded-2xl border p-2 text-center transition sm:p-3
-                                                    {{ $this->presetLogo === $key ? 'border-cyan-300/50 bg-cyan-400/10' : 'border-white/10 bg-white/4 hover:bg-white/8' }}">
-                                        <img src="data:image/svg+xml;base64,{{ base64_encode($icon['svg']) }}"
-                                            alt="{{ $icon['label'] }}"
-                                            class="mx-auto h-9 w-9 rounded-xl sm:h-10 sm:w-10">
-                                        <span
-                                            class="mt-2 block text-[10px] font-bold text-blue-100/60 sm:text-[11px]">
-                                            {{ $icon['label'] }}
-                                        </span>
+                                    @if ($icon['group'] === 'icon')
+                                    <button type="button" wire:key="logo-icon-{{ $key }}" wire:ignore.self @click="chooseLogo('preset:{{ $key }}', 'selectPreset', '{{ $key }}')"
+                                        data-active="{{ $this->centerLogo === 'preset' && $this->presetLogo === $key ? 'yes' : 'no' }}"
+                                        :data-active="choices.logo === 'preset:{{ $key }}' ? 'yes' : 'no'"
+                                        :aria-pressed="choices.logo === 'preset:{{ $key }}' ? 'true' : 'false'"
+                                        aria-label="{{ $icon['label'] }} logo" title="{{ $icon['label'] }}"
+                                        aria-pressed="{{ $this->centerLogo === 'preset' && $this->presetLogo === $key ? 'true' : 'false' }}"
+                                        class="qr-logo-option grid h-20 cursor-pointer place-items-center rounded-xl border-2 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 sm:h-24
+                                            {{ $this->centerLogo === 'preset' && $this->presetLogo === $key ? 'border-cyan-400 bg-cyan-50 ring-1 ring-cyan-400/40' : 'border-slate-200 bg-white hover:border-cyan-300' }}">
+                                        <img src="data:image/svg+xml;base64,{{ base64_encode($icon['svg']) }}" alt="" class="h-12 w-12 sm:h-14 sm:w-14">
                                     </button>
+                                    @endif
                                     @endforeach
                                 </div>
+                                <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3" role="group" aria-label="Scan logos">
+                                    @foreach ($this->presetIcons as $key => $icon)
+                                    @if ($icon['group'] === 'scan')
+                                    <button type="button" wire:key="logo-scan-{{ $key }}" wire:ignore.self @click="chooseLogo('preset:{{ $key }}', 'selectPreset', '{{ $key }}')"
+                                        data-active="{{ $this->centerLogo === 'preset' && $this->presetLogo === $key ? 'yes' : 'no' }}"
+                                        :data-active="choices.logo === 'preset:{{ $key }}' ? 'yes' : 'no'"
+                                        :aria-pressed="choices.logo === 'preset:{{ $key }}' ? 'true' : 'false'"
+                                        aria-label="{{ $icon['label'] }} logo" title="{{ $icon['label'] }}"
+                                        aria-pressed="{{ $this->centerLogo === 'preset' && $this->presetLogo === $key ? 'true' : 'false' }}"
+                                        class="qr-logo-option grid h-20 cursor-pointer place-items-center rounded-xl border-2 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 sm:h-24
+                                            {{ $this->centerLogo === 'preset' && $this->presetLogo === $key ? 'border-cyan-400 bg-cyan-50 ring-1 ring-cyan-400/40' : 'border-slate-200 bg-white hover:border-cyan-300' }}">
+                                        <img src="data:image/svg+xml;base64,{{ base64_encode($icon['svg']) }}" alt="" class="h-14 w-full max-w-28 object-contain sm:h-16">
+                                    </button>
+                                    @endif
+                                    @endforeach
+                                </div>
+                                <button type="button" wire:ignore.self @click="chooseLogo('site', 'selectSiteLogo')"
+                                    data-active="{{ $this->centerLogo === 'site' ? 'yes' : 'no' }}" :data-active="choices.logo === 'site' ? 'yes' : 'no'"
+                                    :aria-pressed="choices.logo === 'site' ? 'true' : 'false'"
+                                    aria-pressed="{{ $this->centerLogo === 'site' ? 'true' : 'false' }}"
+                                    class="qr-design-option mt-4 cursor-pointer rounded-xl border px-4 py-2.5 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-cyan-300
+                                        {{ $this->centerLogo === 'site' ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-white/4 text-blue-100/55 hover:bg-white/8' }}">
+                                    Use site logo
+                                </button>
                             </div>
 
                             <div class="border-t border-white/10 pt-5">
                                 <label
-                                    class="block cursor-pointer rounded-2xl border border-dashed border-white/15 bg-white/4 px-5 py-6 text-center transition hover:bg-white/8">
+                                    wire:ignore.self data-active="{{ $this->centerLogo === 'custom' ? 'yes' : 'no' }}"
+                                    :data-active="choices.logo === 'custom' ? 'yes' : 'no'"
+                                    class="qr-design-option block cursor-pointer rounded-2xl border border-dashed border-white/15 bg-white/4 px-5 py-6 text-center transition hover:bg-white/8">
                                     <span
                                         class="material-symbols-outlined text-3xl text-blue-100/35">cloud_upload</span>
-                                    <p class="mt-2 text-sm font-black text-blue-100/70">Upload custom logo</p>
-                                    <p class="mt-1 text-xs text-blue-100/35">PNG, JPG, WebP or SVG. Max 2MB.
+                                    <p class="mt-2 text-sm font-semibold text-blue-100/70">Upload custom logo</p>
+                                    <p class="mt-1 text-xs text-blue-100/35">PNG, JPG, WebP or SVG. Max 2MB; raster images up to 16 megapixels.
                                     </p>
                                     <input wire:model="customLogo" type="file" accept="image/*,.svg"
                                         class="hidden">
@@ -894,7 +1126,7 @@ new #[Title('QR Code Generator')] class extends Component {
                             </div>
                         </div>
                         @endif
-                        @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -905,7 +1137,7 @@ new #[Title('QR Code Generator')] class extends Component {
                     <div class="border-b border-white/10 p-4 sm:p-5">
                         <div class="flex items-center justify-between gap-4">
                             <div>
-                                <h2 class="text-base font-black sm:text-lg">Live preview</h2>
+                                <h2 class="text-base font-semibold sm:text-lg">Live preview</h2>
                                 <p class="mt-1 text-xs text-blue-100/45">QR appears only after valid content.</p>
                             </div>
                         </div>
@@ -913,13 +1145,12 @@ new #[Title('QR Code Generator')] class extends Component {
 
                     <div class="p-4 sm:p-5">
                         <div
-                            class="grid min-h-[320px] place-items-center rounded-3xl border border-dashed border-white/15 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_45%),rgba(255,255,255,0.03)] p-3 sm:min-h-[400px] sm:p-5">
-                            @if ($this->generatedQr)
-                            <img src="{{ $this->generatedQr }}" alt="Generated QR Code" x-ref="qrImg"
-                                class="max-h-[280px] max-w-full drop-shadow-2xl sm:max-h-[390px]">
-                            @else
+                            wire:ignore :aria-busy="busy || uploading" class="relative grid min-h-[320px] place-items-center overflow-hidden rounded-3xl border border-dashed border-white/15 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_45%),rgba(255,255,255,0.03)] p-3 sm:min-h-[400px] sm:p-5">
+                            <img :src="displayUrl || null" x-show="displayUrl" x-cloak alt="Generated QR Code" x-ref="qrImg"
+                                :class="busy || uploading ? 'opacity-40' : 'opacity-100'"
+                                class="max-h-[280px] max-w-full drop-shadow-2xl transition-opacity sm:max-h-[390px]">
                             <div
-                                class="w-full max-w-[250px] rounded-[1.5rem] border border-white/10 bg-white p-4 text-center shadow-2xl sm:max-w-[310px] sm:rounded-[2rem] sm:p-6">
+                                x-show="!displayUrl" class="w-full max-w-[250px] rounded-[1.5rem] border border-white/10 bg-white p-4 text-center shadow-2xl sm:max-w-[310px] sm:rounded-[2rem] sm:p-6">
                                 <div
                                     class="mx-auto grid h-40 w-40 grid-cols-7 gap-1 rounded-2xl bg-slate-50 p-3 sm:h-56 sm:w-56 sm:p-4">
                                     @foreach (range(1, 49) as $i)
@@ -930,25 +1161,33 @@ new #[Title('QR Code Generator')] class extends Component {
                                 </div>
 
                                 <div
-                                    class="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 sm:mt-5 sm:px-4 sm:text-xs">
+                                    class="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-slate-500 sm:mt-5 sm:px-4 sm:text-xs">
                                     <span class="material-symbols-outlined text-base">qr_code_2</span>
                                     QR Preview
                                 </div>
 
-                                <p class="mt-3 text-xs font-semibold text-slate-500 sm:text-sm">
+                                <p class="mt-3 text-xs font-normal text-slate-500 sm:text-sm">
                                     Enter valid content to generate your QR code.
                                 </p>
                             </div>
-                            @endif
+                            <div x-show="busy || uploading" x-cloak role="status" aria-live="polite"
+                                class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-3xl bg-slate-950/65 backdrop-blur-sm">
+                                <span class="h-9 w-9 animate-spin rounded-full border-2 border-cyan-300/30 border-t-cyan-200" aria-hidden="true"></span>
+                                <span class="text-sm font-medium text-cyan-100" x-text="uploading ? 'Uploading logo… ' + uploadProgress + '%' : 'Updating QR code…'"></span>
+                            </div>
+                            <div x-show="error" x-cloak role="alert" class="absolute inset-x-3 bottom-3 z-20 rounded-xl border border-red-300/20 bg-red-950/90 p-3 text-center text-xs text-red-100">
+                                Preview could not update. Try selecting a style again.
+                            </div>
                         </div>
 
-                        @if ($this->generatedQr)
-                        <button type="button" x-data x-on:click="window.downloadQr($event)"
-                            class="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:shadow-cyan-500/30">
+                        <button type="button" wire:ignore x-show="displayUrl" x-cloak @click="download($event)" :disabled="busy || uploading || downloading || error || !displayUrl"
+                            class="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition disabled:cursor-wait disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-cyan-500/30">
                             <span class="material-symbols-outlined text-base">download</span>
                             <span class="btn-text">Download QR Code</span>
                         </button>
-                        @endif
+
+                        <p wire:ignore x-show="downloadError" x-cloak role="alert" x-text="downloadError"
+                            class="mt-3 text-center text-xs text-red-200"></p>
 
                         <p class="mt-4 text-center text-xs leading-5 text-blue-100/40">
                             For best scan result, keep strong contrast between QR color and background.
@@ -960,49 +1199,10 @@ new #[Title('QR Code Generator')] class extends Component {
     </section>
 </div>
 
-@push('scripts')
+@assets
 <script>
-    window.downloadQr = async function(event) {
-        const btn = event.currentTarget;
-        const txt = btn.querySelector('.btn-text');
-        const orig = txt.textContent;
-        txt.textContent = 'Downloading...';
-        btn.disabled = true;
+    {!! file_get_contents(resource_path('js/qr-designer.js')) !!}
 
-        try {
-            const imgEl = document.querySelector('[x-ref="qrImg"]');
-            if (!imgEl) return;
-
-            const resp = await fetch(imgEl.src);
-            const blob = await resp.blob();
-            const url = URL.createObjectURL(blob);
-
-            const img = new Image();
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = url;
-            });
-
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || 400;
-            canvas.height = img.naturalHeight || 400;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-
-            const link = document.createElement('a');
-            link.download = 'techwave-qr-code.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-
-            URL.revokeObjectURL(url);
-        } finally {
-            txt.textContent = orig;
-            btn.disabled = false;
-        }
-    };
 </script>
 
-@endpush
+@endassets

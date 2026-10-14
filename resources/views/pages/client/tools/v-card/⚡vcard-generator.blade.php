@@ -18,6 +18,35 @@ new #[Title('VCard Generator')] class extends Component {
     private const FREE_TEMPLATE = 'modern-banner-center';
     private const FREE_WEEKLY_SCAN_LIMIT = 10;
 
+    /**
+     * Appearance properties that belong to the premium Contact Setting, Design and Fonts
+     * panels. They are reset by applyFreePlanRestrictions(), so free users must never be
+     * able to apply them in the first place.
+     */
+    private const PREMIUM_ONLY_PROPERTIES = [
+        'accentColor',
+        'avatarBorderRadius',
+        'avatarRingColor',
+        'avatarRingEnabled',
+        'avatarRingWidth',
+        'bgColor',
+        'buttonTextColor',
+        'cardBg',
+        'fieldBorderColor',
+        'fieldBorderRadius',
+        'fieldBorderStyle',
+        'fieldShadow',
+        'fieldBorderWidth',
+        'floatingButtonBorderRadius',
+        'floatingButtonPlacement',
+        'floatingButtonRingColor',
+        'floatingButtonRingEnabled',
+        'floatingButtonRingShape',
+        'floatingButtonRingWidth',
+        'fontFamily',
+        'textColor',
+    ];
+
     /*
     |--------------------------------------------------------------------------
     | Builder State
@@ -355,13 +384,8 @@ new #[Title('VCard Generator')] class extends Component {
 
     public function toggleAppearancePanel(string $panel): void
     {
-        if (!$this->isPremium && $panel !== 'template') {
-            $this->addError('appearancePremium', 'This customization is premium. Upgrade to unlock it.');
-
-            return;
-        }
-
-        $this->resetErrorBag('appearancePremium');
+        // Premium panels stay visible for everyone; free users just cannot use them
+        // (see the lock overlay in the view and the guard in updated()).
         $this->openAppearancePanel = $this->openAppearancePanel === $panel ? '' : $panel;
     }
 
@@ -658,6 +682,12 @@ new #[Title('VCard Generator')] class extends Component {
 
     public function applyColorPreset(string $accent, string $cardBg, string $textColor): void
     {
+        if (!$this->isPremium) {
+            $this->dispatch('toast', message: 'This customization is premium. Upgrade to unlock it.', type: 'error');
+
+            return;
+        }
+
         $this->accentColor = $accent;
         $this->cardBg = $cardBg;
         $this->textColor = $textColor;
@@ -1600,6 +1630,12 @@ new #[Title('VCard Generator')] class extends Component {
 
     public function updated(mixed $property): void
     {
+        if (in_array($property, self::PREMIUM_ONLY_PROPERTIES, true) && !$this->isPremium) {
+            $this->applyFreePlanRestrictions();
+
+            $this->dispatch('toast', message: 'This customization is premium. Upgrade to unlock it.', type: 'error');
+        }
+
         if (!in_array($property, ['profileImage', 'bannerImage', 'loadingImage', 'qrLogo'], true)) {
             $this->generatedVcf = null;
             $this->resetErrorBag('vcf');
@@ -1707,6 +1743,9 @@ new #[Title('VCard Generator')] class extends Component {
 
     toggleOpenSubPanel(panel, prop) {
         this[prop] = this[prop] === panel ? '' : panel;
+    },
+    showPremiumPanelNotice() {
+        this.$dispatch('toast', { message: 'This customization is premium. Upgrade to unlock it.', type: 'error' });
     },
     openIconPicker(path, type, title, selected) {
         this.iconPicker = { open: true, path, type, title, selected };
@@ -2114,9 +2153,8 @@ new #[Title('VCard Generator')] class extends Component {
 
                     {{-- Contact Setting --}}
                     <div class="overflow-hidden border-b border-white/10 last:border-b-0">
-                        <button type="button"
-                            @click="toggleOpenSubPanel('contact-setting', 'openAppearancePanel', $event)"
-                            class="flex w-full items-center justify-between gap-3 py-4 text-left {{ !$this->isPremium ? 'opacity-55' : 'cursor-pointer' }}">
+                        <button type="button" @click="toggleOpenSubPanel('contact-setting', 'openAppearancePanel')"
+                            class="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left {{ !$this->isPremium ? 'opacity-55' : '' }}">
                             <span class="flex items-center gap-3">
                                 <span class="material-symbols-outlined text-base text-cyan-200 transition"
                                     :class="openAppearancePanel === 'contact-setting' ? 'rotate-90' : ''">chevron_right</span>
@@ -2133,7 +2171,12 @@ new #[Title('VCard Generator')] class extends Component {
                             @endif
                         </button>
 
-                        <div x-show="openAppearancePanel === 'contact-setting'" x-collapse class="pb-6 pl-7">
+                        <div x-show="openAppearancePanel === 'contact-setting'" x-collapse
+                            class="relative pb-6 pl-7 {{ !$this->isPremium ? 'opacity-55' : '' }}">
+                            @if (!$this->isPremium)
+                            {{-- Free users can look at premium controls, but never use them. --}}
+                            <div @click="showPremiumPanelNotice()" class="absolute inset-0 z-20 cursor-not-allowed"></div>
+                            @endif
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label class="mb-1 block text-xs font-bold text-blue-100/55">Button
@@ -2292,9 +2335,8 @@ new #[Title('VCard Generator')] class extends Component {
 
                     {{-- Design --}}
                     <div class="overflow-hidden border-b border-white/10 last:border-b-0">
-                        <button type="button"
-                            @click="toggleOpenSubPanel('design', 'openAppearancePanel', $event)"
-                            class="flex w-full items-center justify-between gap-3 py-4 text-left {{ !$this->isPremium ? 'opacity-55' : 'cursor-pointer' }}">
+                        <button type="button" @click="toggleOpenSubPanel('design', 'openAppearancePanel')"
+                            class="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left {{ !$this->isPremium ? 'opacity-55' : '' }}">
                             <span class="flex items-center gap-3">
                                 <span class="material-symbols-outlined text-base text-cyan-200 transition"
                                     :class="openAppearancePanel === 'design' ? 'rotate-90' : ''">chevron_right</span>
@@ -2311,7 +2353,12 @@ new #[Title('VCard Generator')] class extends Component {
                             @endif
                         </button>
 
-                        <div x-show="openAppearancePanel === 'design'" x-collapse class="pb-6 pl-7">
+                        <div x-show="openAppearancePanel === 'design'" x-collapse
+                            class="relative pb-6 pl-7 {{ !$this->isPremium ? 'opacity-55' : '' }}">
+                            @if (!$this->isPremium)
+                            {{-- Free users can look at premium controls, but never use them. --}}
+                            <div @click="showPremiumPanelNotice()" class="absolute inset-0 z-20 cursor-not-allowed"></div>
+                            @endif
                             <label
                                 class="mb-3 block text-xs font-black uppercase tracking-wider text-blue-100/55">Color
                                 palette</label>
@@ -2574,8 +2621,8 @@ new #[Title('VCard Generator')] class extends Component {
 
                     {{-- Fonts --}}
                     <div class="overflow-hidden border-b border-white/10 last:border-b-0">
-                        <button type="button" @click="toggleOpenSubPanel('fonts', 'openAppearancePanel', $event)"
-                            class="flex w-full items-center justify-between gap-3 py-4 text-left {{ !$this->isPremium ? 'opacity-55' : 'cursor-pointer' }}">
+                        <button type="button" @click="toggleOpenSubPanel('fonts', 'openAppearancePanel')"
+                            class="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left {{ !$this->isPremium ? 'opacity-55' : '' }}">
                             <span class="flex items-center gap-3">
                                 <span class="material-symbols-outlined text-base text-cyan-200 transition"
                                     :class="openAppearancePanel === 'fonts' ? 'rotate-90' : ''">chevron_right</span>
@@ -2592,7 +2639,12 @@ new #[Title('VCard Generator')] class extends Component {
                             @endif
                         </button>
 
-                        <div x-show="openAppearancePanel === 'fonts'" x-collapse class="pb-6 pl-7">
+                        <div x-show="openAppearancePanel === 'fonts'" x-collapse
+                            class="relative pb-6 pl-7 {{ !$this->isPremium ? 'opacity-55' : '' }}">
+                            @if (!$this->isPremium)
+                            {{-- Free users can look at premium controls, but never use them. --}}
+                            <div @click="showPremiumPanelNotice()" class="absolute inset-0 z-20 cursor-not-allowed"></div>
+                            @endif
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label class="mb-1 block text-xs font-bold text-blue-100/55">Font

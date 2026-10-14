@@ -150,54 +150,8 @@ new class extends Component {
                             </span>
                             <span>My Invoices</span>
                         </a>
-
-                        <a href="{{ route('client.proposals.index') }}" wire:navigate
-                            wire:current.exact="client-dash-link-active" class="client-dash-link">
-                            <span class="client-dash-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    class="lucide lucide-receipt-text-icon lucide-receipt-text">
-                                    <path d="M13 16H8" />
-                                    <path d="M14 8H8" />
-                                    <path d="M16 12H8" />
-                                    <path
-                                        d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z" />
-                                </svg>
-                            </span>
-                            <span>Proposal</span>
-                        </a>
                     </div>
                 </div>
-
-                <a href="{{ route('account.workspace-projects') }}" wire:navigate wire:current.exact="client-dash-link-active"
-                    class="client-dash-link">
-                    <span class="client-dash-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-                            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-                            <path d="M10 9H8" />
-                            <path d="M16 13H8" />
-                            <path d="M16 17H8" />
-                        </svg>
-                    </span>
-                    <span>Projects</span>
-                </a>
-
-                <a href="{{ route('account.vcards') }}" wire:navigate wire:current.exact="client-dash-link-active"
-                    class="client-dash-link">
-                    <span class="client-dash-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="16" height="18" x="4" y="3" rx="2" />
-                            <line x1="8" y1="21" x2="16" y2="21" />
-                            <line x1="12" y1="3" x2="12" y2="21" />
-                            <line x1="8" y1="9" x2="16" y2="9" />
-                            <line x1="8" y1="13" x2="16" y2="13" />
-                        </svg>
-                    </span>
-                    <span>My vCards</span>
-                </a>
 
                 @if ($this->is_tools_premium)
                 <div x-data="{ toolsBackupOpen: false }" class="space-y-1">
@@ -281,9 +235,67 @@ new class extends Component {
                             </span>
                             <span>PDF Files</span>
                         </a>
+
+                        <a href="{{ route('account.qr-codes') }}" wire:navigate wire:current.exact="client-dash-link-active" class="client-dash-link">
+                            <span class="client-dash-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="6" height="6" rx="1" />
+                                    <rect x="15" y="3" width="6" height="6" rx="1" />
+                                    <rect x="3" y="15" width="6" height="6" rx="1" />
+                                    <path d="M15 15h3v3h3M15 21h3M21 15v-3" />
+                                </svg>
+                            </span>
+                            <span>QR Code Records</span>
+                        </a>
+
+                        <a href="{{ route('account.vcards') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                            class="client-dash-link">
+                            <span class="client-dash-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="16" height="18" x="4" y="3" rx="2" />
+                                    <line x1="8" y1="21" x2="16" y2="21" />
+                                    <line x1="12" y1="3" x2="12" y2="21" />
+                                    <line x1="8" y1="9" x2="16" y2="9" />
+                                    <line x1="8" y1="13" x2="16" y2="13" />
+                                </svg>
+                            </span>
+                            <span>My vCards</span>
+                        </a>
                     </div>
                 </div>
                 @endif
+
+                <a href="{{ route('account.workspace-projects') }}" wire:navigate wire:current.exact="client-dash-link-active"
+                    class="client-dash-link">
+                    <span class="client-dash-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                            <path d="M10 9H8" />
+                            <path d="M16 13H8" />
+                            <path d="M16 17H8" />
+                        </svg>
+                    </span>
+                    <span>Projects</span>
+                </a>
+
+                <a href="{{ route('client.proposals.index') }}" wire:navigate
+                    wire:current.exact="client-dash-link-active" class="client-dash-link">
+                    <span class="client-dash-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-receipt-text-icon lucide-receipt-text">
+                            <path d="M13 16H8" />
+                            <path d="M14 8H8" />
+                            <path d="M16 12H8" />
+                            <path
+                                d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z" />
+                        </svg>
+                    </span>
+                    <span>Proposal</span>
+                </a>
             </div>
 
             {{-- Billing --}}
