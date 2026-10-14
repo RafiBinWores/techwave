@@ -1954,17 +1954,7 @@ new #[Title('VCard Generator')] class extends Component {
                                     }
                                 }">
                                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                                    <div class="min-w-0">
-                                        {{-- <p class="text-sm font-black text-white">Template slider</p>
-                                                <p class="mt-1 text-xs text-blue-100/45">Grab and drag, or use the arrow
-                                                    buttons.</p> --}}
-                                    </div>
-
                                     <div class="flex shrink-0 items-center gap-2">
-                                        {{-- <span
-                                                    class="hidden rounded-full bg-cyan-400/10 px-3 py-1 text-[10px] font-black text-cyan-100 sm:inline-flex">
-                                                    {{ $this->templates[$this->template]['label'] ?? 'Selected' }}
-                                        </span> --}}
 
                                         <button type="button" x-on:click="slideTemplate(-1)"
                                             class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-cyan-100 shadow-lg transition hover:bg-white/14 cursor-pointer"
@@ -2010,7 +2000,7 @@ new #[Title('VCard Generator')] class extends Component {
 
                                         <button type="button"
                                             @if (!$templateLocked) wire:click="selectTemplate('{{ $slug }}')" @endif
-                                            class="relative w-[185px] shrink-0 overflow-hidden rounded-2xl border-2 bg-white p-2 text-center transition {{ $templateLocked ? '' : 'hover:-translate-y-1 hover:shadow-xl' }} {{ $isSelectedTemplate ? 'border-cyan-400 ring-4 ring-cyan-400/15' : 'border-slate-200 hover:border-cyan-300' }}">
+                                            class="relative w-46.25 shrink-0 overflow-hidden rounded-2xl border-2 bg-white p-2 text-center transition {{ $templateLocked ? '' : 'hover:-translate-y-1 hover:shadow-xl' }} {{ $isSelectedTemplate ? 'border-cyan-400 ring-4 ring-cyan-400/15' : 'border-slate-200 hover:border-cyan-300' }}">
                                             @if ($templateLocked)
                                             <span class="absolute right-3 bg-amber-400/40 rounded-full p-1.5 top-3 z-20 border-amber-300/20">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-crown preview-icon">
@@ -2027,7 +2017,7 @@ new #[Title('VCard Generator')] class extends Component {
                                                     style="background: {{ in_array($tplEffect, ['glass', 'water-glass', 'glassmorphism'], true) ? 'rgba(255,255,255,0.16)' : $tplCardBg }};">
 
                                                     @if ($tplHasBanner)
-                                                    <div class="relative h-[72px] overflow-hidden"
+                                                    <div class="relative h-18 overflow-hidden"
                                                         style="background: linear-gradient(135deg, {{ $tplAccent }}, {{ $tplBg }});">
                                                         <div class="absolute inset-0 opacity-25"
                                                             style="background-image: radial-gradient(circle at 22% 20%, #ffffff 0 2px, transparent 2px), radial-gradient(circle at 76% 48%, #ffffff 0 2px, transparent 2px); background-size: 22px 22px;">
@@ -3523,10 +3513,6 @@ new #[Title('VCard Generator')] class extends Component {
                             <h2 class="text-base font-black sm:text-lg">Live preview</h2>
                             <p class="mt-1 text-xs text-blue-100/45">Mobile digital card preview.</p>
                         </div>
-                        <!-- <span
-                            class="rounded-full {{ $this->isPremium ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-400/10 text-amber-200' }} px-3 py-1.5 text-xs font-black">
-                            {{ $this->isPremium ? 'Premium' : 'Free' }}
-                        </span> -->
                     </div>
                 </div>
 
