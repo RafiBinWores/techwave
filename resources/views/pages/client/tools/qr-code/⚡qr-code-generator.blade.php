@@ -761,21 +761,9 @@ new #[Title('QR Code Generator')] class extends Component {
                         @enderror
 
                         <p class="mt-3 flex items-center gap-2 text-xs font-normal text-blue-100/40">
-                            <span class="material-symbols-outlined text-sm">bolt</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap preview-icon"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg>
                             QR code updates automatically when valid content is entered.
                         </p>
-                        @if (! $this->isPremium)
-                        <p class="mt-2 text-xs leading-5 text-blue-100/50">
-                            Free QR codes include the site logo and allow {{ config('qr.free_daily_scan_limit') }} scans per day per code.
-                            The limit resets at midnight ({{ config('qr.scan_timezone') }}).
-                        </p>
-                        @endif
-                        @if ($this->inputType !== 'url')
-                        <p class="mt-2 text-xs leading-5 text-blue-100/50">Scanning opens a page with your {{ $this->inputType === 'wifi' ? 'Wi-Fi details' : 'content' }} so scans can be counted.</p>
-                        @endif
-                        @auth
-                        <a href="{{ route('account.qr-codes') }}" wire:navigate class="mt-3 inline-flex items-center gap-1 text-xs text-cyan-200 hover:text-cyan-100">View QR Code Records <span aria-hidden="true">→</span></a>
-                        @endauth
                     </div>
                 </div>
 
