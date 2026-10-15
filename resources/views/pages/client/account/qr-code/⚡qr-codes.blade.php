@@ -22,8 +22,10 @@ new #[Title('QR Code Records')] class extends Component {
         $userId = auth()->id();
         $today = now()->timezone(config('qr.scan_timezone'))->toDateString();
         $records = TrackedQrCode::query()->where('user_id', $userId)
+            ->select(['id', 'token', 'user_id', 'content_type', 'content', 'created_at'])
+            ->selectRaw('svg IS NOT NULL as has_saved_design')
             ->withSum('dailyScans as total_scans', 'scan_count')
-            ->withSum(['dailyScans as today_scans' => fn ($query) => $query->where('scan_date', $today)], 'scan_count')
+            ->withSum(['dailyScans as today_scans' => fn($query) => $query->where('scan_date', $today)], 'scan_count')
             ->latest()->orderByDesc('id')->paginate(12);
         $totals = DB::table('qr_daily_scans')
             ->join('tracked_qr_codes', 'tracked_qr_codes.id', '=', 'qr_daily_scans.tracked_qr_code_id')
@@ -59,61 +61,69 @@ new #[Title('QR Code Records')] class extends Component {
                                 <p class="mt-2 text-sm text-blue-100/50">Your QR codes and their scan activity.</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button type="button" wire:click="$refresh" wire:loading.attr="disabled" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-medium text-blue-100/70 hover:bg-white/10 disabled:opacity-50">Refresh</button>
+                        <div class="hidden md:flex">
                             <a href="{{ route('client.tools.qr-code-generator') }}" wire:navigate class="rounded-xl bg-linear-to-r from-cyan-600 to-blue-600 px-4 py-2.5 text-xs font-semibold text-white">Create QR code</a>
                         </div>
                     </div>
 
-                    <div class="mb-6 grid gap-3 sm:grid-cols-3">
+                    <div class="mb-6 grid gap-3 grid-cols-3">
                         @foreach (['QR codes' => $totalCodes, 'Total scans' => $totalScans, 'Scans today' => $todayScans] as $label => $value)
-                        <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+                        <div class="rounded-xl md:rounded-2xl border border-white/10 bg-white/5 p-2.5 md:p-5">
                             <p class="text-xs font-medium text-blue-100/50">{{ $label }}</p>
-                            <p class="mt-2 text-3xl font-bold text-cyan-100">{{ number_format($value) }}</p>
+                            <p class="mt-2 text-lg md:text-3xl font-bold text-cyan-100">{{ number_format($value) }}</p>
                         </div>
                         @endforeach
                     </div>
 
-                    <p class="mb-5 text-xs leading-5 text-blue-100/45">
-                        {{ $premium ? 'Your premium plan includes unlimited scans.' : 'Each free QR code allows '.config('qr.free_daily_scan_limit').' scans per day.' }}
-                        Today follows {{ config('qr.scan_timezone') }} time. Opening a QR scan link counts as a scan.
-                    </p>
-
-                    <div class="space-y-3">
-                        @forelse ($records as $record)
-                        <article wire:key="qr-record-{{ $record->id }}" class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
-                            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div class="min-w-0 flex-1">
-                                    <div class="mb-2 flex items-center gap-2">
-                                        <span class="rounded-md bg-cyan-400/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-200">{{ $record->content_type }}</span>
-                                        <span class="text-xs text-blue-100/35">{{ $record->created_at->timezone(config('qr.scan_timezone'))->format('j M Y, g:i A') }}</span>
-                                    </div>
-                                    <h2 class="break-words text-sm font-semibold text-white">{{ $record->content_type === 'wifi' ? 'Wi-Fi QR code' : Str::limit($record->content, 90) }}</h2>
-                                    <label class="mt-3 block">
-                                        <span class="text-[10px] text-blue-100/40">Scan link — select to copy</span>
-                                        <input readonly @focus="$event.target.select()" value="{{ route('qr.scan', ['token' => $record->token]) }}" aria-label="Scan link for QR {{ $record->id }}"
-                                            class="mt-1 w-full min-w-0 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-blue-100/60 outline-none focus:border-cyan-300/40">
-                                    </label>
-                                </div>
-                                <div class="grid shrink-0 grid-cols-2 gap-3 sm:w-44">
-                                    <div class="rounded-xl bg-black/20 p-3 text-center">
-                                        <p class="text-xl font-bold text-cyan-200">{{ number_format((int) $record->total_scans) }}</p>
-                                        <p class="mt-1 text-[10px] text-blue-100/45">Total scans</p>
-                                    </div>
-                                    <div class="rounded-xl bg-black/20 p-3 text-center">
-                                        <p class="text-xl font-bold text-white">{{ number_format((int) $record->today_scans) }}</p>
-                                        <p class="mt-1 text-[10px] text-blue-100/45">Today</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </article>
-                        @empty
-                        <div class="rounded-2xl border border-dashed border-white/15 bg-white/3 px-5 py-14 text-center">
-                            <span class="material-symbols-outlined text-5xl text-cyan-200/50" aria-hidden="true">qr_code_2</span>
-                            <h2 class="mt-4 text-lg font-semibold">No QR codes yet</h2>
-                            <p class="mt-2 text-sm text-blue-100/45">Create a QR code while signed in to see its records here.</p>
+                    <div class="overflow-hidden rounded-xl border border-white/10 bg-white/3">
+                        <div class="overflow-x-auto" role="region" aria-label="QR code records" tabindex="0">
+                            <table class="w-full min-w-[600px] text-left text-sm">
+                                <caption class="sr-only">Your QR codes, scan counts, and downloads</caption>
+                                <thead class="border-b border-white/10 bg-white/5 text-[11px] font-medium uppercase tracking-wide text-blue-100/45">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 font-medium">QR details</th>
+                                        <th scope="col" class="w-24 px-3 py-3 text-right font-medium whitespace-nowrap">Total scans</th>
+                                        <th scope="col" class="w-20 px-3 py-3 text-right font-medium">Today</th>
+                                        <th scope="col" class="w-40 px-4 py-3 text-right font-medium">Download</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/10">
+                                    @forelse ($records as $record)
+                                    <tr wire:key="qr-record-{{ $record->id }}" class="transition-colors hover:bg-white/5">
+                                        <td class="max-w-xs px-4 py-3 align-middle">
+                                            <div class="flex items-center gap-2">
+                                                <span class="rounded bg-cyan-400/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-cyan-200">{{ $record->content_type }}</span>
+                                                <span class="text-[11px] text-blue-100/35">{{ $record->created_at->timezone(config('qr.scan_timezone'))->format('j M Y, g:i A') }}</span>
+                                            </div>
+                                            <p class="mt-1 truncate text-sm font-medium text-white" title="{{ $record->content_type === 'wifi' ? 'Wi-Fi QR code' : $record->content }}">{{ $record->content_type === 'wifi' ? 'Wi-Fi QR code' : Str::limit($record->content, 90) }}</p>
+                                            <input readonly @focus="$event.target.select()" value="{{ route('qr.scan', ['token' => $record->token]) }}" aria-label="Scan link for QR {{ $record->id }}" title="Select to copy scan link"
+                                                class="mt-1 block w-full min-w-0 truncate rounded border border-transparent bg-transparent py-0.5 text-[11px] text-blue-100/40 outline-none focus:border-cyan-300/40 focus:bg-black/20">
+                                        </td>
+                                        <td class="px-3 py-3 text-right align-middle font-semibold tabular-nums text-cyan-100">{{ number_format((int) $record->total_scans) }}</td>
+                                        <td class="px-3 py-3 text-right align-middle font-medium tabular-nums text-blue-100/70">{{ number_format((int) $record->today_scans) }}</td>
+                                        <td class="px-4 py-3 text-right align-middle" x-data="qrRecordDownloader(@js(route('account.qr-codes.image', $record->id)))">
+                                            <button type="button" @click="download()" :disabled="busy" aria-label="Download QR {{ $record->id }} as PNG" class="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-cyan-300/15 bg-cyan-400/10 px-3 py-2 text-xs font-medium text-cyan-100 transition hover:bg-cyan-400/20 focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-50">
+                                                <span class="material-symbols-outlined text-base" :class="{ 'animate-spin': busy }" aria-hidden="true" x-text="busy ? 'progress_activity' : 'download'">download</span>
+                                                <span x-text="busy ? 'Downloading…' : 'Download PNG'">Download PNG</span>
+                                            </button>
+                                            @unless ($record->has_saved_design)
+                                            <p title="Original design unavailable for this older record" class="mt-1 text-[10px] text-blue-100/35">Standard design</p>
+                                            @endunless
+                                            <p x-show="error" x-text="error" role="alert" style="display:none" class="mt-1 max-w-40 whitespace-normal text-xs text-red-300"></p>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="px-5 py-12 text-center">
+                                            <span class="material-symbols-outlined text-4xl text-cyan-200/50" aria-hidden="true">qr_code_2</span>
+                                            <p class="mt-3 font-medium text-white">No QR codes yet</p>
+                                            <p class="mt-1 text-xs text-blue-100/45">Create a QR code while signed in to see its records here.</p>
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
-                        @endforelse
                     </div>
                     <div class="mt-6">{{ $records->links() }}</div>
                 </div>
@@ -121,3 +131,11 @@ new #[Title('QR Code Records')] class extends Component {
         </div>
     </div>
 </div>
+
+@assets
+<script>
+    @php
+    echo file_get_contents(resource_path('js/qr-designer.js'));
+    @endphp
+</script>
+@endassets

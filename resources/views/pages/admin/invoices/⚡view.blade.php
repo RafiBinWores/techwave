@@ -135,21 +135,21 @@ new #[Layout('layouts.admin-app')] #[Title('Invoice Details')] class extends Com
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <span class="text-secondary">Subtotal</span>
                         <span class="font-semibold text-on-surface">
-                            ৳{{ number_format($invoice->subtotal(), 2) }}
+                            {{ $invoice->currencyLabel() }}{{ number_format($invoice->subtotal(), 2) }}
                         </span>
                     </div>
 
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <span class="text-secondary">Discount</span>
                         <span class="font-semibold text-amber-600">
-                            - ৳{{ number_format($invoice->discountAmount(), 2) }}
+                            - {{ $invoice->currencyLabel() }}{{ number_format($invoice->discountAmount(), 2) }}
                         </span>
                     </div>
 
                     <div class="flex items-center justify-between text-base">
                         <span class="font-bold text-on-surface">Total</span>
                         <span class="font-bold text-primary">
-                            ৳{{ number_format($invoice->total(), 2) }}
+                            {{ $invoice->currencyLabel() }}{{ number_format($invoice->total(), 2) }}
                         </span>
                     </div>
                 </div>

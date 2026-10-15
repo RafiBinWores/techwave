@@ -349,15 +349,15 @@ new class extends Component {
             x-on:user-notification-received.window="$nextTick(() => {})">
 
             @php
-                $unreadTicketCount = $this->unreadTicketCount();
-                $unreadContactCount = $this->unreadContactMessageCount();
-                $unreadBookingCount = $this->unreadBookingCount();
-                $unreadProposalCommentCount = $this->unreadProposalCommentCount();
-                $unreadProposalStatusCount = $this->unreadProposalStatusCount();
-                $unreadToolSubscriptionCount = $this->unreadToolSubscriptionCount();
-                $unreadUserNotificationCount = $this->unreadUserNotificationCount();
-                $totalUnreadCount = $this->totalUnreadCount();
-                $notifications = $this->latestNotifications();
+            $unreadTicketCount = $this->unreadTicketCount();
+            $unreadContactCount = $this->unreadContactMessageCount();
+            $unreadBookingCount = $this->unreadBookingCount();
+            $unreadProposalCommentCount = $this->unreadProposalCommentCount();
+            $unreadProposalStatusCount = $this->unreadProposalStatusCount();
+            $unreadToolSubscriptionCount = $this->unreadToolSubscriptionCount();
+            $unreadUserNotificationCount = $this->unreadUserNotificationCount();
+            $totalUnreadCount = $this->totalUnreadCount();
+            $notifications = $this->latestNotifications();
             @endphp
 
             <button type="button" @click.stop="notificationOpen = !notificationOpen"
@@ -365,10 +365,10 @@ new class extends Component {
                 <span class="material-symbols-outlined">notifications</span>
 
                 @if ($totalUnreadCount > 0)
-                    <span wire:key="admin-notification-badge-{{ $notificationRefreshKey }}-{{ $totalUnreadCount }}"
-                        class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                        {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
-                    </span>
+                <span wire:key="admin-notification-badge-{{ $notificationRefreshKey }}-{{ $totalUnreadCount }}"
+                    class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                    {{ $totalUnreadCount > 99 ? '99+' : $totalUnreadCount }}
+                </span>
                 @endif
             </button>
 
@@ -385,19 +385,19 @@ new class extends Component {
                         </p>
 
                         @if ($totalUnreadCount > 0)
-                            <p class="mt-1 text-[11px] text-slate-400">
-                                {{ $unreadTicketCount }} ticket{{ $unreadTicketCount === 1 ? '' : 's' }},
-                                {{ $unreadContactCount }} contact{{ $unreadContactCount === 1 ? '' : 's' }},
-                                {{ $unreadBookingCount }} booking{{ $unreadBookingCount === 1 ? '' : 's' }},
-                                {{ $unreadProposalCommentCount }} proposal
-                                comment{{ $unreadProposalCommentCount === 1 ? '' : 's' }},
-                                {{ $unreadProposalStatusCount }} proposal
-                                update{{ $unreadProposalStatusCount === 1 ? '' : 's' }},
-                                {{ $unreadToolSubscriptionCount }}
-                                subscription{{ $unreadToolSubscriptionCount === 1 ? '' : 's' }},
-                                {{ $unreadUserNotificationCount }}
-                                workspace{{ $unreadUserNotificationCount === 1 ? '' : 's' }}
-                            </p>
+                        <p class="mt-1 text-[11px] text-slate-400">
+                            {{ $unreadTicketCount }} ticket{{ $unreadTicketCount === 1 ? '' : 's' }},
+                            {{ $unreadContactCount }} contact{{ $unreadContactCount === 1 ? '' : 's' }},
+                            {{ $unreadBookingCount }} booking{{ $unreadBookingCount === 1 ? '' : 's' }},
+                            {{ $unreadProposalCommentCount }} proposal
+                            comment{{ $unreadProposalCommentCount === 1 ? '' : 's' }},
+                            {{ $unreadProposalStatusCount }} proposal
+                            update{{ $unreadProposalStatusCount === 1 ? '' : 's' }},
+                            {{ $unreadToolSubscriptionCount }}
+                            subscription{{ $unreadToolSubscriptionCount === 1 ? '' : 's' }},
+                            {{ $unreadUserNotificationCount }}
+                            workspace{{ $unreadUserNotificationCount === 1 ? '' : 's' }}
+                        </p>
                         @endif
                     </div>
 
@@ -410,66 +410,66 @@ new class extends Component {
                 <div wire:key="admin-notification-list-{{ $notificationRefreshKey }}"
                     class="max-h-88 divide-y divide-slate-100 overflow-y-auto">
                     @forelse ($notifications as $notification)
-                        @if (str_starts_with($notification['id'], 'user-'))
-                            <button type="button" @click.stop="notificationOpen = false"
-                                wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
-                                class="flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
-                            @else
-                                <a href="{{ $notification['url'] }}" wire:navigate @click="notificationOpen = false"
-                                    class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
-                        @endif
+                    @if (str_starts_with($notification['id'], 'user-'))
+                    <button type="button" @click.stop="notificationOpen = false"
+                        wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
+                        class="flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
+                        @else
+                        <a href="{{ $notification['url'] }}" wire:navigate @click="notificationOpen = false"
+                            class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
+                            @endif
 
-                        <div
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $this->notificationColor($notification['type']) }}">
-                            <span class="material-symbols-outlined text-[20px]">
-                                {{ $this->notificationIcon($notification['type']) }}
-                            </span>
-                        </div>
-
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-start justify-between gap-3">
-                                <p class="truncate text-sm font-semibold text-slate-800">
-                                    {{ $notification['title'] }}
-                                </p>
-
-                                <span
-                                    class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase {{ $this->notificationBadgeColor($notification['type']) }}">
-                                    {{ $notification['type'] }}
+                            <div
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $this->notificationColor($notification['type']) }}">
+                                <span class="material-symbols-outlined text-[20px]">
+                                    {{ $this->notificationIcon($notification['type']) }}
                                 </span>
                             </div>
 
-                            <p class="mt-0.5 truncate text-xs text-slate-500">
-                                {{ $notification['subject'] }}
-                            </p>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-3">
+                                    <p class="truncate text-sm font-semibold text-slate-800">
+                                        {{ $notification['title'] }}
+                                    </p>
 
-                            <p class="mt-0.5 truncate text-xs text-slate-400">
-                                By {{ $notification['from'] }}
-                            </p>
+                                    <span
+                                        class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase {{ $this->notificationBadgeColor($notification['type']) }}">
+                                        {{ $notification['type'] }}
+                                    </span>
+                                </div>
 
-                            <p class="mt-1 text-[11px] text-slate-400">
-                                {{ $notification['time']?->diffForHumans() }}
-                            </p>
-                        </div>
-                        @if (str_starts_with($notification['id'], 'user-'))
-                            </button>
-                        @else
-                            </a>
-                        @endif
-                    @empty
-                        <div class="px-4 py-10 text-center">
-                            <div
-                                class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                                <span class="material-symbols-outlined">notifications_off</span>
+                                <p class="mt-0.5 truncate text-xs text-slate-500">
+                                    {{ $notification['subject'] }}
+                                </p>
+
+                                <p class="mt-0.5 truncate text-xs text-slate-400">
+                                    By {{ $notification['from'] }}
+                                </p>
+
+                                <p class="mt-1 text-[11px] text-slate-400">
+                                    {{ $notification['time']?->diffForHumans() }}
+                                </p>
                             </div>
-
-                            <h4 class="mt-3 text-sm font-semibold text-slate-900">
-                                No new notifications
-                            </h4>
-
-                            <p class="mt-1 text-xs text-slate-500">
-                                New tickets, contacts, bookings, and proposal comments will appear here.
-                            </p>
+                            @if (str_starts_with($notification['id'], 'user-'))
+                    </button>
+                    @else
+                    </a>
+                    @endif
+                    @empty
+                    <div class="px-4 py-10 text-center">
+                        <div
+                            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                            <span class="material-symbols-outlined">notifications_off</span>
                         </div>
+
+                        <h4 class="mt-3 text-sm font-semibold text-slate-900">
+                            No new notifications
+                        </h4>
+
+                        <p class="mt-1 text-xs text-slate-500">
+                            New tickets, contacts, bookings, and proposal comments will appear here.
+                        </p>
+                    </div>
                     @endforelse
                 </div>
 
@@ -482,11 +482,11 @@ new class extends Component {
                     </a>
 
                     @if ($totalUnreadCount > 0)
-                        <button type="button" wire:click="markAllNotificationsRead"
-                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
-                            <span class="material-symbols-outlined text-[17px]">done_all</span>
-                            Mark all as read
-                        </button>
+                    <button type="button" wire:click="markAllNotificationsRead"
+                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                        <span class="material-symbols-outlined text-[17px]">done_all</span>
+                        Mark all as read
+                    </button>
                     @endif
                 </div>
             </div>
@@ -507,13 +507,13 @@ new class extends Component {
             <button type="button" @click="userMenu = !userMenu"
                 class="flex items-center gap-2 cursor-pointer rounded-lg p-1.5 transition hover:bg-slate-100">
                 @if (auth()->user()->avatar)
-                    <img src="{{ \App\Services\UploadStorage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
-                        class="h-8 w-8 object-cover rounded-full" />
+                <img src="{{ \App\Services\UploadStorage::url(auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}"
+                    class="h-8 w-8 object-cover rounded-full" />
                 @else
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-primary to-sky-600 text-xs font-bold text-white">
-                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                    </div>
+                <div
+                    class="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-primary to-sky-600 text-xs font-bold text-white">
+                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                </div>
                 @endif
 
                 <div class="text-left">

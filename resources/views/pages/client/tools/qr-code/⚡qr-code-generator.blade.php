@@ -268,9 +268,10 @@ new #[Title('QR Code Generator')] class extends Component {
                 throw ValidationException::withMessages(['input' => 'Free QR codes require a valid site logo. Please contact the site administrator to restore it.']);
             }
         }
-        $encodedData = app(ScanTracker::class)->link(
+        $record = app(ScanTracker::class)->code(
             $this->previewToken, $this->inputType, $data, auth()->id(),
         );
+        $encodedData = route('qr.scan', ['token' => $record->token]);
         $qr = (new DesignGenerator)
             ->format('svg')
             ->size(max(200, min(900, $this->size)))
@@ -313,7 +314,11 @@ new #[Title('QR Code Generator')] class extends Component {
         }
 
         if ($this->framePreset !== 'none') {
-            return $this->wrapWithFrame($svg);
+            $svg = $this->wrapWithFrame($svg);
+        }
+
+        if ($record->user_id !== null) {
+            $record->update(['svg' => $svg]);
         }
 
         return $svg;

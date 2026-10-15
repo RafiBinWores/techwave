@@ -925,7 +925,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
 
                                     @if ($this->selectedPlanPrice() !== null)
                                         <p class="text-xs text-emerald-600">
-                                            Price: ৳{{ number_format($this->selectedPlanPrice(), 2) }}
+                                            Price: {{ $invoice->currencyLabel() }}{{ number_format($this->selectedPlanPrice(), 2) }}
                                             per {{ $selected_billing_cycle === 'one_time' ? 'service' : $selected_billing_cycle }}
                                         </p>
                                     @endif
@@ -1159,17 +1159,17 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Invoice')] class extends Compon
                         <div class="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">
                             <div class="flex items-center justify-between">
                                 <span class="text-secondary">Subtotal</span>
-                                <span class="font-mono text-on-surface">৳{{ number_format($this->subtotal(), 2) }}</span>
+                                <span class="font-mono text-on-surface">{{ $invoice->currencyLabel() }}{{ number_format($this->subtotal(), 2) }}</span>
                             </div>
 
                             <div class="flex items-center justify-between">
                                 <span class="text-secondary">Discount</span>
-                                <span class="font-mono text-red-600">-৳{{ number_format($this->discountAmount(), 2) }}</span>
+                                <span class="font-mono text-red-600">-{{ $invoice->currencyLabel() }}{{ number_format($this->discountAmount(), 2) }}</span>
                             </div>
 
                             <div class="flex items-center justify-between border-t border-slate-200 pt-2">
                                 <span class="font-semibold text-on-surface">Total</span>
-                                <span class="font-mono text-base font-bold text-primary">৳{{ number_format($this->grandTotal(), 2) }}</span>
+                                <span class="font-mono text-base font-bold text-primary">{{ $invoice->currencyLabel() }}{{ number_format($this->grandTotal(), 2) }}</span>
                             </div>
                         </div>
                     </div>

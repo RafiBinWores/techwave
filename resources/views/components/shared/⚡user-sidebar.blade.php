@@ -1,5 +1,15 @@
 <?php
 
+use App\Models\CompressedPdf;
+use App\Models\MergedPdf;
+use App\Models\Proposal;
+use App\Models\SplitPdf;
+use App\Models\TrackedQrCode;
+use App\Models\UserBgRemovedImage;
+use App\Models\UserCompressedImage;
+use App\Models\UserResizedImage;
+use App\Models\Vcard;
+use App\Models\WorkspaceProject;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -22,6 +32,60 @@ new class extends Component {
     public function getHasWhmcsAccountProperty(): bool
     {
         return auth()->check() && auth()->user()->whmcsAccount()->exists();
+    }
+
+    public function getHasProjectsProperty(): bool
+    {
+        return auth()->check() && WorkspaceProject::query()
+            ->where('client_id', auth()->id())
+            ->exists();
+    }
+
+    public function getHasProposalsProperty(): bool
+    {
+        return auth()->check() && Proposal::query()
+            ->where('user_id', auth()->id())
+            ->whereIn('status', ['sent', 'accepted', 'rejected'])
+            ->exists();
+    }
+
+    public function getToolBackupAvailabilityProperty(): array
+    {
+        if (! $this->is_tools_premium) {
+            return [];
+        }
+
+        $availability = [];
+
+        foreach ([
+            'compressed-images' => UserCompressedImage::class,
+            'bg-removed-images' => UserBgRemovedImage::class,
+            'resized-images' => UserResizedImage::class,
+        ] as $key => $model) {
+            $availability[$key] = $model::query()
+                ->where('user_id', auth()->id())
+                ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->exists();
+        }
+
+        $availability['pdf-files'] = false;
+
+        foreach ([MergedPdf::class, SplitPdf::class, CompressedPdf::class] as $model) {
+            if ($model::query()
+                ->where('user_id', auth()->id())
+                ->where('is_backup_enabled', true)
+                ->where('status', 'completed')
+                ->where('backup_expires_at', '>', now())
+                ->exists()) {
+                $availability['pdf-files'] = true;
+                break;
+            }
+        }
+
+        $availability['qr-codes'] = TrackedQrCode::query()->where('user_id', auth()->id())->exists();
+        $availability['vcards'] = Vcard::query()->where('user_id', auth()->id())->exists();
+
+        return $availability;
     }
 };
 ?>
@@ -153,7 +217,7 @@ new class extends Component {
                     </div>
                 </div>
 
-                @if ($this->is_tools_premium)
+                @if (in_array(true, $this->tool_backup_availability, true))
                 <div x-data="{ toolsBackupOpen: false }" class="space-y-1">
                     <button @click="toolsBackupOpen = !toolsBackupOpen" type="button"
                         class="client-dash-link w-full cursor-pointer">
@@ -183,6 +247,7 @@ new class extends Component {
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0"
                         x-transition:leave-end="opacity-0 -translate-y-1" class="space-y-1 pl-4">
+                        @if ($this->tool_backup_availability['compressed-images'])
                         <a href="{{ route('account.compressed-images') }}" wire:navigate
                             wire:current.exact="client-dash-link-active" class="client-dash-link">
                             <span class="client-dash-icon">
@@ -195,7 +260,9 @@ new class extends Component {
                             </span>
                             <span>Compressed Images</span>
                         </a>
+                        @endif
 
+                        @if ($this->tool_backup_availability['bg-removed-images'])
                         <a href="{{ route('account.bg-removed-images') }}" wire:navigate
                             wire:current.exact="client-dash-link-active" class="client-dash-link">
                             <span class="client-dash-icon">
@@ -208,7 +275,9 @@ new class extends Component {
                             </span>
                             <span>BG Removed Images</span>
                         </a>
+                        @endif
 
+                        @if ($this->tool_backup_availability['resized-images'])
                         <a href="{{ route('account.resized-images') }}" wire:navigate
                             wire:current.exact="client-dash-link-active" class="client-dash-link">
                             <span class="client-dash-icon">
@@ -221,7 +290,9 @@ new class extends Component {
                             </span>
                             <span>Resized Images</span>
                         </a>
+                        @endif
 
+                        @if ($this->tool_backup_availability['pdf-files'])
                         <a href="{{ route('account.pdf-files') }}" wire:navigate
                             wire:current.exact="client-dash-link-active" class="client-dash-link">
                             <span class="client-dash-icon">
@@ -235,7 +306,9 @@ new class extends Component {
                             </span>
                             <span>PDF Files</span>
                         </a>
+                        @endif
 
+                        @if ($this->tool_backup_availability['qr-codes'])
                         <a href="{{ route('account.qr-codes') }}" wire:navigate wire:current.exact="client-dash-link-active" class="client-dash-link">
                             <span class="client-dash-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -247,7 +320,9 @@ new class extends Component {
                             </span>
                             <span>QR Code Records</span>
                         </a>
+                        @endif
 
+                        @if ($this->tool_backup_availability['vcards'])
                         <a href="{{ route('account.vcards') }}" wire:navigate wire:current.exact="client-dash-link-active"
                             class="client-dash-link">
                             <span class="client-dash-icon">
@@ -262,10 +337,12 @@ new class extends Component {
                             </span>
                             <span>My vCards</span>
                         </a>
+                        @endif
                     </div>
                 </div>
                 @endif
 
+                @if ($this->has_projects)
                 <a href="{{ route('account.workspace-projects') }}" wire:navigate wire:current.exact="client-dash-link-active"
                     class="client-dash-link">
                     <span class="client-dash-icon">
@@ -280,7 +357,9 @@ new class extends Component {
                     </span>
                     <span>Projects</span>
                 </a>
+                @endif
 
+                @if ($this->has_proposals)
                 <a href="{{ route('client.proposals.index') }}" wire:navigate
                     wire:current.exact="client-dash-link-active" class="client-dash-link">
                     <span class="client-dash-icon">
@@ -296,6 +375,7 @@ new class extends Component {
                     </span>
                     <span>Proposal</span>
                 </a>
+                @endif
             </div>
 
             {{-- Billing --}}

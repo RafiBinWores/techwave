@@ -1780,7 +1780,11 @@ new #[Title('VCard Generator')] class extends Component {
         context.quadraticCurveTo(x, y, x + safeRadius, y);
         context.closePath();
     },
+    qrDownloading: false,
     async downloadQrPng(filename = 'vcard-qr') {
+        if (this.qrDownloading) return;
+        this.qrDownloading = true;
+        try {
         const wrapper = document.querySelector('#vcard-qr-svg');
         const svg = wrapper?.querySelector('svg');
 
@@ -1789,14 +1793,21 @@ new #[Title('VCard Generator')] class extends Component {
             return;
         }
 
+        const exportSize = 2048;
         const clonedSvg = svg.cloneNode(true);
+        // Preserve the vector coordinate system before changing output dimensions.
+        if (!clonedSvg.hasAttribute('viewBox')) {
+            const width = parseFloat(svg.getAttribute('width')) || 320;
+            const height = parseFloat(svg.getAttribute('height')) || width;
+            clonedSvg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        }
 
         // Remove the SVG logo image because browsers may skip it while converting
         // a Blob-based SVG to canvas. The logo is drawn separately below.
         clonedSvg.querySelectorAll('image').forEach((node) => node.remove());
         clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-        clonedSvg.setAttribute('width', '1024');
-        clonedSvg.setAttribute('height', '1024');
+        clonedSvg.setAttribute('width', String(exportSize));
+        clonedSvg.setAttribute('height', String(exportSize));
 
         const serializer = new XMLSerializer();
         const svgText = serializer.serializeToString(clonedSvg);
@@ -1806,11 +1817,11 @@ new #[Title('VCard Generator')] class extends Component {
         try {
             const qrImage = await this.loadQrDownloadImage(svgUrl);
             const canvas = document.createElement('canvas');
-            canvas.width = 1024;
-            canvas.height = 1024;
+            canvas.width = exportSize;
+            canvas.height = exportSize;
 
             const context = canvas.getContext('2d');
-            context.imageSmoothingEnabled = true;
+            context.imageSmoothingEnabled = false;
             context.imageSmoothingQuality = 'high';
             context.fillStyle = '#ffffff';
             context.fillRect(0, 0, canvas.width, canvas.height);
@@ -1821,9 +1832,9 @@ new #[Title('VCard Generator')] class extends Component {
             if (logoUrl) {
                 try {
                     const logoImage = await this.loadQrDownloadImage(logoUrl);
-                    const logoBox = 230;
-                    const logoPadding = 24;
-                    const logoRadius = 34;
+                    const logoBox = canvas.width * (230 / 1024);
+                    const logoPadding = canvas.width * (24 / 1024);
+                    const logoRadius = canvas.width * (34 / 1024);
                     const logoX = (canvas.width - logoBox) / 2;
                     const logoY = (canvas.height - logoBox) / 2;
 
@@ -1843,6 +1854,7 @@ new #[Title('VCard Generator')] class extends Component {
                     context.save();
                     this.drawRoundedRect(context, logoX, logoY, logoBox, logoBox, logoRadius);
                     context.clip();
+                    context.imageSmoothingEnabled = true;
                     context.drawImage(logoImage, x, y, width, height);
                     context.restore();
                 } catch (logoError) {
@@ -1850,11 +1862,10 @@ new #[Title('VCard Generator')] class extends Component {
                 }
             }
 
-            canvas.toBlob((pngBlob) => {
-                if (!pngBlob) {
-                    console.error('Could not create the PNG file.');
-                    return;
-                }
+            const pngBlob = await new Promise((resolve, reject) => canvas.toBlob(
+                blob => blob ? resolve(blob) : reject(new Error('Could not create the PNG file.')),
+                'image/png',
+            ));
 
                 const downloadUrl = URL.createObjectURL(pngBlob);
                 const link = document.createElement('a');
@@ -1863,12 +1874,15 @@ new #[Title('VCard Generator')] class extends Component {
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
-                setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-            }, 'image/png');
+                setTimeout(() => URL.revokeObjectURL(downloadUrl), 10000);
+
         } catch (error) {
             console.error('Could not convert the QR code to PNG.', error);
         } finally {
             URL.revokeObjectURL(svgUrl);
+        }
+        } finally {
+            this.qrDownloading = false;
         }
     },
     chooseIcon(icon) {
@@ -4427,7 +4441,7 @@ new #[Title('VCard Generator')] class extends Component {
                     <p class="mt-3 text-center text-xs font-semibold text-red-300">{{ $message }}</p>
                     @enderror
 
-                    <div class="mt-5 rounded-3xl border border-white/10 bg-black/20 p-4">
+                    <div x-data="{ qrLogoChoice: $wire.entangle('qrLogoMode').live }" class="mt-5 rounded-3xl border border-white/10 bg-black/20 p-4">
                         <div class="flex items-center justify-between gap-3">
                             <div>
                                 <h3 class="text-sm font-black">QR & Downloads</h3>
@@ -4453,6 +4467,11 @@ new #[Title('VCard Generator')] class extends Component {
                         </div>
                         @endif
 
+                        <div wire:loading.flex wire:target="qrLogoMode,qrLogo,removeQrLogo" role="status" class="mt-3 items-center justify-center gap-2 text-xs text-cyan-100" style="display:none">
+                            <span class="material-symbols-outlined animate-spin text-base" aria-hidden="true">progress_activity</span>
+                            Updating QR preview…
+                        </div>
+
                         <div class="mt-4 space-y-3">
                             @if ($this->isPremium)
                             <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -4467,19 +4486,19 @@ new #[Title('VCard Generator')] class extends Component {
 
                                     <div
                                         class="inline-flex shrink-0 rounded-xl border border-white/10 bg-black/25 p-1">
-                                        <button type="button" wire:click="$set('qrLogoMode', 'none')"
-                                            class="rounded-lg px-2.5 py-1.5 text-[10px] font-black transition {{ $this->qrLogoMode === 'none' ? 'bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-300/30' : 'text-blue-100/55 hover:text-white' }}">
+                                        <button type="button" @click="qrLogoChoice = 'none'" :aria-pressed="qrLogoChoice === 'none'"
+                                            class="rounded-lg px-2.5 py-1.5 text-[10px] font-black transition" :class="qrLogoChoice === 'none' ? 'bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-300/30' : 'text-blue-100/55 hover:text-white'">
                                             No Logo
                                         </button>
 
-                                        <button type="button" wire:click="$set('qrLogoMode', 'custom')"
-                                            class="rounded-lg px-2.5 py-1.5 text-[10px] font-black transition {{ $this->qrLogoMode === 'custom' ? 'bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-300/30' : 'text-blue-100/55 hover:text-white' }}">
+                                        <button type="button" @click="qrLogoChoice = 'custom'" :aria-pressed="qrLogoChoice === 'custom'"
+                                            class="rounded-lg px-2.5 py-1.5 text-[10px] font-black transition" :class="qrLogoChoice === 'custom' ? 'bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-300/30' : 'text-blue-100/55 hover:text-white'">
                                             Upload Logo
                                         </button>
                                     </div>
                                 </div>
 
-                                @if ($this->qrLogoMode === 'custom')
+                                <div x-show="qrLogoChoice === 'custom'" x-cloak>
                                 <label
                                     class="mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-white/15 bg-black/20 p-3 transition hover:bg-white/8">
                                     <span
@@ -4515,7 +4534,7 @@ new #[Title('VCard Generator')] class extends Component {
                                 @error('qrLogo')
                                 <p class="mt-2 text-xs text-red-300">{{ $message }}</p>
                                 @enderror
-                                @endif
+                                </div>
                             </div>
                             @else
                             <div
@@ -4526,52 +4545,23 @@ new #[Title('VCard Generator')] class extends Component {
                             </div>
                             @endif
 
-                            <button type="button" wire:click="saveVcard"
+                            <button type="button" wire:click="saveVcard" wire:loading.attr="disabled" wire:target="saveVcard"
                                 class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5">
-                                <span class="material-symbols-outlined text-base">save</span>
-                                Save vCard & Generate QR
+                                <span wire:loading.remove wire:target="saveVcard" class="material-symbols-outlined text-base" aria-hidden="true">save</span>
+                                <span wire:loading wire:target="saveVcard" class="material-symbols-outlined animate-spin text-base" aria-hidden="true">progress_activity</span>
+                                <span wire:loading.remove wire:target="saveVcard">Save vCard & Generate QR</span>
+                                <span wire:loading wire:target="saveVcard" role="status">Saving…</span>
                             </button>
 
                             @if ($this->savedVcard && $this->qrSvg)
-                            <button type="button" @click="downloadQrPng(@js(Str::slug($this->savedVcard->full_name ?? $this->getFullName()) ?: 'vcard-qr'))"
+                            <button type="button" :disabled="qrDownloading" :aria-busy="qrDownloading" @click="downloadQrPng(@js(Str::slug($this->savedVcard->full_name ?? $this->getFullName()) ?: 'vcard-qr'))"
                                 class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-5 py-3.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10">
-                                <span class="material-symbols-outlined text-base">download</span>
-                                Download QR Code PNG
+                                <span class="material-symbols-outlined text-base" :class="{ 'animate-spin': qrDownloading }" x-text="qrDownloading ? 'progress_activity' : 'download'" aria-hidden="true">download</span>
+                                <span x-text="qrDownloading ? 'Downloading…' : 'Download QR Code PNG'" role="status">Download QR Code PNG</span>
                             </button>
                             @endif
 
-                            <button type="button" wire:click="generateVcf"
-                                class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-5 py-3.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10">
-                                <span class="material-symbols-outlined text-base">download</span>
-                                Download VCF
-                            </button>
 
-                            @if ($this->savedVcard)
-                            <div x-data="{ confirmDelete: false }">
-                                <template x-if="!confirmDelete">
-                                    <button type="button" @click="confirmDelete = true"
-                                        class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-3.5 text-sm font-black text-red-200 transition hover:-translate-y-0.5 hover:bg-red-400/20">
-                                        <span class="material-symbols-outlined text-base">delete</span>
-                                        Delete vCard
-                                    </button>
-                                </template>
-                                <template x-if="confirmDelete">
-                                    <div class="flex items-center gap-2">
-                                        <button type="button"
-                                            wire:click="deleteVcard({{ $this->savedVcard->id }})"
-                                            class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-red-500 px-5 py-3.5 text-sm font-black text-white transition hover:-translate-y-0.5">
-                                            <span
-                                                class="material-symbols-outlined text-base">delete</span>
-                                            Confirm Delete
-                                        </button>
-                                        <button type="button" @click="confirmDelete = false"
-                                            class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-4 py-3.5 text-sm font-black text-white transition hover:bg-white/10">
-                                            <span class="material-symbols-outlined text-base">close</span>
-                                        </button>
-                                    </div>
-                                </template>
-                            </div>
-                            @endif
                         </div>
                     </div>
                 </div>

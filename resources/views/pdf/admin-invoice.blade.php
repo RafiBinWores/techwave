@@ -14,7 +14,7 @@ $companyAddress = $settings?->location ?? '';
 $subtotal = $invoice->subtotal();
 $discountAmount = $invoice->discountAmount();
 $grandTotal = $invoice->total();
-$currency = '৳';
+$currency = $invoice->currencyLabel();
 
 $statusKey = strtolower($invoice->status ?? '');
 $statusLabel = $invoice->status ? ucfirst($invoice->status) : 'Unpaid';

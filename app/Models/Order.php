@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\Invoices\OrderInvoiceSync;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'booking_id',
@@ -52,6 +54,19 @@ class Order extends Model
         'start_date' => 'date',
         'end_date' => 'date',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function (Order $order): void {
+            app(OrderInvoiceSync::class)->sync($order);
+            $order->unsetRelation('invoice');
+        });
+    }
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
+    }
 
     public function booking()
     {

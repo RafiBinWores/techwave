@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 #[Fillable([
+    'order_id',
+    'currency',
     'user_id',
     'company_id',
     'tool_subscription_id',
@@ -39,6 +41,18 @@ class Invoice extends Model
         'sent_at' => 'datetime',
     ];
 
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function currencyLabel(): string
+    {
+        $currency = $this->currency ?: 'BDT';
+
+        return $currency === 'BDT' ? '৳' : $currency.' ';
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -61,14 +75,14 @@ class Invoice extends Model
 
     public static function generateInvoiceNumber(): string
     {
-        $datePrefix = 'INV-' . now()->format('Ymd');
+        $datePrefix = 'INV-'.now()->format('Ymd');
 
         $lastNumber = static::lastSequenceNumber();
 
         do {
             $lastNumber++;
             $number = str_pad((string) $lastNumber, 4, '0', STR_PAD_LEFT);
-            $candidate = $datePrefix . '-' . $number;
+            $candidate = $datePrefix.'-'.$number;
         } while (
             static::query()->where('invoice_no', $candidate)->exists()
             || Order::query()->where('order_no', $candidate)->exists()
@@ -81,13 +95,13 @@ class Invoice extends Model
     {
         return (int) static::query()
             ->pluck('invoice_no')
-            ->map(fn(string $invoiceNo) => (int) Str::afterLast($invoiceNo, '-'))
+            ->map(fn (string $invoiceNo) => (int) Str::afterLast($invoiceNo, '-'))
             ->max();
     }
 
     public function subtotal(): float
     {
-        return $this->items->sum(fn($item) => (float) $item->quantity * (float) $item->unit_price);
+        return $this->items->sum(fn ($item) => (float) $item->quantity * (float) $item->unit_price);
     }
 
     public function discountAmount(): float

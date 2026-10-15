@@ -83,7 +83,7 @@ new #[Layout('layouts.admin-app')] #[Title('Invoices')] class extends Component 
 
         $invoice->update([
             'customer_email' => $this->sendEmail,
-            'status' => 'sent',
+            'status' => $invoice->status === 'draft' ? 'sent' : $invoice->status,
             'sent_at' => $invoice->sent_at ?: now(),
         ]);
 
@@ -101,7 +101,7 @@ new #[Layout('layouts.admin-app')] #[Title('Invoices')] class extends Component 
         $invoice = Invoice::findOrFail($invoiceId);
 
         $invoice->update([
-            'status' => 'sent',
+            'status' => $invoice->status === 'draft' ? 'sent' : $invoice->status,
             'sent_at' => $invoice->sent_at ?: now(),
         ]);
 
@@ -249,7 +249,7 @@ new #[Layout('layouts.admin-app')] #[Title('Invoices')] class extends Component 
                                 </td>
 
                                 <td class="px-6 py-4 font-mono text-body-sm text-on-surface">
-                                    ৳{{ number_format($invoice->total(), 2) }}
+                                    {{ $invoice->currencyLabel() }}{{ number_format($invoice->total(), 2) }}
                                 </td>
 
                                 <td class="px-6 py-4">

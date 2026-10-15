@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\SupportTicket;
 use App\Models\Visit;
+use App\Support\Admin\DashboardOverview;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -11,110 +15,104 @@ new
     #[Title('Admin Dashboard')]
     class extends Component
     {
-        public string $chartPeriod = '14d';
+        public string $period = '30d';
+
+        #[Computed]
+        public function periodLabel(): string
+        {
+            return DashboardOverview::PERIODS[$this->period] ?? DashboardOverview::PERIODS['30d'];
+        }
+
+        #[Computed]
+        public function overview(): array
+        {
+            return app(DashboardOverview::class)->metrics($this->period);
+        }
+
+        #[Computed]
+        public function revenueTrend(): array
+        {
+            return app(DashboardOverview::class)->revenueTrend($this->period, $this->overview['monthlyRevenue']);
+        }
+
+        #[Computed]
+        public function recentTickets()
+        {
+            return app(DashboardOverview::class)->applyRange(SupportTicket::query(), $this->period)
+                ->with('user')->latest()->orderByDesc('id')->limit(5)->get();
+        }
+
+        private function visitQuery(): Builder
+        {
+            return app(DashboardOverview::class)->applyRange(Visit::query(), $this->period);
+        }
 
         #[Computed]
         public function visits(): int
         {
-            return Visit::count();
+            return $this->visitQuery()->count();
         }
 
         #[Computed]
         public function uniqueVisitors(): int
         {
-            return (int) Visit::query()
-                ->whereNotNull('ip_address')
-                ->distinct()
-                ->count('ip_address');
+            return (int) $this->visitQuery()->whereNotNull('ip_address')->distinct()->count('ip_address');
         }
 
         #[Computed]
-        public function visitsToday(): int
+        public function visitChange(): array
         {
-            return Visit::query()
-                ->whereDate('created_at', today())
-                ->count();
+            return app(DashboardOverview::class)->visitorTrend($this->period, $this->visits);
         }
 
         #[Computed]
         public function visitsTrend(): array
         {
-            $days = $this->chartPeriod === '30d' ? 29 : 13;
+            [$start, $end] = app(DashboardOverview::class)->range($this->period);
+            $query = $this->visitQuery();
+            $start ??= CarbonImmutable::parse((clone $query)->min('created_at') ?? today())->startOfDay();
+            $monthly = $start->diffInDays($end) > 90;
+            $dateExpression = $monthly ? 'SUBSTR(created_at, 1, 7)' : 'DATE(created_at)';
+            $rows = $query
+                ->selectRaw($dateExpression.' as date, COUNT(*) as visits, COUNT(DISTINCT ip_address) as unique_visitors')
+                ->groupBy('date')->orderBy('date')->get();
 
-            $rows = Visit::query()
-                ->where(
-                    'created_at',
-                    '>=',
-                    now()->subDays($days)->startOfDay()
-                )
-                ->selectRaw(
-                    '
-                        DATE(created_at) as date,
-                        COUNT(*) as visits,
-                        COUNT(DISTINCT ip_address) as unique_visitors
-                    '
-                )
-                ->groupBy('date')
-                ->orderBy('date')
-                ->get()
-                ->keyBy('date');
+            $buckets = [];
+            foreach ($rows as $row) {
+                $buckets[$row->date] = ['visits' => (int) $row->visits, 'unique' => (int) $row->unique_visitors];
+            }
 
             $labels = [];
             $visits = [];
             $unique = [];
-
-            for ($i = $days; $i >= 0; $i--) {
-
-                $date = today()->subDays($i);
-
-                $key = $date->toDateString();
-
-                $labels[] = $date->format('M d');
-
-                $visits[] = (int) (
-                    $rows[$key]->visits ?? 0
-                );
-
-                $unique[] = (int) (
-                    $rows[$key]->unique_visitors ?? 0
-                );
+            for ($date = $monthly ? $start->startOfMonth() : $start; $date <= $end; $date = $monthly ? $date->addMonth() : $date->addDay()) {
+                $key = $date->format($monthly ? 'Y-m' : 'Y-m-d');
+                $labels[] = $date->format($monthly ? 'M Y' : 'M d');
+                $visits[] = $buckets[$key]['visits'] ?? 0;
+                $unique[] = $buckets[$key]['unique'] ?? 0;
             }
 
-            return [
-                'labels' => $labels,
-                'visits' => $visits,
-                'unique' => $unique,
-            ];
+            return ['labels' => $labels, 'visits' => $visits, 'unique' => $unique];
         }
 
         #[Computed]
         public function deviceDistribution(): array
         {
-            return Visit::query()
-                ->selectRaw(
-                    "
-                        COALESCE(NULLIF(device, ''), 'Other') as name,
-                        COUNT(*) as total
-                    "
-                )
-                ->groupBy('name')
-                ->orderByDesc('total')
-                ->get()
-                ->map(fn($row) => [
-                    'name' => $row->name,
-                    'total' => (int) $row->total,
-                ])
-                ->values()
-                ->toArray();
+            return $this->visitQuery()
+                ->selectRaw("COALESCE(NULLIF(device, ''), 'Other') as name, COUNT(*) as total")
+                ->groupBy('name')->orderByDesc('total')->get()
+                ->map(fn ($row) => ['name' => $row->name, 'total' => (int) $row->total])
+                ->values()->toArray();
         }
 
-        public function updatedChartPeriod(): void
+        public function updatedPeriod(): void
         {
-            $this->dispatch(
-                'visit-chart-updated',
-                trend: $this->visitsTrend(),
-                device: $this->deviceDistribution(),
-            );
+            if (! array_key_exists($this->period, DashboardOverview::PERIODS)) {
+                $this->period = '30d';
+            }
+
+            unset($this->periodLabel, $this->overview, $this->revenueTrend, $this->visitChange, $this->recentTickets, $this->visits, $this->uniqueVisitors, $this->visitsTrend, $this->deviceDistribution);
+            $this->dispatch('visit-chart-updated', trend: $this->visitsTrend, device: $this->deviceDistribution);
         }
     };
 ?>
@@ -136,42 +134,26 @@ new
 
             <p
                 class="text-xs md:text-body-md text-on-surface-variant">
-                Real-time infrastructure performance and operations status.
+                Users, support tickets, billing, projects, and site activity.
             </p>
 
         </div>
 
 
-        <div class="flex gap-3 basis-1/3 justify-end">
-
-            <button
-                type="button"
-                class="
-                    flex items-center gap-2
-                    px-4 py-2
-                    shadow
-                    bg-white
-                    text-xs md:text-base
-                    text-on-surface
-                    font-label-md
-                    rounded
-                    hover:bg-surface-container
-                    transition-all
-                ">
-
-                <span class="material-symbols-outlined">
-                    calendar_today
-                </span>
-
-                Last 30 Days
-
-            </button>
-
+        <div class="flex basis-1/3 justify-end">
+            <div class="relative flex items-center rounded bg-white shadow text-on-surface">
+                <span class="material-symbols-outlined pointer-events-none absolute left-3 text-lg" aria-hidden="true">calendar_today</span>
+                <label for="dashboard-period" class="sr-only">Dashboard date range</label>
+                <select id="dashboard-period" wire:model.live="period"
+                    class="cursor-pointer appearance-none rounded border-0 bg-transparent py-2 pl-10 pr-9 text-xs md:text-base font-label-md focus:ring-2 focus:ring-primary/20">
+                    @foreach (\App\Support\Admin\DashboardOverview::PERIODS as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+                <span class="material-symbols-outlined pointer-events-none absolute right-2 text-lg" aria-hidden="true">expand_more</span>
+            </div>
         </div>
-
     </div>
-
-
 
     {{-- ============================================================ --}}
     {{-- Metric Cards --}}
@@ -232,7 +214,7 @@ new
                         text-h1
                         text-on-surface
                     ">
-                    12,842
+                    {{ number_format($this->overview['totalUsers']) }}
                 </h3>
 
 
@@ -250,7 +232,7 @@ new
                     </span>
 
                     <span>
-                        +4.2%
+                        {{ number_format($this->overview['newUsers']) }} new
                     </span>
 
                 </div>
@@ -306,7 +288,7 @@ new
                         text-h1
                         text-on-surface
                     ">
-                    43
+                    {{ number_format($this->overview['activeTickets']) }}
                 </h3>
 
 
@@ -324,7 +306,7 @@ new
                     </span>
 
                     <span>
-                        8 Critical
+                        {{ number_format($this->overview['highPriorityTickets']) }} High / Urgent
                     </span>
 
                 </div>
@@ -358,7 +340,7 @@ new
                         uppercase
                         tracking-wider
                     ">
-                    Revenue (MTD)
+                    Revenue{{ $this->period === 'month' ? ' (MTD)' : '' }}
                 </p>
 
                 <span
@@ -377,29 +359,32 @@ new
                 <h3
                     class="
                         font-h1
-                        text-h1
+                        text-h1 inline-flex items-center gap-1
                         text-on-surface
                     ">
-                    $84,200
+                    @if (config('app.currency_code', 'BDT') === 'BDT')
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bangladeshi-taka preview-icon shrink-0" role="img" aria-label="Bangladeshi Taka"><path d="M6 5a2 2 0 0 1 4 0v12a4 4 0 0 0 8 0 2 2 0 0 0-4 0"/><path d="M6 9h12"/></svg>
+                    @else
+                        <span class="text-base">{{ config('app.currency_code') }}</span>
+                    @endif
+                    {{ number_format($this->overview['monthlyRevenue']) }}
                 </h3>
 
 
                 <div
-                    class="
-                        flex items-center
-                        text-emerald-600
-                        text-xs
-                        font-semibold
-                    ">
+                    @class([
+                        'flex items-center text-xs font-semibold',
+                        'text-emerald-600' => $this->revenueTrend['direction'] === 'up',
+                        'text-red-600' => $this->revenueTrend['direction'] === 'down',
+                        'text-slate-500' => $this->revenueTrend['direction'] === 'flat',
+                    ])
+                    title="{{ $this->revenueTrend['description'] }}">
 
-                    <span
-                        class="material-symbols-outlined text-sm">
-                        trending_up
+                    <span class="material-symbols-outlined text-sm" aria-hidden="true">
+                        {{ match ($this->revenueTrend['direction']) { 'up' => 'trending_up', 'down' => 'trending_down', default => 'trending_flat' } }}
                     </span>
 
-                    <span>
-                        +12%
-                    </span>
+                    <span>{{ $this->revenueTrend['label'] }}</span>
 
                 </div>
 
@@ -454,7 +439,7 @@ new
                         text-h1
                         text-on-surface
                     ">
-                    24
+                    {{ number_format($this->overview['activeProjects']) }}
                 </h3>
 
 
@@ -472,7 +457,7 @@ new
                     </span>
 
                     <span>
-                        3 Near Deadline
+                        {{ number_format($this->overview['nearDeadlineProjects']) }} {{ match ($this->period) { 'today' => 'due today', '7d' => 'due in last 7 days', 'month' => 'due month to date', 'all' => 'due through today', default => 'due in last 30 days' } }}
                     </span>
 
                 </div>
@@ -533,22 +518,17 @@ new
 
 
                 <div
-                    class="
-                        flex items-center
-                        text-xs
-                        font-semibold
-                        text-emerald-600
-                    ">
-
-                    <span
-                        class="material-symbols-outlined text-sm">
-                        trending_up
+                    @class([
+                        'flex items-center text-xs font-semibold',
+                        'text-emerald-600' => $this->visitChange['direction'] === 'up',
+                        'text-red-600' => $this->visitChange['direction'] === 'down',
+                        'text-slate-500' => $this->visitChange['direction'] === 'flat',
+                    ])
+                    title="{{ $this->visitChange['description'] }}">
+                    <span class="material-symbols-outlined text-sm" aria-hidden="true">
+                        {{ match ($this->visitChange['direction']) { 'up' => 'trending_up', 'down' => 'trending_down', default => 'trending_flat' } }}
                     </span>
-
-                    <span>
-                        {{ number_format($this->visitsToday) }} today
-                    </span>
-
+                    <span>{{ $this->visitChange['label'] }}</span>
                 </div>
 
             </div>
@@ -620,7 +600,7 @@ new
                     </span>
 
                     <span>
-                        all time
+                        {{ $this->periodLabel }}
                     </span>
 
                 </div>
@@ -703,38 +683,7 @@ new
                 </div>
 
 
-                <select
-                    wire:model.live="chartPeriod"
-                    class="
-                        shrink-0
-
-                        rounded-lg
-
-                        border
-                        border-outline-variant
-
-                        bg-white
-
-                        px-3
-                        py-1.5
-
-                        text-sm
-                        text-slate-600
-
-                        focus:outline-none
-                        focus:ring-2
-                        focus:ring-primary/20
-                    ">
-
-                    <option value="14d">
-                        Last 14 Days
-                    </option>
-
-                    <option value="30d">
-                        Last 30 Days
-                    </option>
-
-                </select>
+                <span class="shrink-0 rounded-lg bg-surface-container-low px-3 py-1.5 text-xs text-secondary">{{ $this->periodLabel }}</span>
 
             </div>
 
@@ -943,15 +892,7 @@ new
                 </h4>
 
 
-                <button
-                    type="button"
-                    class="
-                        text-primary
-                        font-label-md
-                        hover:underline
-                    ">
-                    View All
-                </button>
+                <a href="{{ route('admin.tickets.index') }}" wire:navigate class="text-primary font-label-md hover:underline">View All</a>
 
             </div>
 
@@ -1045,534 +986,35 @@ new
                             divide-outline-variant
                         ">
 
-                        {{-- Ticket 1 --}}
-                        <tr
-                            class="
-                                hover:bg-slate-50
-                                transition-colors
-                            ">
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                    font-mono
-                                    text-primary
-                                    font-bold
-                                ">
-                                #TK-8421
+                        @forelse ($this->recentTickets as $ticket)
+                        <tr wire:key="dashboard-ticket-{{ $ticket->id }}" class="hover:bg-slate-50 transition-colors">
+                            <td class="px-stack-lg py-4 font-mono text-primary font-bold">{{ $ticket->ticket_no }}</td>
+                            <td class="px-stack-lg py-4">
+                                <p class="font-label-md text-on-surface">{{ $ticket->subject }}</p>
+                                <p class="text-body-sm text-secondary">{{ $ticket->department }}</p>
                             </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <p
-                                    class="
-                                        font-label-md
-                                        text-on-surface
-                                    ">
-                                    Cloud storage quota exceeded
-                                </p>
-
-                                <p
-                                    class="
-                                        text-body-sm
-                                        text-secondary
-                                    ">
-                                    Reporting: Database Sync failure
-                                </p>
-
+                            <td class="px-stack-lg py-4 text-body-md">{{ $ticket->customer_name ?: ($ticket->user?->name ?: $ticket->customer_email ?: 'Guest') }}</td>
+                            <td class="px-stack-lg py-4">
+                                <span @class([ 'inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase' , 'bg-blue-100 text-blue-700'=> $ticket->status === 'open',
+                                    'bg-amber-100 text-amber-700' => $ticket->status === 'pending',
+                                    'bg-emerald-100 text-emerald-700' => $ticket->status === 'answered',
+                                    'bg-slate-100 text-slate-600' => $ticket->status === 'closed',
+                                    ])>{{ ucfirst($ticket->status) }}</span>
                             </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <div
-                                    class="
-                                        flex
-                                        items-center
-                                        gap-2
-                                    ">
-
-                                    <div
-                                        class="
-                                            h-6
-                                            w-6
-
-                                            rounded-full
-
-                                            bg-slate-200
-
-                                            flex
-                                            items-center
-                                            justify-center
-
-                                            text-[10px]
-                                            font-bold
-                                        ">
-                                        AM
-                                    </div>
-
-                                    <span class="text-body-md">
-                                        Alex Murphy
-                                    </span>
-
-                                </div>
-
+                            <td class="px-stack-lg py-4">
+                                <span @class([ 'font-label-sm' , 'text-error'=> in_array($ticket->priority, ['high', 'urgent']),
+                                    'text-secondary' => !in_array($ticket->priority, ['high', 'urgent']),
+                                    ])>{{ ucfirst($ticket->priority) }}</span>
                             </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <span
-                                    class="
-                                        inline-flex
-                                        items-center
-
-                                        px-2
-                                        py-1
-
-                                        rounded
-
-                                        bg-amber-100
-                                        text-amber-700
-
-                                        text-[10px]
-                                        font-bold
-                                        uppercase
-                                        tracking-tight
-                                    ">
-                                    In Progress
-                                </span>
-
+                            <td class="px-stack-lg py-4">
+                                <a href="{{ route('admin.tickets.show', $ticket) }}" wire:navigate class="text-primary hover:underline" aria-label="View ticket {{ $ticket->ticket_no }}">View</a>
                             </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <div
-                                    class="
-                                        flex
-                                        items-center
-                                        gap-1.5
-                                        text-error
-                                    ">
-
-                                    <span
-                                        class="
-                                            h-2
-                                            w-2
-                                            rounded-full
-                                            bg-error
-                                        "></span>
-
-                                    <span class="font-label-sm">
-                                        High
-                                    </span>
-
-                                </div>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <button
-                                    type="button"
-                                    class="
-                                        p-1
-                                        hover:bg-surface-variant
-                                        rounded
-                                    ">
-
-                                    <span
-                                        class="
-                                            material-symbols-outlined
-                                            text-body-lg
-                                        ">
-                                        more_vert
-                                    </span>
-
-                                </button>
-
-                            </td>
-
                         </tr>
-
-
-
-                        {{-- Ticket 2 --}}
-                        <tr
-                            class="
-                                bg-slate-50/50
-                                hover:bg-slate-100
-                                transition-colors
-                            ">
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                    font-mono
-                                    text-primary
-                                    font-bold
-                                ">
-                                #TK-8420
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <p
-                                    class="
-                                        font-label-md
-                                        text-on-surface
-                                    ">
-                                    VPN Access Reset
-                                </p>
-
-                                <p
-                                    class="
-                                        text-body-sm
-                                        text-secondary
-                                    ">
-                                    Standard request from HR
-                                </p>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <div
-                                    class="
-                                        flex
-                                        items-center
-                                        gap-2
-                                    ">
-
-                                    <div
-                                        class="
-                                            h-6
-                                            w-6
-
-                                            rounded-full
-
-                                            bg-slate-200
-
-                                            flex
-                                            items-center
-                                            justify-center
-
-                                            text-[10px]
-                                            font-bold
-                                        ">
-                                        SJ
-                                    </div>
-
-                                    <span class="text-body-md">
-                                        Sarah Jenkins
-                                    </span>
-
-                                </div>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <span
-                                    class="
-                                        inline-flex
-                                        items-center
-
-                                        px-2
-                                        py-1
-
-                                        rounded
-
-                                        bg-emerald-100
-                                        text-emerald-700
-
-                                        text-[10px]
-                                        font-bold
-                                        uppercase
-                                        tracking-tight
-                                    ">
-                                    Resolved
-                                </span>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <div
-                                    class="
-                                        flex
-                                        items-center
-                                        gap-1.5
-                                        text-secondary
-                                    ">
-
-                                    <span
-                                        class="
-                                            h-2
-                                            w-2
-                                            rounded-full
-                                            bg-secondary
-                                        "></span>
-
-                                    <span class="font-label-sm">
-                                        Low
-                                    </span>
-
-                                </div>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <button
-                                    type="button"
-                                    class="
-                                        p-1
-                                        hover:bg-surface-variant
-                                        rounded
-                                    ">
-
-                                    <span
-                                        class="
-                                            material-symbols-outlined
-                                            text-body-lg
-                                        ">
-                                        more_vert
-                                    </span>
-
-                                </button>
-
-                            </td>
-
+                        @empty
+                        <tr>
+                            <td colspan="6" class="px-stack-lg py-8 text-center text-secondary">No support tickets in this period.</td>
                         </tr>
-
-
-
-                        {{-- Ticket 3 --}}
-                        <tr
-                            class="
-                                hover:bg-slate-50
-                                transition-colors
-                            ">
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                    font-mono
-                                    text-primary
-                                    font-bold
-                                ">
-                                #TK-8419
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <p
-                                    class="
-                                        font-label-md
-                                        text-on-surface
-                                    ">
-                                    Critical: Server 04 Unresponsive
-                                </p>
-
-                                <p
-                                    class="
-                                        text-body-sm
-                                        text-secondary
-                                    ">
-                                    Automated Monitoring Alert
-                                </p>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <div
-                                    class="
-                                        flex
-                                        items-center
-                                        gap-2
-                                    ">
-
-                                    <div
-                                        class="
-                                            h-6
-                                            w-6
-
-                                            rounded-full
-
-                                            bg-primary-container
-                                            text-white
-
-                                            flex
-                                            items-center
-                                            justify-center
-
-                                            text-[10px]
-                                            font-bold
-                                        ">
-                                        SYS
-                                    </div>
-
-                                    <span class="text-body-md">
-                                        System Bot
-                                    </span>
-
-                                </div>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <span
-                                    class="
-                                        inline-flex
-                                        items-center
-
-                                        px-2
-                                        py-1
-
-                                        rounded
-
-                                        bg-red-100
-                                        text-red-700
-
-                                        text-[10px]
-                                        font-bold
-                                        uppercase
-                                        tracking-tight
-                                    ">
-                                    Open
-                                </span>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <div
-                                    class="
-                                        flex
-                                        items-center
-                                        gap-1.5
-                                        text-error
-                                    ">
-
-                                    <span
-                                        class="
-                                            h-2
-                                            w-2
-                                            rounded-full
-                                            bg-error
-                                            animate-pulse
-                                        "></span>
-
-                                    <span class="font-label-sm">
-                                        Critical
-                                    </span>
-
-                                </div>
-
-                            </td>
-
-
-                            <td
-                                class="
-                                    px-stack-lg
-                                    py-4
-                                ">
-
-                                <button
-                                    type="button"
-                                    class="
-                                        p-1
-                                        hover:bg-surface-variant
-                                        rounded
-                                    ">
-
-                                    <span
-                                        class="
-                                            material-symbols-outlined
-                                            text-body-lg
-                                        ">
-                                        more_vert
-                                    </span>
-
-                                </button>
-
-                            </td>
-
-                        </tr>
+                        @endforelse
 
                     </tbody>
 

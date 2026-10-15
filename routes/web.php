@@ -7,12 +7,14 @@ use App\Http\Controllers\PlanOrderInvoiceController;
 use App\Http\Controllers\PricingCheckoutController;
 use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\QrPreviewController;
+use App\Http\Controllers\QrRecordImageController;
 use App\Http\Controllers\QrScanController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\SslCommerzController;
 use App\Http\Controllers\SubscriptionInvoiceController;
 use App\Http\Controllers\TempMailAttachmentController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\VcardQrImageController;
 use App\Http\Controllers\WhmcsInvoiceController;
 use App\Http\Controllers\WhmcsSsoController;
 use App\Models\User;
@@ -249,9 +251,11 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::get('/resized-images/{path}', [ResizedImageController::class, 'show'])->where('path', '.*')->name('storage.resized-images');
 
     // virtual card management 
+    Route::get('/account/vcards/{vcard}/qr-image', VcardQrImageController::class)->whereNumber('vcard')->name('account.vcards.qr-image');
     Route::livewire('/account/vcards', 'pages::client.account.v-card.vcards')->name('account.vcards');
 
     // QR Code management
+    Route::get('/account/qr-codes/{qrCode}/image', QrRecordImageController::class)->whereNumber('qrCode')->name('account.qr-codes.image');
     Route::livewire('/account/qr-codes', 'pages::client.account.qr-code.qr-codes')->name('account.qr-codes');
 });
 

@@ -29,13 +29,18 @@ class ScanTracker
 
     public function link(string $editorToken, string $type, string $content, ?int $userId): string
     {
+        return route('qr.scan', ['token' => $this->code($editorToken, $type, $content, $userId)->token]);
+    }
+
+    public function code(string $editorToken, string $type, string $content, ?int $userId): TrackedQrCode
+    {
         // Editing the content creates a different code; design edits preserve the original scan link.
         $token = substr(hash_hmac('sha256', json_encode([$editorToken, $type, $content, $userId]), config('app.key')), 0, 40);
-        $code = TrackedQrCode::firstOrCreate(['token' => $token], [
+
+        return TrackedQrCode::firstOrCreate(['token' => $token], [
             'user_id' => $userId, 'content_type' => $type, 'content' => $content,
         ]);
 
-        return route('qr.scan', ['token' => $code->token]);
     }
 
     public function record(TrackedQrCode $code): bool

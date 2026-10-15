@@ -184,7 +184,7 @@ new #[Title('My Profile')] class extends Component {
 
                             {{-- Personal Profile Form --}}
                             <form wire:submit.prevent="updatePersonalProfile"
-                                class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                                class="rounded-2xl border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                                 <div class="mb-6 flex items-center justify-between gap-4">
                                     <div>
                                         <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">
@@ -381,29 +381,6 @@ new #[Title('My Profile')] class extends Component {
                                 </button>
                             </div>
                         </form>
-                        @else
-                        <div
-                            class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
-                            <div class="flex items-start gap-4">
-                                <div
-                                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400/10 text-amber-200">
-                                    <span class="material-symbols-outlined">info</span>
-                                </div>
-
-                                <div>
-                                    <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">
-                                        Business Profile
-                                    </p>
-                                    <h2 class="mt-2 text-2xl font-bold text-white">
-                                        Not available for personal account
-                                    </h2>
-                                    <p class="mt-3 text-sm leading-7 text-blue-100/60">
-                                        Your current account type is personal. Business profile information is
-                                        only available for company or business accounts.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                         @endif
 
                     </div>
@@ -413,7 +390,7 @@ new #[Title('My Profile')] class extends Component {
 
                         {{-- Avatar Upload --}}
                         <div
-                            class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                            class="rounded-2xl border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                             <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Profile Photo</p>
                             <h2 class="mt-2 text-2xl font-bold text-white">Avatar</h2>
 
@@ -505,46 +482,6 @@ new #[Title('My Profile')] class extends Component {
                             </div>
                         </div>
                         @endif
-
-                        {{-- Account Summary --}}
-                        <div
-                            class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
-                            <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Summary</p>
-                            <h2 class="mt-2 text-2xl font-bold text-white">Profile overview</h2>
-
-                            <div class="mt-6 space-y-4 text-sm">
-                                <div class="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
-                                    <span class="text-blue-100/55">Account Type</span>
-                                    <span
-                                        class="font-semibold text-white">{{ ucfirst($type ?: 'Personal') }}</span>
-                                </div>
-
-                                <div class="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
-                                    <span class="text-blue-100/55">Designation</span>
-                                    <span class="max-w-[170px] truncate font-semibold text-white">
-                                        {{ $designation ?: 'Not added' }}
-                                    </span>
-                                </div>
-
-                                @if ($type !== 'personal')
-                                <div
-                                    class="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
-                                    <span class="text-blue-100/55">Company</span>
-                                    <span class="max-w-[170px] truncate font-semibold text-white">
-                                        {{ $company_name ?: 'Not added' }}
-                                    </span>
-                                </div>
-                                @endif
-
-                                <div class="flex items-center justify-between gap-4">
-                                    <span class="text-blue-100/55">Status</span>
-                                    <span
-                                        class="font-semibold {{ $is_active ? 'text-emerald-300' : 'text-rose-300' }}">
-                                        {{ $is_active ? 'Active' : 'Inactive' }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
 
                     </div>
                 </div>

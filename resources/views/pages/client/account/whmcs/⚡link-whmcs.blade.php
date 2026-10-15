@@ -402,20 +402,6 @@ new #[Title('Link Billing Account')] class extends Component {
                                 </p>
                             </div>
                         </div>
-
-                        <div
-                            class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 backdrop-blur-xl">
-                            <span
-                                class="material-symbols-outlined {{ $step === 'linked' ? 'text-emerald-300' : 'text-cyan-300' }}">
-                                {{ $step === 'linked' ? 'link_off' : 'link' }}
-                            </span>
-                            <div>
-                                <p class="text-xs text-blue-100/45">Billing Account</p>
-                                <p class="text-sm font-semibold {{ $step === 'linked' ? 'text-emerald-300' : 'text-blue-100/70' }}">
-                                    {{ $step === 'linked' ? 'Linked' : 'Not linked' }}
-                                </p>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
@@ -426,7 +412,7 @@ new #[Title('Link Billing Account')] class extends Component {
                             {{-- Step 1: Enter email --}}
                             @if ($step === 'email')
                             <form wire:submit.prevent="sendCode"
-                                class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                                class="rounded-2xl border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                                 <div class="mb-6">
                                     <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">
                                         Step 1 of 2 · Verification
@@ -443,7 +429,7 @@ new #[Title('Link Billing Account')] class extends Component {
                                         Billing Email Address
                                     </label>
                                     <input type="email" wire:model="email"
-                                        class="h-12 w-full rounded-2xl border border-white/10 bg-white/8 px-4 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl focus:border-cyan-300/40"
+                                        class="h-12 w-full rounded-xl border border-white/10 bg-white/8 px-4 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl focus:border-cyan-300/40"
                                         placeholder="you@example.com">
                                     @error('email')
                                     <p class="mt-2 text-xs text-rose-300">{{ $message }}</p>
@@ -453,7 +439,7 @@ new #[Title('Link Billing Account')] class extends Component {
                                 <div class="mt-6 flex justify-end">
                                     <button type="submit" wire:loading.attr="disabled"
                                         wire:target="sendCode"
-                                        class="cursor-pointer inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5 hover:shadow-cyan-500/35 disabled:cursor-not-allowed disabled:opacity-60">
+                                        class="cursor-pointer inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5 hover:shadow-cyan-500/35 disabled:cursor-not-allowed disabled:opacity-60">
 
                                         <span wire:loading.remove wire:target="sendCode"
                                             class="inline-flex items-center">
@@ -574,23 +560,23 @@ new #[Title('Link Billing Account')] class extends Component {
 
                             {{-- How it works --}}
                             <div
-                                class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                                class="rounded-2xl border border-white/10 bg-white/8 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                                 <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Guide</p>
-                                <h2 class="mt-2 text-2xl font-bold text-white">How linking works</h2>
+                                <h2 class="text-2xl font-bold text-white">How linking works</h2>
 
-                                <ol class="mt-6 space-y-5">
+                                <ol class="mt-6 space-y-3">
                                     @foreach ([
                                     'Enter your billing email address.',
                                     'Receive a 6-digit code in your inbox.',
                                     'Enter the code to verify ownership.',
                                     'Your billing services and invoices appear here.',
                                     ] as $index => $instruction)
-                                    <li class="flex items-start gap-4">
+                                    <li class="flex items-center gap-3">
                                         <span
                                             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-400/10 text-sm font-bold text-cyan-200">
                                             {{ $index + 1 }}
                                         </span>
-                                        <p class="pt-1.5 text-sm leading-6 text-blue-100/60">{{ $instruction }}</p>
+                                        <p class="text-sm leading-6 text-blue-100/60">{{ $instruction }}</p>
                                     </li>
                                     @endforeach
                                 </ol>
@@ -598,8 +584,8 @@ new #[Title('Link Billing Account')] class extends Component {
 
                             {{-- Security note --}}
                             <div
-                                class="rounded-[28px] border border-white/10 bg-white/8 p-6 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
-                                <div class="flex items-start gap-4">
+                                class="rounded-2xl border border-white/10 bg-white/8 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                                <div class="flex items-center gap-4">
                                     <div
                                         class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-200">
                                         <span class="material-symbols-outlined">shield_lock</span>
@@ -607,14 +593,14 @@ new #[Title('Link Billing Account')] class extends Component {
 
                                     <div>
                                         <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Security</p>
-                                        <h2 class="mt-2 text-xl font-bold text-white">Verified ownership only</h2>
-                                        <p class="mt-3 text-sm leading-7 text-blue-100/60">
-                                            An account can only be linked after proving you own its email. A billing
-                                            account can be linked to one portal profile at a time, and you can unlink
-                                            it whenever you want.
-                                        </p>
+                                        <h2 class="text-xl font-bold text-white">Verified ownership only</h2>
                                     </div>
                                 </div>
+                                <p class="mt-3 text-sm leading-6 text-blue-100/60">
+                                    An account can only be linked after proving you own its email. A billing
+                                    account can be linked to one portal profile at a time, and you can unlink
+                                    it whenever you want.
+                                </p>
                             </div>
 
                         </div>

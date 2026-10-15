@@ -14,7 +14,7 @@
     $subtotal = $invoice->subtotal();
     $discountAmount = $invoice->discountAmount();
     $grandTotal = $invoice->total();
-    $currency = '৳';
+    $currency = $invoice->currencyLabel();
 
     $formatMoney = fn ($amount) => $currency.number_format((float) $amount, 2);
 @endphp
