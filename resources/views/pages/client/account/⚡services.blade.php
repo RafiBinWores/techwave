@@ -2,6 +2,7 @@
 
 use App\Models\Booking;
 use App\Models\Order;
+use App\Services\ServiceOrderRenewal;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,13 @@ new #[Title('My Services')] class extends Component
         $this->search = '';
         $this->status = '';
         $this->resetPage();
+    }
+
+    public function renew(int $orderId): void
+    {
+        $order = Order::query()->where('user_id', Auth::id())->findOrFail($orderId);
+        $renewal = app(ServiceOrderRenewal::class)->request($order);
+        $this->redirectRoute('client.renewals.checkout', $renewal, navigate: true);
     }
 
     public function formatDate($date): string
@@ -468,7 +476,7 @@ new #[Title('My Services')] class extends Component
                         class="mb-6 rounded-2xl border border-white/10 bg-white/8 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                         <div class="flex flex-nowrap gap-1.5 overflow-x-auto pb-1 sm:gap-2 sm:overflow-visible">
                             <button type="button" wire:click="setTab('services')"
-                                @class([ 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm' , 'border-cyan-300/50 bg-cyan-400/10 text-white'=> $activeTab === 'services',
+                                @class([ 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm' , 'border-cyan-300/50 bg-cyan-400/10 text-white'=> $activeTab === 'services',
                                 'border-white/10 bg-white/6 text-blue-100/65 hover:bg-white/10 hover:text-white' => $activeTab !== 'services',
                                 ])>
                                 <span class="material-symbols-outlined hidden text-base sm:inline-block sm:text-lg">design_services</span>
@@ -481,7 +489,7 @@ new #[Title('My Services')] class extends Component
                             </button>
 
                             <button type="button" wire:click="setTab('plans')"
-                                @class([ 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm' , 'border-blue-300/50 bg-blue-400/10 text-white'=> $activeTab === 'plans',
+                                @class([ 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm' , 'border-blue-300/50 bg-blue-400/10 text-white'=> $activeTab === 'plans',
                                 'border-white/10 bg-white/6 text-blue-100/65 hover:bg-white/10 hover:text-white' => $activeTab !== 'plans',
                                 ])>
                                 <span class="material-symbols-outlined hidden text-base sm:inline-block sm:text-lg">workspace_premium</span>
@@ -494,7 +502,7 @@ new #[Title('My Services')] class extends Component
                             </button>
 
                             <button type="button" wire:click="setTab('pending')"
-                                @class([ 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm' , 'border-amber-300/50 bg-amber-400/10 text-white'=> $activeTab === 'pending',
+                                @class([ 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm' , 'border-amber-300/50 bg-amber-400/10 text-white'=> $activeTab === 'pending',
                                 'border-white/10 bg-white/6 text-blue-100/65 hover:bg-white/10 hover:text-white' => $activeTab !== 'pending',
                                 ])>
                                 <span class="material-symbols-outlined hidden text-base sm:inline-block sm:text-lg">schedule</span>
@@ -512,7 +520,7 @@ new #[Title('My Services')] class extends Component
                             <div class="relative">
                                 <input type="text" wire:model.live.debounce.400ms="search"
                                     placeholder="Search service, status, billing cycle..."
-                                    class="h-10 w-full rounded-2xl border border-white/10 bg-white/8 pl-11 pr-4 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl focus:border-cyan-300/40">
+                                    class="h-10 w-full rounded-xl border border-white/10 bg-white/8 pl-11 pr-4 text-sm text-white placeholder:text-blue-100/35 outline-none backdrop-blur-xl focus:border-cyan-300/40">
 
                                 <span
                                     class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-lg text-blue-100/45">
@@ -521,7 +529,7 @@ new #[Title('My Services')] class extends Component
                             </div>
 
                             <select wire:model.live="status"
-                                class="h-10 w-full rounded-2xl border border-white/10 bg-white/8 px-4 text-sm text-white outline-none backdrop-blur-xl focus:border-cyan-300/40">
+                                class="h-10 w-full rounded-xl border border-white/10 bg-white/8 px-4 text-sm text-white outline-none backdrop-blur-xl focus:border-cyan-300/40">
                                 <option value="" class="bg-slate-900">All Status</option>
                                 <option value="paid" class="bg-slate-900">Paid</option>
                                 <option value="active" class="bg-slate-900">Active</option>
@@ -530,18 +538,21 @@ new #[Title('My Services')] class extends Component
                             </select>
 
                             <button type="button" wire:click="clearFilters"
-                                class="inline-flex h-10 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-white/8 px-5 text-sm font-semibold text-white transition hover:bg-white/12">
+                                class="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/8 px-5 text-sm font-semibold text-white transition hover:bg-white/12">
                                 Clear
                             </button>
                         </div>
                         @endif
                     </div>
 
+                    @error('renewal')
+                    <p class="rounded-lg border border-red-300/20 bg-red-400/10 p-4 text-sm text-red-200">{{ $message }}</p>
+                    @enderror
+
                     @if ($activeTab === 'services')
                     <div
-                        class="rounded-[28px] border border-white/10 bg-white/8 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                        class="rounded-2xl border border-white/10 bg-white/8 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
                         <div class="mb-5">
-                            <p class="text-xs uppercase tracking-[0.18em] text-blue-100/45">Service Orders</p>
                             <h2 class="mt-1 text-xl font-bold text-white">Your services</h2>
                         </div>
 
@@ -552,7 +563,7 @@ new #[Title('My Services')] class extends Component
                             $serviceName = $this->orderTitle($order);
                             @endphp
 
-                            <div wire:key="service-order-{{ $order->id }}"
+                            <div id="service-order-{{ $order->id }}" wire:key="service-order-{{ $order->id }}"
                                 class="flex flex-col gap-3 bg-white/5 p-4 transition hover:bg-white/10 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="flex min-w-0 items-center gap-3">
                                     <div
@@ -568,10 +579,28 @@ new #[Title('My Services')] class extends Component
                                         <p class="mt-0.5 text-xs leading-5 text-blue-100/50">
                                             {{ $this->formatDate($order->created_at) }} · {{ $this->billingLabel($order->billing_cycle) }} · {{ $order->order_no ?? 'N/A' }}
                                         </p>
+                                        @if ($order->end_date)
+                                        <p class="mt-1 text-xs {{ $order->isExpired() ? 'text-rose-300' : 'text-blue-100/70' }}">
+                                            {{ $order->isExpired() ? 'Expired' : ($order->start_date?->gt(today()) ? 'Upcoming period ends' : 'Expires') }}
+                                            {{ $this->formatDate($order->end_date) }}
+                                            @if ($order->renewal_of_id) · Renewal @endif
+                                        </p>
+                                        @endif
                                     </div>
                                 </div>
 
                                 <div class="flex items-center justify-between gap-3 pl-14 sm:justify-end sm:pl-0">
+                                    @php $pendingRenewal = $order->pendingRenewal(); @endphp
+                                    @if ($pendingRenewal)
+                                    <a href="{{ route('client.renewals.checkout', $pendingRenewal) }}" wire:navigate
+                                        class="rounded-lg border border-cyan-300/30 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-cyan-300/10">Complete payment</a>
+                                    @elseif ($order->canRenew())
+                                    <button type="button" wire:click="renew({{ $order->id }})"
+                                        wire:loading.attr="disabled" wire:target="renew"
+                                        class="rounded-lg border border-cyan-300/30 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-cyan-300/10">
+                                        Pay to renew
+                                    </button>
+                                    @endif
                                     <span class="text-sm font-semibold text-blue-100/70">
                                         {{ $this->displayAmount($order) }}
                                     </span>
@@ -786,6 +815,11 @@ new #[Title('My Services')] class extends Component
                                             <h3 class="text-base font-bold text-white">
                                                 {{ $title }}
                                             </h3>
+                                            @if ($isOrder && $item->renewal_of_id)
+                                            <p class="mt-1 text-xs text-cyan-200">Service renewal · awaiting payment</p>
+                                            <a href="{{ route('client.renewals.checkout', $item) }}" wire:navigate
+                                                class="mt-2 inline-flex rounded-lg border border-cyan-300/30 px-3 py-2 text-xs font-semibold text-cyan-200">Complete payment</a>
+                                            @endif
                                         </div>
                                     </div>
 

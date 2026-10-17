@@ -55,7 +55,11 @@ class OrderInvoiceSync
                 'company_name' => $order->company_name,
                 'subject' => $title,
                 'currency' => strtoupper($order->currency ?: 'BDT'),
-                'status' => match ($order->status) {
+                'status' => $order->order_type === 'service' ? match (true) {
+                    $order->status === 'cancelled' => 'cancelled',
+                    $order->payment_status === 'paid' => 'paid',
+                    default => 'sent',
+                } : match ($order->status) {
                     'paid', 'active', 'completed' => 'paid',
                     'cancelled' => 'cancelled',
                     'pending' => 'draft',

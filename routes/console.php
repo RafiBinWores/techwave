@@ -9,3 +9,4 @@ Schedule::command('resized-images:cleanup')->dailyAt('03:20');
 Schedule::command('pdf-files:cleanup')->dailyAt('03:30');
 Schedule::command('accounts:purge-scheduled')->dailyAt('04:00');
 Schedule::command('subscriptions:auto-expire')->everyMinute()->withoutOverlapping();
+Schedule::command('service-orders:send-renewal-notices')->dailyAt('04:30')->withoutOverlapping();

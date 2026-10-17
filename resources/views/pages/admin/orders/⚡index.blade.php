@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Order;
+use App\Services\ServiceOrderRenewal;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -11,6 +12,7 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
 
     public string $search = '';
     public string $status = 'all';
+    public string $paymentStatus = 'all';
     public string $orderType = 'all';
     public int $perPage = 10;
 
@@ -24,8 +26,16 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
         $this->resetPage();
     }
 
+    public function updatedPaymentStatus(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedOrderType(): void
     {
+        if ($this->orderType === 'service' && in_array($this->status, ['paid', 'awaiting_payment'], true)) {
+            $this->status = 'all';
+        }
         $this->resetPage();
     }
 
@@ -74,6 +84,9 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
             ->when($this->orderType !== 'all', function ($query) {
                 $query->where('order_type', $this->orderType);
             })
+            ->when($this->paymentStatus !== 'all', function ($query) {
+                $query->where('payment_status', $this->paymentStatus);
+            })
             ->latest()
             ->paginate($this->perPage);
     }
@@ -82,20 +95,25 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
     {
         Order::query()
             ->findOrFail($orderId)
-            ->update([
-                'status' => 'awaiting_payment',
-            ]);
+            ->setPaymentStatus('awaiting_payment');
 
         $this->dispatch('toast', message: 'Order marked as awaiting payment.', type: 'success');
     }
 
+    public function renew(int $orderId): void
+    {
+        $renewal = app(ServiceOrderRenewal::class)->request(Order::query()->findOrFail($orderId));
+        $this->redirectRoute('admin.orders.edit', $renewal, navigate: true);
+    }
+
     public function markAsPaid(int $orderId): void
     {
-        Order::query()
-            ->findOrFail($orderId)
-            ->update([
-                'status' => 'paid',
-            ]);
+        $order = Order::query()->findOrFail($orderId);
+        if ($order->renewal_of_id && $order->renewal_manual_submitted_at && ! $order->renewal_manual_verified_at) {
+            app(\App\Services\ServiceRenewalManualPayment::class)->confirm($order);
+        } else {
+            $order->setPaymentStatus('paid');
+        }
 
         $this->dispatch('toast', message: 'Order marked as paid.', type: 'success');
     }
@@ -135,7 +153,13 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
 
     public function delete(int $orderId): void
     {
-        Order::query()->findOrFail($orderId)->delete();
+        $order = Order::query()->findOrFail($orderId);
+        if ($order->renewals()->exists() || $order->renewal_activated_at) {
+            $this->dispatch('toast', message: 'Orders with renewal history cannot be deleted. Cancel the order instead.', type: 'error');
+
+            return;
+        }
+        $order->delete();
 
         $this->dispatch('toast', message: 'Order deleted successfully.', type: 'success');
     }
@@ -194,6 +218,15 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
 ?>
 
 <div>
+    @error('renewal')
+        <p class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">{{ $message }}</p>
+    @enderror
+    @error('payment_status')
+        <p class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">{{ $message }}</p>
+    @enderror
+    @error('status')
+        <p class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">{{ $message }}</p>
+    @enderror
     <div class="mx-auto w-full space-y-stack-lg">
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
@@ -207,7 +240,7 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
             </div>
 
             <div class="flex w-full flex-col gap-4 lg:w-auto lg:flex-row lg:items-center">
-                <div class="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:max-w-3xl">
+                <div class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:max-w-4xl">
                     <div class="relative">
                         <span
                             class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
@@ -235,10 +268,12 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                     <div class="relative">
                         <select wire:model.live="status"
                             class="w-full appearance-none rounded-lg border border-outline-variant bg-white px-4 py-2.5 pr-10 text-label-md font-label-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/10">
-                            <option value="all">All Status</option>
+                            <option value="all">All Order Statuses</option>
                             <option value="pending">Pending</option>
-                            <option value="awaiting_payment">Awaiting Payment</option>
-                            <option value="paid">Paid</option>
+                            @if ($orderType !== 'service')
+                                <option value="awaiting_payment">Awaiting Payment (Plans)</option>
+                                <option value="paid">Paid (Plans)</option>
+                            @endif
                             <option value="active">Active</option>
                             <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
@@ -248,6 +283,14 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                             class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
                             expand_more
                         </span>
+                    </div>
+                    <div class="relative">
+                        <select wire:model.live="paymentStatus" aria-label="Payment Status"
+                            class="w-full rounded-lg border border-outline-variant bg-white px-4 py-2.5 text-label-md text-on-surface">
+                            <option value="all">All Payment Statuses</option>
+                            <option value="awaiting_payment">Awaiting Payment</option>
+                            <option value="paid">Paid</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -275,7 +318,15 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Status
+                                Order Status
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Payment Status
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Service Period
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
@@ -297,6 +348,9 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                                         <span class="block text-label-md font-label-md text-on-surface">
                                             {{ $order->order_no }}
                                         </span>
+                                        @if ($order->renewal_of_id)
+                                            <span class="block text-xs text-blue-600">Renewal order</span>
+                                        @endif
 
                                         @if ($order->booking?->booking_no)
                                             <span class="block font-mono text-[11px] text-slate-400">
@@ -382,6 +436,33 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                                     </span>
                                 </td>
 
+                                <td class="px-6 py-4">
+                                    <span @class([
+                                        'inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider',
+                                        'bg-emerald-100 text-emerald-700' => $order->payment_status === 'paid',
+                                        'bg-amber-100 text-amber-700' => $order->payment_status === 'awaiting_payment',
+                                    ])>
+                                        {{ $this->statusLabel($order->payment_status) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4 text-body-sm text-secondary">
+                                    @if ($order->end_date)
+                                        <span class="block text-xs">{{ $order->start_date?->format('d M Y') ?? 'N/A' }} – {{ $order->end_date->format('d M Y') }}</span>
+                                        @if ($order->isExpired())
+                                            <span class="text-xs font-semibold text-red-600">Expired</span>
+                                        @elseif ($order->start_date?->gt(today()))
+                                            <span class="text-xs font-semibold text-blue-600">Upcoming</span>
+                                        @elseif ($order->canRenew() && $order->end_date->lte(today()->addDays(7)))
+                                            <span class="text-xs font-semibold text-amber-700">Renewal due soon</span>
+                                        @endif
+                                    @elseif ($order->renewal_of_id)
+                                        <span class="text-xs">Starts after payment</span>
+                                    @else
+                                        <span class="text-xs">No expiry</span>
+                                    @endif
+                                </td>
+
                                 <td class="px-6 py-4 text-body-sm text-secondary">
                                     {{ $order->created_at?->format('M d, Y h:i A') }}
                                 </td>
@@ -402,7 +483,16 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                                                 Edit Order
                                             </a>
 
-                                            @if ($order->status !== 'awaiting_payment')
+                                            @if ($order->canRenew())
+                                                <button type="button" wire:click="renew({{ $order->id }})"
+                                                    wire:confirm="Create a renewal invoice for this service?" @click="open = false"
+                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-blue-700 hover:bg-blue-50">
+                                                    <span class="material-symbols-outlined text-[18px]">autorenew</span>
+                                                    Renew Service
+                                                </button>
+                                            @endif
+
+                                            @if ($order->payment_status !== 'awaiting_payment')
                                                 <button type="button"
                                                     wire:click="markAsAwaitingPayment({{ $order->id }})"
                                                     @click="open = false"
@@ -412,7 +502,7 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                                                 </button>
                                             @endif
 
-                                            @if ($order->status !== 'paid')
+                                            @if ($order->payment_status !== 'paid')
                                                 <button type="button" wire:click="markAsPaid({{ $order->id }})"
                                                     @click="open = false"
                                                     class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
@@ -478,7 +568,7 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-14 text-center">
+                                <td colspan="9" class="px-6 py-14 text-center">
                                     <div class="mx-auto flex max-w-sm flex-col items-center">
                                         <div
                                             class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">

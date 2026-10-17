@@ -63,7 +63,7 @@
                             <tr>
                                 <td style="padding:14px 0;">
                                     <p style="margin:0; font-size:14px; font-weight:600; color:{{ $head }};">
-                                        {{ $item->title }}
+                                        {{ $invoice->order?->order_type === 'service' && $item->item_type === 'service_plan' && $item->item_id == $invoice->order->service_plan_id ? $invoice->order->invoiceItemTitle() : $item->title }}
                                     </p>
                                     @if (! empty($item->features))
                                         @foreach ($item->features as $feature)

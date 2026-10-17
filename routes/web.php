@@ -10,6 +10,7 @@ use App\Http\Controllers\QrPreviewController;
 use App\Http\Controllers\QrRecordImageController;
 use App\Http\Controllers\QrScanController;
 use App\Http\Controllers\ResizedImageController;
+use App\Http\Controllers\ServiceRenewalPaymentController;
 use App\Http\Controllers\SslCommerzController;
 use App\Http\Controllers\SubscriptionInvoiceController;
 use App\Http\Controllers\TempMailAttachmentController;
@@ -207,6 +208,11 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Service booking success page
     Route::livewire('/services/booking/success/{booking}', 'pages::client.services.booking-success')->name('client.services.booking-success');
 
+    // service renewal
+    Route::livewire('/checkout/service-renewals/{order}', 'pages::client.checkout.service-renewal')->name('client.renewals.checkout');
+    Route::post('/checkout/service-renewals/{order}/pay', [ServiceRenewalPaymentController::class, 'pay'])
+        ->middleware('throttle:6,1')->name('client.renewals.pay');
+
     // Invoice download
     Route::get('/success/{order}/invoice/download', [PlanOrderInvoiceController::class, 'download'])->name('success.invoice.download');
 
@@ -257,6 +263,13 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // QR Code management
     Route::get('/account/qr-codes/{qrCode}/image', QrRecordImageController::class)->whereNumber('qrCode')->name('account.qr-codes.image');
     Route::livewire('/account/qr-codes', 'pages::client.account.qr-code.qr-codes')->name('account.qr-codes');
+});
+
+Route::prefix('sslcommerz/service-renewals/{order}')->group(function () {
+    Route::match(['get', 'post'], 'success', [ServiceRenewalPaymentController::class, 'success'])->name('client.renewals.success');
+    Route::match(['get', 'post'], 'fail', [ServiceRenewalPaymentController::class, 'fail'])->name('client.renewals.fail');
+    Route::match(['get', 'post'], 'cancel', [ServiceRenewalPaymentController::class, 'cancel'])->name('client.renewals.cancel');
+    Route::post('ipn', [ServiceRenewalPaymentController::class, 'ipn'])->name('client.renewals.ipn');
 });
 
 Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])

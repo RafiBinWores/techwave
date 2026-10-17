@@ -23,7 +23,7 @@
         ?: $order->booking?->company_name
         ?: 'N/A';
 
-    $planName = $plan?->title ?? 'Pricing Plan';
+    $planName = $order->order_type === 'service' ? $order->invoiceItemTitle() : ($plan?->title ?? 'Pricing Plan');
     $description = $plan
         ? ($plan->description ?? 'Business IT plan subscription.')
         : ($order->servicePlan?->description ?? ($order->service?->short_description ?? 'Service order.'));
@@ -39,7 +39,7 @@
     $companyAddress = $setting->location ?? 'N/A';
     $companyWebsite = $setting->website ?? ($setting->url ?? config('app.url'));
 
-    $statusKey = $order->status ?? 'pending';
+    $statusKey = $order->order_type === 'service' ? $order->payment_status : ($order->status ?? 'pending');
     $statusLabel = match ($statusKey) {
         'pending' => 'Pending',
         'awaiting_payment' => 'Awaiting Payment',

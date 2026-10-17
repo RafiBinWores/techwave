@@ -43,7 +43,15 @@ new class extends Component {
         return Order::query()
             ->with(['pricingPlan', 'service', 'servicePlan'])
             ->where('user_id', Auth::id())
-            ->whereIn('status', ['paid', 'active'])
+            ->where(function ($orders) {
+                $orders->where(function ($services) {
+                    $services->where('order_type', 'service')
+                        ->whereIn('status', ['pending', 'active'])
+                        ->where('payment_status', 'paid');
+                })->orWhere(function ($plans) {
+                    $plans->where('order_type', 'pricing_plan')->whereIn('status', ['paid', 'active']);
+                });
+            })
             ->where(function ($query) {
                 $query->whereNull('start_date')->orWhere('start_date', '<=', now()->toDateString());
             })
@@ -95,7 +103,7 @@ new class extends Component {
                 return 'You need a paid or active order to open a support ticket.';
             }
 
-            if ($latestOrder->status === 'awaiting_payment') {
+            if ($latestOrder->payment_status === 'awaiting_payment' && $latestOrder->status !== 'cancelled') {
                 return 'Your latest order is waiting for payment. Support will unlock after payment confirmation.';
             }
 
@@ -137,7 +145,7 @@ new class extends Component {
             return 'Support Expired';
         }
 
-        if ($latestOrder?->status === 'awaiting_payment') {
+        if ($latestOrder?->payment_status === 'awaiting_payment' && $latestOrder?->status !== 'cancelled') {
             return 'Payment Pending';
         }
 

@@ -576,7 +576,7 @@ $fontBaseUrl = str_replace('\\', '/', public_path('fonts'));
 
                     <tr>
                         <td>
-                            <span class="plan-name">{{ $item->title }}</span>
+                            <span class="plan-name">{{ $invoice->order?->order_type === 'service' && $item->item_type === 'service_plan' && $item->item_id == $invoice->order->service_plan_id ? $invoice->order->invoiceItemTitle() : $item->title }}</span>
                             @if (! empty($item->features))
                             <ul class="feature-list">
                                 @foreach ($item->features as $feature)

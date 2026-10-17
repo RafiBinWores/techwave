@@ -12,9 +12,7 @@
 
     $itemName = $isPricingPlan
         ? $order->pricingPlan?->title ?? ($order->plan_name ?? 'Pricing Plan')
-        : $order->service?->card_title ?? ($order->plan_name ?? 'Service');
-
-    $itemPlanName = !$isPricingPlan ? $order->servicePlan?->name : null;
+        : $order->invoiceItemTitle();
 
     $description = $isPricingPlan
         ? $order->pricingPlan?->description ?? 'Business IT plan subscription.'
@@ -28,7 +26,7 @@
         default => 'Negotiable',
     };
 
-    $statusLabel = ucfirst(str_replace('_', ' ', $order->status ?? 'awaiting_payment'));
+    $statusLabel = ucfirst(str_replace('_', ' ', $order->order_type === 'service' ? $order->payment_status : ($order->status ?? 'awaiting_payment')));
 
     $subtotal =
         (float) ($order->amount ?? ($order->final_price ?? ($order->quoted_price ?? ($order->plan_price ?? 0))));
@@ -258,11 +256,6 @@
                                             style="padding:13px 12px; border-top:1px solid #e2e8f0; font-size:11px; font-weight:800; color:#0f172a;">
                                             <div>{{ $itemName }}</div>
 
-                                            @if ($itemPlanName)
-                                                <div style="margin-top:2px; font-size:10px; font-weight:400; color:#64748b;">
-                                                    Plan: {{ $itemPlanName }}
-                                                </div>
-                                            @endif
 
                                             @if ($order->booking?->addons)
                                                 <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #d1d5db;">

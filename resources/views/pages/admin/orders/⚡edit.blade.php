@@ -2,6 +2,7 @@
 
 use App\Mail\OrderInvoiceMail;
 use App\Models\Order;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -11,6 +12,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
     public Order $order;
 
     public string $status = 'awaiting_payment';
+    public string $payment_status = 'awaiting_payment';
     public string $billing_cycle = 'monthly';
 
     public string $start_date = '';
@@ -23,6 +25,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
         $this->order = $order->load(['booking', 'user', 'service.category', 'servicePlan', 'pricingPlan']);
 
         $this->status = $order->status ?? 'awaiting_payment';
+        $this->payment_status = $order->payment_status;
         $this->billing_cycle = $order->billing_cycle ?? 'monthly';
 
         $this->start_date = $order->start_date?->format('Y-m-d') ?? '';
@@ -34,7 +37,10 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
     protected function rules(): array
     {
         return [
-            'status' => ['required', 'in:pending,awaiting_payment,paid,active,completed,cancelled'],
+            'status' => ['required', $this->order->order_type === 'service'
+                ? 'in:pending,active,completed,cancelled'
+                : 'in:pending,awaiting_payment,paid,active,completed,cancelled'],
+            'payment_status' => ['required', 'in:awaiting_payment,paid'],
             'billing_cycle' => ['nullable', 'in:one_time,monthly,yearly,custom'],
 
             'start_date' => ['nullable', 'date'],
@@ -68,15 +74,36 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
     {
         $validated = $this->validate();
 
-        $this->order->update([
-            'status' => $validated['status'],
-            'billing_cycle' => $validated['billing_cycle'],
+        DB::transaction(function () use ($validated): void {
+            if ($this->order->renewal_of_id) {
+                if ($validated['payment_status'] !== $this->order->payment_status) {
+                    if ($validated['payment_status'] === 'paid' && $this->order->renewal_manual_submitted_at && ! $this->order->renewal_manual_verified_at) {
+                        app(\App\Services\ServiceRenewalManualPayment::class)->confirm($this->order);
+                    } else {
+                        $this->order->setPaymentStatus($validated['payment_status']);
+                    }
+                }
+                $attributes = ['admin_note' => $validated['admin_note'] ?: null];
+                if (in_array($validated['status'], ['cancelled', 'completed'], true)) {
+                    $attributes['status'] = $validated['status'];
+                }
+                $this->order->update($attributes);
 
-            'start_date' => $validated['start_date'] ?: null,
-            'end_date' => $validated['end_date'] ?: null,
+                return;
+            }
+            if ($this->order->order_type === 'service') {
+                $this->order->setPaymentStatus($validated['payment_status']);
+            }
+            $this->order->update([
+                'status' => $validated['status'],
+                'billing_cycle' => $validated['billing_cycle'],
 
-            'admin_note' => $validated['admin_note'] ?: null,
-        ]);
+                'start_date' => $validated['start_date'] ?: null,
+                'end_date' => $validated['end_date'] ?: null,
+
+                'admin_note' => $validated['admin_note'] ?: null,
+            ]);
+        });
 
         $this->order = $this->order->fresh(['booking', 'user', 'service.category', 'servicePlan', 'pricingPlan']);
 
@@ -168,7 +195,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
                 </h1>
 
                 <p class="mt-1 text-body-md text-secondary">
-                    Update order status, billing cycle, and admin note.
+                    Update order status, payment status, billing cycle, and admin note.
                 </p>
             </div>
 
@@ -293,6 +320,17 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
                     </div>
                 </div>
 
+                @if ($order->renewal_manual_submitted_at)
+                    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-slate-800">
+                        <h3 class="font-semibold">Manual bKash payment</h3>
+                        <dl class="mt-3 space-y-2">
+                            <div><dt class="font-medium">Sending number</dt><dd>{{ $order->renewal_sender_bkash }}</dd></div>
+                            <div><dt class="font-medium">Transaction ID</dt><dd class="font-mono">{{ $order->renewal_manual_transaction_id }}</dd></div>
+                            <div><dt class="font-medium">Submitted</dt><dd>{{ $order->renewal_manual_submitted_at->format('d M Y, h:i A') }}</dd></div>
+                        </dl>
+                        <p class="mt-3">{{ $order->renewal_manual_verified_at ? 'Verified on '.$order->renewal_manual_verified_at->format('d M Y, h:i A') : 'Check the received payment against these details, then set Payment Status to Paid and save to confirm the renewal.' }}</p>
+                    </div>
+                @endif
                 <form wire:submit.prevent="save">
                     <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                         <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
@@ -301,14 +339,24 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
                         </h3>
 
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            @if ($order->renewal_of_id)
+                                <div class="rounded-lg bg-blue-50 p-4 text-sm text-blue-800 md:col-span-2">
+                                    This is a renewal order. Payment confirmation sets its service period automatically.
+                                    @if ($order->start_date && $order->end_date)
+                                        Period: {{ $order->start_date->format('d M Y') }} – {{ $order->end_date->format('d M Y') }}.
+                                    @endif
+                                </div>
+                            @endif
                             <div class="space-y-2">
-                                <label class="block font-label-md text-on-surface">Status</label>
+                                <label class="block font-label-md text-on-surface">Order Status</label>
 
                                 <select wire:model="status"
                                     class="w-full rounded border border-outline-variant px-4 py-2.5">
                                     <option value="pending">Pending</option>
-                                    <option value="awaiting_payment">Awaiting Payment</option>
-                                    <option value="paid">Paid</option>
+                                    @if ($order->order_type === 'pricing_plan')
+                                        <option value="awaiting_payment">Awaiting Payment</option>
+                                        <option value="paid">Paid</option>
+                                    @endif
                                     <option value="active">Active</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
@@ -319,10 +367,24 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
                                 @enderror
                             </div>
 
+                            @if ($order->order_type === 'service')
+                                <div class="space-y-2">
+                                    <label class="block font-label-md text-on-surface">Payment Status</label>
+                                    <select wire:model="payment_status" class="w-full rounded border border-outline-variant px-4 py-2.5">
+                                        <option value="awaiting_payment">Awaiting Payment</option>
+                                        <option value="paid">Paid</option>
+                                    </select>
+                                    @error('payment_status')
+                                        <p class="text-sm text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
+
                             <div class="space-y-2">
                                 <label class="block font-label-md text-on-surface">Billing Cycle</label>
 
                                 <select wire:model="billing_cycle"
+                                    @disabled($order->renewal_of_id)
                                     class="w-full rounded border border-outline-variant px-4 py-2.5">
                                     <option value="one_time">One-time</option>
                                     <option value="monthly">Monthly</option>
@@ -339,6 +401,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
                                 <label class="block font-label-md text-on-surface">Start Date</label>
 
                                 <input type="date" wire:model="start_date"
+                                    @disabled($order->renewal_of_id)
                                     class="w-full rounded border border-outline-variant px-4 py-2.5">
 
                                 @error('start_date')
@@ -350,6 +413,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
                                 <label class="block font-label-md text-on-surface">End Date</label>
 
                                 <input type="date" wire:model="end_date"
+                                    @disabled($order->renewal_of_id)
                                     class="w-full rounded border border-outline-variant px-4 py-2.5">
 
                                 @error('end_date')
@@ -359,6 +423,7 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Order')] class extends Componen
 
                             <div class="md:col-span-2">
                                 <button type="button" wire:click="autoSetDates"
+                                    @disabled($order->renewal_of_id)
                                     class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100">
                                     <span class="material-symbols-outlined text-lg">event_repeat</span>
                                     Auto Set Dates From Billing Cycle
