@@ -34,7 +34,13 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
     public string $privacy_policy = '';
 
     public string $bkash_number = '';
+    public bool $bkash_enabled = false;
     public string $bkash_instructions = '';
+
+    public bool $sslcommerz_enabled = false;
+    public string $sslcommerz_store_id = '';
+    public string $sslcommerz_store_password = '';
+    public bool $sslcommerz_sandbox = true;
 
     public bool $live_tv_enabled = false;
 
@@ -86,7 +92,12 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
         $this->privacy_policy = $this->setting->privacy_policy ?? '';
 
         $this->bkash_number = $this->setting->bkash_number ?? '';
+        $this->bkash_enabled = $this->setting->bkash_enabled ?? false;
         $this->bkash_instructions = $this->setting->bkash_instructions ?? '';
+
+        $this->sslcommerz_enabled = $this->setting->sslcommerz_enabled ?? false;
+        $this->sslcommerz_store_id = $this->setting->sslcommerz_store_id ?? '';
+        $this->sslcommerz_sandbox = $this->setting->sslcommerz_sandbox ?? true;
 
         $this->live_tv_enabled = $this->setting->live_tv_enabled ?? false;
 
@@ -113,8 +124,14 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
             'terms_conditions' => ['nullable', 'string'],
             'privacy_policy' => ['nullable', 'string'],
 
-            'bkash_number' => ['nullable', 'string', 'max:30'],
+            'bkash_enabled' => ['boolean'],
+            'bkash_number' => ['required_if:bkash_enabled,true', 'nullable', 'string', 'max:30'],
             'bkash_instructions' => ['nullable', 'string'],
+
+            'sslcommerz_enabled' => ['boolean'],
+            'sslcommerz_store_id' => ['required_if:sslcommerz_enabled,true', 'nullable', 'string', 'max:255'],
+            'sslcommerz_store_password' => [\Illuminate\Validation\Rule::requiredIf($this->sslcommerz_enabled && blank($this->setting->sslcommerz_store_password)), 'nullable', 'string', 'max:255'],
+            'sslcommerz_sandbox' => ['boolean'],
 
             'live_tv_enabled' => ['boolean'],
 
@@ -171,6 +188,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
             'privacy_policy' => $this->privacy_policy,
 
             'bkash_number' => $this->bkash_number,
+            'bkash_enabled' => $this->bkash_enabled,
             'bkash_instructions' => $this->bkash_instructions,
 
             'live_tv_enabled' => $this->live_tv_enabled,
@@ -182,6 +200,13 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
 
     private function hasChanges(): bool
     {
+        if ($this->sslcommerz_enabled !== (bool) $this->setting->sslcommerz_enabled
+            || $this->sslcommerz_store_id !== ($this->setting->sslcommerz_store_id ?? '')
+            || $this->sslcommerz_sandbox !== (bool) ($this->setting->sslcommerz_sandbox ?? true)
+            || filled($this->sslcommerz_store_password)) {
+            return true;
+        }
+
         $currentState = [
             'site_name' => $this->site_name,
             'email' => $this->email,
@@ -201,6 +226,7 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
             'privacy_policy' => $this->privacy_policy,
 
             'bkash_number' => $this->bkash_number,
+            'bkash_enabled' => $this->bkash_enabled,
             'bkash_instructions' => $this->bkash_instructions,
 
             'live_tv_enabled' => $this->live_tv_enabled,
@@ -260,7 +286,14 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
             'privacy_policy' => $validated['privacy_policy'] ?: null,
 
             'bkash_number' => $validated['bkash_number'] ?: null,
+            'bkash_enabled' => $validated['bkash_enabled'],
             'bkash_instructions' => $validated['bkash_instructions'] ?: null,
+
+            'sslcommerz_enabled' => $validated['sslcommerz_enabled'],
+            'sslcommerz_store_id' => $validated['sslcommerz_store_id'] ?: null,
+            'sslcommerz_store_password' => filled($validated['sslcommerz_store_password'])
+                ? $validated['sslcommerz_store_password'] : $this->setting->sslcommerz_store_password,
+            'sslcommerz_sandbox' => $validated['sslcommerz_sandbox'],
 
             'live_tv_enabled' => $this->live_tv_enabled,
 
@@ -270,6 +303,8 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
 
         $this->logo = null;
         $this->favicon = null;
+        $this->sslcommerz_store_password = '';
+        $this->captureOriginalState();
 
         $this->dispatch('branding-saved');
 
@@ -385,12 +420,61 @@ new #[Layout('layouts.admin-app')] #[Title('Site Settings')] class extends Compo
                 <!-- Payment Settings -->
                 @if ($activeTab === 'payment')
                 <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <h3 class="mb-6 text-h3 font-h2">SSLCommerz Settings</h3>
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <label class="flex items-center gap-3 md:col-span-2">
+                            <input type="checkbox" wire:model.live="sslcommerz_enabled" class="accent-primary" />
+                            <span>Enable SSLCommerz payments</span>
+                        </label>
+                        @error('sslcommerz_enabled')<p class="text-sm text-red-500">{{ $message }}</p>@enderror
+                        <div class="space-y-2">
+                            <label for="sslcommerz-store-id" class="block font-label-md text-on-surface">Store ID</label>
+                            <input id="sslcommerz-store-id" type="text" wire:model="sslcommerz_store_id" autocomplete="off"
+                                class="w-full rounded border border-outline-variant px-4 py-2.5" />
+                            @error('sslcommerz_store_id')<p class="text-sm text-red-500">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="space-y-2">
+                            <label for="sslcommerz-store-password" class="block font-label-md text-on-surface">Store Password</label>
+                            <div x-data="{ showPassword: false }" class="relative">
+                                <input id="sslcommerz-store-password" type="password" :type="showPassword ? 'text' : 'password'"
+                                    wire:model="sslcommerz_store_password" autocomplete="new-password"
+                                    placeholder="{{ filled($setting->sslcommerz_store_password) ? 'Password saved — leave blank to keep it' : 'Enter store password' }}"
+                                    class="w-full rounded border border-outline-variant py-2.5 pl-4 pr-20" />
+                                <button type="button" @click="showPassword = !showPassword"
+                                    aria-controls="sslcommerz-store-password" :aria-pressed="showPassword"
+                                    :aria-label="showPassword ? 'Hide store password' : 'Show store password'"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-sm font-semibold text-primary"
+                                    x-text="showPassword ? 'Hide' : 'Show'">Show</button>
+                            </div>
+                            @error('sslcommerz_store_password')<p class="text-sm text-red-500">{{ $message }}</p>@enderror
+                            <p class="text-xs text-secondary">Use the SSLCommerz store password. Saved passwords are encrypted.</p>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="sslcommerz-mode" class="block font-label-md text-on-surface">Payment mode</label>
+                            <select id="sslcommerz-mode" wire:model="sslcommerz_sandbox" class="w-full rounded border border-outline-variant px-4 py-2.5">
+                                <option value="1">Sandbox (test payments)</option>
+                                <option value="0">Live (real payments)</option>
+                            </select>
+                            @error('sslcommerz_sandbox')<p class="text-sm text-red-500">{{ $message }}</p>@enderror
+                        </div>
+                        <p class="text-sm text-secondary md:col-span-2">Disabling SSLCommerz stops new online payments. Payments already in progress can still be verified.</p>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
                     <h3 class="mb-8 flex items-center gap-2 text-h3 font-h2">
                         <span class="material-symbols-outlined text-primary">payments</span>
                         bKash Payment Settings
                     </h3>
 
                     <div class="grid grid-cols-1 gap-6">
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3">
+                                <input type="checkbox" wire:model.live="bkash_enabled" class="accent-primary" />
+                                <span>Enable bKash payments</span>
+                            </label>
+                            @error('bkash_enabled')<p class="text-sm text-red-500">{{ $message }}</p>@enderror
+                            <p class="text-xs text-secondary">Disabling bKash stops new manual payments. Submitted payments can still be verified.</p>
+                        </div>
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">bKash Number</label>
                             <input type="text" wire:model.live="bkash_number"

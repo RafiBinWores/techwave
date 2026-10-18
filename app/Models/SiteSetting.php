@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Services\UploadStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'site_name',
@@ -24,11 +25,18 @@ use Illuminate\Database\Eloquent\Model;
     'terms_conditions',
     'privacy_policy',
     'bkash_number',
+    'bkash_enabled',
     'bkash_instructions',
+    'sslcommerz_enabled',
+    'sslcommerz_store_id',
+    'sslcommerz_store_password',
+    'sslcommerz_sandbox',
     'live_tv_enabled',
 ])]
 class SiteSetting extends Model
 {
+    protected $hidden = ['sslcommerz_store_password'];
+
     protected static ?self $currentSetting = null;
 
     public static function current(): self
@@ -48,6 +56,20 @@ class SiteSetting extends Model
     public static function forgetCurrent(): void
     {
         static::$currentSetting = null;
+    }
+
+    public function bkashAvailable(): bool
+    {
+        return (bool) $this->bkash_enabled && filled($this->bkash_number);
+    }
+
+    public function requireBkashAvailable(): void
+    {
+        if (! $this->bkashAvailable()) {
+            throw ValidationException::withMessages([
+                'payment' => 'bKash payments are currently unavailable. Please contact the team.',
+            ]);
+        }
     }
 
     public function getLogoUrlAttribute(): ?string
@@ -86,6 +108,10 @@ class SiteSetting extends Model
     {
         return [
             'live_tv_enabled' => 'boolean',
+            'bkash_enabled' => 'boolean',
+            'sslcommerz_enabled' => 'boolean',
+            'sslcommerz_sandbox' => 'boolean',
+            'sslcommerz_store_password' => 'encrypted',
         ];
     }
 }

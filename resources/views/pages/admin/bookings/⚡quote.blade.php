@@ -181,6 +181,13 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
         }
 
         $amount = $this->finalAmount();
+        try {
+            $this->booking->requireVerifiedOnlinePayment();
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->dispatch('toast', message: 'This SSLCommerz payment has not been verified yet.', type: 'error');
+
+            return;
+        }
 
         if ($amount <= 0) {
             $this->dispatch('toast', message: 'Please add a valid quoted, requested, or plan price before creating order.', type: 'error');
@@ -220,6 +227,7 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
             'final_price' => $amount,
             'amount' => $amount,
             'currency' => $this->booking->currency ?: 'BDT',
+            'payment_method' => $this->booking->paymentMethodForOrder(),
 
             'message' => $this->booking->message,
             'user_note' => $this->booking->user_note,
@@ -340,6 +348,9 @@ new #[Layout('layouts.admin-app')] #[Title('Booking Quote')] class extends Compo
 
     public function finalAmount(): float
     {
+        if ($this->booking->payment_method === 'sslcommerz') {
+            return $this->booking->verifiedOnlineAmount() ?? 0;
+        }
         $amount = $this->booking->final_price ?? ($this->booking->quoted_price ?? ($this->booking->requested_price ?? ($this->booking->plan_price ?? 0)));
 
         if ($amount == $this->booking->plan_price && $this->booking->addons) {
@@ -413,6 +424,9 @@ Techwave Team
                     {{ $booking->booking_no }}
                 </span>
 
+                @if ($booking->payment_method === 'sslcommerz')
+                    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-primary">SSLCommerz: {{ $booking->payment_status === 'paid' ? 'Paid' : 'Awaiting payment' }}</span>
+                @endif
                 @if ($booking->order)
                     <span
                         class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">

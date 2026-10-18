@@ -2,6 +2,8 @@
 
 namespace App\Library\SslCommerz;
 
+use App\Services\SslCommerzSettings;
+
 class SslCommerzNotification extends AbstractSslCommerz
 {
     protected $data = [];
@@ -23,7 +25,7 @@ class SslCommerzNotification extends AbstractSslCommerz
      */
     public function __construct()
     {
-        $this->config = config('sslcommerz');
+        $this->config = app(SslCommerzSettings::class)->configuration();
 
         $this->setStoreId($this->config['apiCredentials']['store_id']);
         $this->setStorePassword($this->config['apiCredentials']['store_password']);
@@ -196,6 +198,7 @@ class SslCommerzNotification extends AbstractSslCommerz
      */
     public function makePayment(array $requestData, $type = 'checkout', $pattern = 'json')
     {
+        app(SslCommerzSettings::class)->requireAvailable();
         if (empty($requestData)) {
             return 'Please provide a valid information list about transaction with transaction id, amount, success url, fail url, cancel url, store id and pass at least';
         }

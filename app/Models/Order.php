@@ -48,6 +48,7 @@ use InvalidArgumentException;
 
     'status',
     'payment_status',
+    'payment_method',
     'start_date',
     'end_date',
     'renewal_of_id',
@@ -134,6 +135,15 @@ class Order extends Model
             $order->update($attributes);
             $this->refresh();
         });
+    }
+
+    public function paymentMethodLabel(): string
+    {
+        return match ($this->payment_method) {
+            'sslcommerz' => 'SSLCommerz',
+            'manual' => 'Manual bKash',
+            default => 'Not recorded',
+        };
     }
 
     public function invoiceItemTitle(): string

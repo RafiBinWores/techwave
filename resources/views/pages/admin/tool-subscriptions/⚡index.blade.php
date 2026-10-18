@@ -79,6 +79,12 @@ new #[Layout('layouts.admin-app')] #[Title('Tool Subscriptions')] class extends 
     {
         $sub = ToolSubscription::findOrFail($id);
 
+        if ($sub->payment_method === 'sslcommerz') {
+            $this->dispatch('toast', message: 'SSLCommerz payments are verified automatically by the gateway.', type: 'warning');
+
+            return;
+        }
+
         $sub->update([
             'status' => 'active',
             'verified_at' => now(),

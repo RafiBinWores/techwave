@@ -2,12 +2,11 @@
 
 // SSLCommerz configuration
 
-$apiDomain = env('SSLCZ_TESTMODE') ? 'https://sandbox.sslcommerz.com' : 'https://securepay.sslcommerz.com';
-
 return [
+    // Credentials and mode are resolved from Site Settings at payment time.
     'apiCredentials' => [
-        'store_id' => env('SSLCZ_STORE_ID'),
-        'store_password' => env('SSLCZ_STORE_PASSWORD'),
+        'store_id' => null,
+        'store_password' => null,
     ],
     'apiUrl' => [
         'make_payment' => '/gwprocess/v4/api.php',
@@ -16,7 +15,7 @@ return [
         'refund_payment' => '/validator/api/merchantTransIDvalidationAPI.php',
         'refund_status' => '/validator/api/merchantTransIDvalidationAPI.php',
     ],
-    'apiDomain' => $apiDomain,
+    'apiDomain' => 'https://sandbox.sslcommerz.com',
     'connect_from_localhost' => env('IS_LOCALHOST', false), // For Sandbox, use "true", For Live, use "false"
     'success_url' => '/sslcommerz/success',
     'fail_url' => '/sslcommerz/fail',

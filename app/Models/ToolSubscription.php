@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['user_id', 'tool_category_id', 'tool_plan_id', 'billing_cycle', 'amount', 'status', 'starts_at', 'expires_at', 'transaction_id', 'sender_bkash', 'verified_at', 'admin_note', 'admin_read_at'])]
+#[Fillable(['user_id', 'tool_category_id', 'tool_plan_id', 'billing_cycle', 'amount', 'status', 'starts_at', 'expires_at', 'transaction_id', 'sender_bkash', 'verified_at', 'admin_note', 'admin_read_at', 'payment_method'])]
 class ToolSubscription extends Model
 {
     protected function casts(): array
@@ -24,6 +24,11 @@ class ToolSubscription extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function onlinePayments()
+    {
+        return $this->morphMany(CheckoutPayment::class, 'payable');
     }
 
     public function toolCategory(): BelongsTo

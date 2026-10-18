@@ -37,6 +37,7 @@ class ServiceOrderRenewal
                 'order_no' => Invoice::generateInvoiceNumber(),
                 'status' => 'pending',
                 'payment_status' => 'awaiting_payment',
+                'payment_method' => null,
                 'start_date' => null,
                 'end_date' => null,
                 'renewal_activated_at' => null,

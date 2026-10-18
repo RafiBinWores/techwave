@@ -14,6 +14,8 @@ class ServiceRenewalPayment
 {
     public function start(Order $renewal, array $customer): string
     {
+        app(SslCommerzSettings::class)->requireAvailable();
+
         return DB::transaction(function () use ($renewal, $customer): string {
             $root = Order::query()->lockForUpdate()->findOrFail($renewal->renewal_of_id);
             $order = Order::query()->lockForUpdate()->findOrFail($renewal->id);
@@ -35,8 +37,8 @@ class ServiceRenewalPayment
             $this->requireCredentials();
             $transaction = 'SR-'.Str::upper(Str::random(24));
             $payload = [
-                'store_id' => config('sslcommerz.apiCredentials.store_id'),
-                'store_passwd' => config('sslcommerz.apiCredentials.store_password'),
+                'store_id' => $this->configuration()['apiCredentials']['store_id'],
+                'store_passwd' => $this->configuration()['apiCredentials']['store_password'],
                 'total_amount' => $order->amount, 'currency' => $order->currency, 'tran_id' => $transaction,
                 'success_url' => route('client.renewals.success', $order),
                 'fail_url' => route('client.renewals.fail', $order),
@@ -84,8 +86,8 @@ class ServiceRenewalPayment
         $this->requireCredentials();
         try {
             $verified = Http::acceptJson()->timeout(20)->get($this->endpoint('order_validate'), [
-                'val_id' => $validationId, 'store_id' => config('sslcommerz.apiCredentials.store_id'),
-                'store_passwd' => config('sslcommerz.apiCredentials.store_password'), 'format' => 'json', 'v' => 1,
+                'val_id' => $validationId, 'store_id' => $this->configuration()['apiCredentials']['store_id'],
+                'store_passwd' => $this->configuration()['apiCredentials']['store_password'], 'format' => 'json', 'v' => 1,
             ])->throw()->json();
         } catch (ConnectionException|RequestException $exception) {
             return false;
@@ -107,6 +109,7 @@ class ServiceRenewalPayment
             }
             if ($order->payment_status !== 'paid') {
                 $order->setPaymentStatus('paid');
+                $order->payment_method = 'sslcommerz';
             }
             $attempts[$key]['status'] = 'paid';
             $attempts[$key]['validation_id'] = $validationId;
@@ -159,13 +162,20 @@ class ServiceRenewalPayment
 
     private function requireCredentials(): void
     {
-        if (! config('sslcommerz.apiCredentials.store_id') || ! config('sslcommerz.apiCredentials.store_password')) {
+        if (! $this->configuration()['apiCredentials']['store_id'] || ! $this->configuration()['apiCredentials']['store_password']) {
             throw ValidationException::withMessages(['payment' => 'Online payment is unavailable. Please contact the team.']);
         }
     }
 
     private function endpoint(string $key): string
     {
-        return rtrim(config('sslcommerz.apiDomain'), '/').config('sslcommerz.apiUrl.'.$key);
+        $config = $this->configuration();
+
+        return rtrim($config['apiDomain'], '/').$config['apiUrl'][$key];
+    }
+
+    private function configuration(): array
+    {
+        return app(SslCommerzSettings::class)->configuration();
     }
 }

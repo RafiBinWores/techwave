@@ -326,6 +326,10 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Payment Method
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                                 Service Period
                             </th>
 
@@ -444,6 +448,9 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                                     ])>
                                         {{ $this->statusLabel($order->payment_status) }}
                                     </span>
+                                </td>
+                                <td class="px-6 py-4 text-body-sm text-secondary">
+                                    {{ $order->paymentMethodLabel() }}
                                 </td>
 
                                 <td class="px-6 py-4 text-body-sm text-secondary">
@@ -568,7 +575,7 @@ new #[Layout('layouts.admin-app')] #[Title('Orders')] class extends Component {
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-14 text-center">
+                                <td colspan="10" class="px-6 py-14 text-center">
                                     <div class="mx-auto flex max-w-sm flex-col items-center">
                                         <div
                                             class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">

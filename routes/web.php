@@ -6,12 +6,12 @@ use App\Http\Controllers\CompressedImageController;
 use App\Http\Controllers\PlanOrderInvoiceController;
 use App\Http\Controllers\PricingCheckoutController;
 use App\Http\Controllers\ProposalPdfController;
+use App\Http\Controllers\PurchasePaymentController;
 use App\Http\Controllers\QrPreviewController;
 use App\Http\Controllers\QrRecordImageController;
 use App\Http\Controllers\QrScanController;
 use App\Http\Controllers\ResizedImageController;
 use App\Http\Controllers\ServiceRenewalPaymentController;
-use App\Http\Controllers\SslCommerzController;
 use App\Http\Controllers\SubscriptionInvoiceController;
 use App\Http\Controllers\TempMailAttachmentController;
 use App\Http\Controllers\UploadController;
@@ -97,7 +97,7 @@ Route::livewire('/', 'pages::client.home')->name('home');
 Route::livewire('/services', 'pages::client.services.index')->name('client.services');
 Route::livewire('/services/{slug}/options', 'pages::client.services.options')->name('client.services.options');
 Route::livewire('/services/{slug}', 'pages::client.services.details')->name('client.services.details');
-Route::livewire('/services/{slug}/checkout/{plan:slug}', 'pages::client.services.checkout')->name('client.services.checkout');
+Route::livewire('/services/{slug}/checkout/{plan:slug}', 'pages::client.checkout.service')->name('client.services.checkout');
 
 // projects
 Route::livewire('/projects', 'pages::client.projects.index')->name('client.projects');
@@ -161,7 +161,7 @@ Route::livewire('/contact', 'pages::client.contact')->name('client.contact');
 Route::livewire('/live-tv', 'pages::client.live-tv')->name('client.live-tv');
 
 // Pricing and orders
-Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing-checkout')->name('client.checkout.pricing');
+Route::livewire('/checkout/pricing/{pricingPlan}', 'pages::client.checkout.pricing')->name('client.checkout.pricing');
 
 // Public proposal response (signed link from email)
 Route::livewire('/proposal/{proposal}/respond', 'pages::client.proposals.respond')->middleware('signed')->name('client.proposals.respond');
@@ -195,15 +195,10 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Delete account
     Route::livewire('account/delete-account', 'pages::client.account.delete-account')->name('account.delete-account');
 
-    // Checkout function for monthly
-    Route::post('/checkout/pricing/{pricingPlan}/pay', [SslCommerzController::class, 'pay'])->name('client.checkout.pricing.pay');
-
     // Booking for yearly
     Route::post('/checkout/pricing/{pricingPlan}/booking', [PricingCheckoutController::class, 'booking'])
         ->name('client.checkout.pricing.booking');
 
-    // Order success page
-    Route::livewire('/checkout/success/{order}', 'pages::client.checkout.checkout-success')->name('client.checkout.success');
 
     // Service booking success page
     Route::livewire('/services/booking/success/{booking}', 'pages::client.services.booking-success')->name('client.services.booking-success');
@@ -230,7 +225,7 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     Route::livewire('/account/projects/{project}/discussion', 'pages::client.account.workspace.project-discussion')->name('account.workspace-project.discussion');
 
     // Tool Subscriptions
-    Route::livewire('/tools/subscriptions/checkout/{plan}', 'pages::client.tool-subscriptions.checkout')->name('client.tool-subscriptions.checkout');
+    Route::livewire('/tools/subscriptions/checkout/{plan}', 'pages::client.checkout.tool-subscription')->name('client.tool-subscriptions.checkout');
 
     // Account subscriptions
     Route::livewire('/account/tool-subscriptions', 'pages::client.account.tool-subscriptions')->name('account.tool-subscriptions');
@@ -272,17 +267,16 @@ Route::prefix('sslcommerz/service-renewals/{order}')->group(function () {
     Route::post('ipn', [ServiceRenewalPaymentController::class, 'ipn'])->name('client.renewals.ipn');
 });
 
-Route::match(['get', 'post'], '/sslcommerz/success', [SslCommerzController::class, 'success'])
-    ->name('sslcommerz.success');
-
-Route::match(['get', 'post'], '/sslcommerz/fail', [SslCommerzController::class, 'fail'])
-    ->name('sslcommerz.fail');
-
-Route::match(['get', 'post'], '/sslcommerz/cancel', [SslCommerzController::class, 'cancel'])
-    ->name('sslcommerz.cancel');
-
-Route::match(['get', 'post'], '/sslcommerz/ipn', [SslCommerzController::class, 'ipn'])
-    ->name('sslcommerz.ipn');
+Route::get('/checkout/payments/{payment}', [PurchasePaymentController::class, 'show'])
+    ->middleware('auth')->name('purchases.show');
+Route::post('/checkout/payments/{payment}/retry', [PurchasePaymentController::class, 'retry'])
+    ->middleware(['auth', 'throttle:6,1'])->name('purchases.retry');
+Route::prefix('sslcommerz/purchases/{payment}')->group(function () {
+    Route::match(['get', 'post'], 'success', [PurchasePaymentController::class, 'success'])->name('purchases.success');
+    Route::match(['get', 'post'], 'fail', [PurchasePaymentController::class, 'fail'])->name('purchases.fail');
+    Route::match(['get', 'post'], 'cancel', [PurchasePaymentController::class, 'cancel'])->name('purchases.cancel');
+    Route::post('ipn', [PurchasePaymentController::class, 'ipn'])->name('purchases.ipn');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -473,7 +467,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::get('/whmcs/invoices/{invoiceId}/pdf', [WhmcsInvoiceController::class, 'adminPdf'])->whereNumber('invoiceId')->name('whmcs.invoices.pdf');
     Route::livewire('/whmcs/invoices/{invoiceId}/view', 'pages::admin.whmcs.invoice-view')->whereNumber('invoiceId')->name('whmcs.invoices.view');
 
-    
+
     // WHMCS users
     Route::livewire('/whmcs/users', 'pages::admin.whmcs.users')->name('whmcs.users');
     Route::livewire('/whmcs/users/{userId}', 'pages::admin.whmcs.user-view')->whereNumber('userId')->name('whmcs.users.view');

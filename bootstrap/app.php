@@ -47,10 +47,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn(Request $request) => route('home'));
 
         $middleware->validateCsrfTokens(except: [
-            'sslcommerz/success',
-            'sslcommerz/fail',
-            'sslcommerz/cancel',
-            'sslcommerz/ipn',
+            'sslcommerz/purchases/*/success',
+            'sslcommerz/purchases/*/fail',
+            'sslcommerz/purchases/*/cancel',
+            'sslcommerz/purchases/*/ipn',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

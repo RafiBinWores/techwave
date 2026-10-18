@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'user_id',
@@ -30,6 +31,8 @@ use Illuminate\Database\Eloquent\Model;
     'addons',
     'sender_bkash',
     'transaction_id',
+    'payment_method',
+    'payment_status',
     'currency',
     'message',
     'user_note',
@@ -55,6 +58,35 @@ class Booking extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function onlinePayments()
+    {
+        return $this->morphMany(CheckoutPayment::class, 'payable');
+    }
+
+    public function paymentMethodForOrder(): ?string
+    {
+        if ($this->payment_method === 'sslcommerz') {
+            return 'sslcommerz';
+        }
+
+        return $this->payment_method === 'manual' && filled($this->sender_bkash) && filled($this->transaction_id)
+            ? 'manual' : null;
+    }
+
+    public function verifiedOnlineAmount(): ?float
+    {
+        $amount = $this->onlinePayments()->where('status', 'paid')->where('needs_review', false)->oldest('id')->value('amount');
+
+        return $amount === null ? null : (float) $amount;
+    }
+
+    public function requireVerifiedOnlinePayment(): void
+    {
+        if ($this->payment_method === 'sslcommerz' && $this->verifiedOnlineAmount() === null) {
+            throw ValidationException::withMessages(['payment' => 'This SSLCommerz payment has not been verified yet.']);
+        }
+    }
+
     public function service()
     {
         return $this->belongsTo(Service::class);
@@ -74,16 +106,6 @@ class Booking extends Model
     {
         return $this->hasOne(Order::class);
     }
-
-    // public function pricingOrder()
-    // {
-    //     return $this->belongsTo(PricingOrder::class);
-    // }
-
-    // public function assignedService()
-    // {
-    //     return $this->hasOne(UserService::class);
-    // }
 
     public function isServiceBooking(): bool
     {

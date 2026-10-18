@@ -103,7 +103,7 @@ abstract class AbstractSslCommerz implements SslCommerzInterface
                 if (strpos($sslcz['failedreason'], 'Store Credential') === false) {
                     $message = $sslcz['failedreason'];
                 } else {
-                    $message = 'Check the SSLCZ_TESTMODE and SSLCZ_STORE_PASSWORD value in your .env; DO NOT USE MERCHANT PANEL PASSWORD HERE.';
+                    $message = 'Check the SSLCommerz mode and store credentials in Admin Site Settings. Use the store password provided by SSLCommerz.';
                 }
                 $response = json_encode(['status' => 'fail', 'data' => null, 'message' => $message]);
             }
@@ -121,7 +121,7 @@ abstract class AbstractSslCommerz implements SslCommerzInterface
      */
     public function redirect($url, $permanent = false)
     {
-        header('Location: '.$url, true, $permanent ? 301 : 302);
+        header('Location: ' . $url, true, $permanent ? 301 : 302);
 
         exit();
     }

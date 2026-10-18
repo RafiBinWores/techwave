@@ -53,24 +53,24 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
             ->with(['user', 'service.category', 'servicePlan', 'pricingPlan', 'order'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('booking_no', 'like', '%'.$search.'%')
-                        ->orWhere('full_name', 'like', '%'.$search.'%')
-                        ->orWhere('phone', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%')
-                        ->orWhere('company_name', 'like', '%'.$search.'%')
-                        ->orWhere('company_phone', 'like', '%'.$search.'%')
-                        ->orWhere('company_email', 'like', '%'.$search.'%')
-                        ->orWhere('plan_name', 'like', '%'.$search.'%')
-                        ->orWhere('message', 'like', '%'.$search.'%')
-                        ->orWhere('user_note', 'like', '%'.$search.'%')
+                    $q->where('booking_no', 'like', '%' . $search . '%')
+                        ->orWhere('full_name', 'like', '%' . $search . '%')
+                        ->orWhere('phone', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhere('company_name', 'like', '%' . $search . '%')
+                        ->orWhere('company_phone', 'like', '%' . $search . '%')
+                        ->orWhere('company_email', 'like', '%' . $search . '%')
+                        ->orWhere('plan_name', 'like', '%' . $search . '%')
+                        ->orWhere('message', 'like', '%' . $search . '%')
+                        ->orWhere('user_note', 'like', '%' . $search . '%')
                         ->orWhereHas('service', function ($serviceQuery) use ($search) {
-                            $serviceQuery->where('card_title', 'like', '%'.$search.'%')->orWhere('detail_title', 'like', '%'.$search.'%');
+                            $serviceQuery->where('card_title', 'like', '%' . $search . '%')->orWhere('detail_title', 'like', '%' . $search . '%');
                         })
                         ->orWhereHas('servicePlan', function ($servicePlanQuery) use ($search) {
-                            $servicePlanQuery->where('name', 'like', '%'.$search.'%');
+                            $servicePlanQuery->where('name', 'like', '%' . $search . '%');
                         })
                         ->orWhereHas('pricingPlan', function ($pricingPlanQuery) use ($search) {
-                            $pricingPlanQuery->where('title', 'like', '%'.$search.'%')->orWhere('plan_type', 'like', '%'.$search.'%');
+                            $pricingPlanQuery->where('title', 'like', '%' . $search . '%')->orWhere('plan_type', 'like', '%' . $search . '%');
                         });
                 });
             })
@@ -112,6 +112,13 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
         }
 
         $amount = $this->orderAmount($booking);
+        try {
+            $booking->requireVerifiedOnlinePayment();
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->dispatch('toast', message: 'This SSLCommerz payment has not been verified yet.', type: 'error');
+
+            return;
+        }
 
         if ($amount <= 0) {
             $this->dispatch('toast', message: 'Please add a valid quoted, requested, or plan price before creating order.', type: 'error');
@@ -151,6 +158,7 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
             'final_price' => $amount,
             'amount' => $amount,
             'currency' => $booking->currency ?: 'BDT',
+            'payment_method' => $booking->paymentMethodForOrder(),
 
             'message' => $booking->message,
             'user_note' => $booking->user_note,
@@ -179,7 +187,7 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
             UserNotificationService::notifyUser(
                 $orderUserId,
                 'Order Confirmed',
-                'Your booking '.$booking->booking_no.' has been confirmed. Order '.$order->order_no.' is now paid and active.',
+                'Your booking ' . $booking->booking_no . ' has been confirmed. Order ' . $order->order_no . ' is now paid and active.',
                 from: 'Support Team',
                 url: route('account.services', ['tab' => $order->order_type === 'pricing_plan' ? 'plans' : 'services']),
                 type: 'order',
@@ -270,6 +278,9 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
 
     private function orderAmount($booking): float
     {
+        if ($booking->payment_method === 'sslcommerz') {
+            return $booking->verifiedOnlineAmount() ?? 0;
+        }
         return (float) ($booking->final_price ?? ($booking->quoted_price ?? ($booking->requested_price ?? ($booking->plan_price ?? 0))));
     }
 
@@ -303,7 +314,7 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
             return 'Negotiable';
         }
 
-        return '৳'.number_format((float) $price, 2);
+        return '৳' . number_format((float) $price, 2);
     }
 
     public function displayBilling($booking): string
@@ -393,19 +404,19 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Company
-                            </th>
-
-                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
                                 Price
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Message
+                                Status
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
-                                Status
+                                Payment Method
+                            </th>
+
+                            <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
+                                Payment Status
                             </th>
 
                             <th class="px-6 py-4 text-label-sm font-label-sm uppercase tracking-wider text-secondary">
@@ -425,288 +436,296 @@ new #[Layout('layouts.admin-app')] #[Title('Bookings')] class extends Component
 
                     <tbody class="divide-y divide-slate-100">
                         @forelse ($this->bookings() as $booking)
-                            <tr wire:key="booking-{{ $booking->id }}" class="transition-colors hover:bg-slate-50/80">
-                                <td class="px-6 py-4">
-                                    <div>
-                                        <span class="block text-label-md font-label-md text-on-surface">
-                                            {{ $booking->full_name ?: $booking->user?->name ?: 'N/A' }}
-                                        </span>
-
-                                        @if ($booking->booking_no)
-                                            <span class="block font-mono text-[11px] text-slate-400">
-                                                {{ $booking->booking_no }}
-                                            </span>
-                                        @endif
-
-                                        @if ($booking->phone)
-                                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $booking->phone) }}"
-                                                class="block text-xs text-slate-400 transition hover:text-primary">
-                                                {{ $booking->phone }}
-                                            </a>
-                                        @endif
-
-                                        @if ($booking->email)
-                                            <a href="mailto:{{ $booking->email }}"
-                                                class="mt-1 block text-xs text-secondary transition hover:text-primary">
-                                                {{ $booking->email }}
-                                            </a>
-                                        @endif
-                                    </div>
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <span class="block text-body-sm text-on-surface">
-                                        {{ $this->bookingTitle($booking) }}
+                        @php
+                        $recordedMethod = $booking->order?->payment_method ?? $booking->payment_method;
+                        $hasBkashDetails = filled($booking->sender_bkash) && filled($booking->transaction_id);
+                        $paymentMethod = match (true) {
+                        $recordedMethod === 'sslcommerz' => 'SSLCommerz',
+                        $recordedMethod === 'manual' && ($booking->order?->payment_method === 'manual' || $hasBkashDetails) => 'Manual bKash',
+                        default => 'Not recorded',
+                        };
+                        $recordedStatus = $booking->order?->payment_status ?? $booking->payment_status;
+                        $paymentStatus = match ($recordedStatus) {
+                        'paid' => 'Paid',
+                        'pending', 'awaiting_payment' => $paymentMethod === 'Manual bKash' ? 'Awaiting verification' : 'Awaiting payment',
+                        'failed' => 'Failed',
+                        'cancelled' => 'Cancelled',
+                        default => match ($paymentMethod) {
+                        'Manual bKash' => 'Awaiting verification',
+                        'SSLCommerz' => 'Awaiting payment',
+                        default => 'No payment recorded',
+                        },
+                        };
+                        @endphp
+                        <tr wire:key="booking-{{ $booking->id }}" class="transition-colors hover:bg-slate-50/80">
+                            <td class="px-6 py-4">
+                                <div>
+                                    <span class="block text-label-md font-label-md text-on-surface">
+                                        {{ $booking->full_name ?: $booking->user?->name ?: 'N/A' }}
                                     </span>
 
-                                    @if ($this->bookingSubtitle($booking))
-                                        <span class="block text-xs capitalize text-secondary">
-                                            {{ $this->bookingSubtitle($booking) }}
-                                        </span>
+                                    @if ($booking->booking_no)
+                                    <span class="block font-mono text-[11px] text-slate-400">
+                                        {{ $booking->booking_no }}
+                                    </span>
                                     @endif
 
-                                    {{-- <span @class([
+                                    @if ($booking->phone)
+                                    <a href="tel:{{ preg_replace('/[^0-9+]/', '', $booking->phone) }}"
+                                        class="block text-xs text-slate-400 transition hover:text-primary">
+                                        {{ $booking->phone }}
+                                    </a>
+                                    @endif
+
+                                    @if ($booking->email)
+                                    <a href="mailto:{{ $booking->email }}"
+                                        class="mt-1 block text-xs text-secondary transition hover:text-primary">
+                                        {{ $booking->email }}
+                                    </a>
+                                    @endif
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="block text-body-sm text-on-surface">
+                                    {{ $this->bookingTitle($booking) }}
+                                </span>
+
+                                @if ($this->bookingSubtitle($booking))
+                                <span class="block text-xs capitalize text-secondary">
+                                    {{ $this->bookingSubtitle($booking) }}
+                                </span>
+                                @endif
+
+                                {{-- <span @class([
                                         'mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
                                         'bg-cyan-100 text-cyan-700' => $booking->booking_type === 'service',
                                         'bg-purple-100 text-purple-700' =>
                                             $booking->booking_type === 'pricing_plan',
                                     ])>
                                         {{ $booking->booking_type === 'pricing_plan' ? 'Pricing Plan' : 'Service' }}
-                                    </span> --}}
-                                </td>
+                                </span> --}}
+                            </td>
 
-                                <td class="px-6 py-4">
-                                    <span class="block text-body-sm text-on-surface">
-                                        {{ $booking->company_name ?: 'N/A' }}
-                                    </span>
-
-                                    @if ($booking->company_phone)
-                                        <span class="block text-xs text-secondary">
-                                            {{ $booking->company_phone }}
-                                        </span>
-                                    @endif
-
-                                    @if ($booking->company_email)
-                                        <span class="block text-xs text-secondary">
-                                            {{ $booking->company_email }}
-                                        </span>
-                                    @endif
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    {{-- <span class="block font-mono text-body-sm text-on-surface">
+                            <td class="px-6 py-4">
+                                {{-- <span class="block font-mono text-body-sm text-on-surface">
                                         {{ $this->displayPrice($booking) }}
-                                    </span> --}}
+                                </span> --}}
 
-                                    {{-- <span class="block text-xs text-secondary">
+                                {{-- <span class="block text-xs text-secondary">
                                         {{ $this->displayBilling($booking) }}
-                                    </span> --}}
+                                </span> --}}
 
-                                    @if ($booking->plan_price)
-                                        <span class="block text-xs text-slate-400">
-                                            Listed: ৳{{ number_format((float) $booking->plan_price, 2) }}
-                                        </span>
+                                @if ($booking->plan_price)
+                                <span class="block text-xs text-slate-400">
+                                    Listed: ৳{{ number_format((float) $booking->plan_price, 2) }}
+                                </span>
+                                @endif
+
+                                @if ($booking->requested_price)
+                                <span class="block text-xs text-cyan-600">
+                                    Requested: ৳{{ number_format((float) $booking->requested_price, 2) }}
+                                </span>
+                                @endif
+
+                                @if ($booking->quoted_price)
+                                <span class="block text-xs text-emerald-600">
+                                    Quoted: ৳{{ number_format((float) $booking->quoted_price, 2) }}
+                                </span>
+                                @endif
+
+                                @if ($booking->addons && count($booking->addons) > 0)
+                                <span class="block text-[11px] font-semibold text-indigo-600 mt-1 mb-0.5">
+                                    Addons ({{ count($booking->addons) }}):
+                                </span>
+                                @foreach ($booking->addons as $addon)
+                                <span class="block text-[11px] text-indigo-500 ml-1">
+                                    {{ $addon['name'] ?? 'Addon' }}
+                                    @if (isset($addon['price']) && $addon['price'] !== null && $addon['price'] !== '')
+                                    – ৳{{ number_format((float) $addon['price'], 2) }}
                                     @endif
+                                </span>
+                                @endforeach
+                                @endif
+                            </td>
 
-                                    @if ($booking->requested_price)
-                                        <span class="block text-xs text-cyan-600">
-                                            Requested: ৳{{ number_format((float) $booking->requested_price, 2) }}
-                                        </span>
-                                    @endif
-
-                                    @if ($booking->quoted_price)
-                                        <span class="block text-xs text-emerald-600">
-                                            Quoted: ৳{{ number_format((float) $booking->quoted_price, 2) }}
-                                        </span>
-                                    @endif
-
-                                    @if ($booking->addons && count($booking->addons) > 0)
-                                        <span class="block text-[11px] font-semibold text-indigo-600 mt-1 mb-0.5">
-                                            Addons ({{ count($booking->addons) }}):
-                                        </span>
-                                        @foreach ($booking->addons as $addon)
-                                            <span class="block text-[11px] text-indigo-500 ml-1">
-                                                {{ $addon['name'] ?? 'Addon' }}
-                                                @if (isset($addon['price']) && $addon['price'] !== null && $addon['price'] !== '')
-                                                    – ৳{{ number_format((float) $addon['price'], 2) }}
-                                                @endif
-                                            </span>
-                                        @endforeach
-                                    @endif
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <p class="max-w-xs text-body-sm leading-6 text-secondary">
-                                        {{ $booking->message || $booking->user_note ? Str::limit($booking->message ?: $booking->user_note, 90) : 'No message provided' }}
-                                    </p>
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <span @class([
-                                        'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider',
-                                        'bg-slate-100 text-slate-600' => $booking->status === 'pending',
-                                        'bg-blue-100 text-blue-700' => $booking->status === 'quoted',
-                                        'bg-cyan-100 text-cyan-700' => $booking->status === 'accepted',
-                                        'bg-red-100 text-red-700' => in_array($booking->status, [
-                                            'rejected',
-                                            'cancelled',
-                                        ]),
-                                        'bg-emerald-100 text-emerald-700' => $booking->status === 'converted',
+                            <td class="px-6 py-4">
+                                <span @class([ 'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider' , 'bg-slate-100 text-slate-600'=> $booking->status === 'pending',
+                                    'bg-blue-100 text-blue-700' => $booking->status === 'quoted',
+                                    'bg-cyan-100 text-cyan-700' => $booking->status === 'accepted',
+                                    'bg-red-100 text-red-700' => in_array($booking->status, [
+                                    'rejected',
+                                    'cancelled',
+                                    ]),
+                                    'bg-emerald-100 text-emerald-700' => $booking->status === 'converted',
                                     ])>
-                                        {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
+                                    {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
+                                </span>
+
+                                @if ($booking->client_responded_at && $booking->offer_price)
+                                <span class="mt-1 block">
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                                        Counter Offer
+                                        ৳{{ number_format((float) $booking->offer_price, 2) }}
                                     </span>
+                                </span>
+                                @elseif ($booking->client_responded_at)
+                                <span class="mt-1 block">
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                        Client Responded
+                                    </span>
+                                </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-body-sm text-secondary">
+                                {{ $paymentMethod }}
+                            </td>
 
-                                    @if ($booking->client_responded_at && $booking->offer_price)
-                                        <span class="mt-1 block">
+                            <td class="px-6 py-4">
+                                <span @class([ 'inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold' , 'bg-emerald-100 text-emerald-700'=> $paymentStatus === 'Paid',
+                                    'bg-amber-100 text-amber-700' => in_array($paymentStatus, ['Awaiting payment', 'Awaiting verification']),
+                                    'bg-red-100 text-red-700' => in_array($paymentStatus, ['Failed', 'Cancelled']),
+                                    'bg-slate-100 text-slate-600' => $paymentStatus === 'No payment recorded',
+                                    ])>
+                                    {{ $paymentStatus }}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                @if ($booking->order)
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                                    <span class="material-symbols-outlined text-[14px]">verified</span>
+                                    {{ $booking->order->order_no }}
+                                </span>
+                                @else
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                                    <span class="material-symbols-outlined text-[14px]">hourglass_empty</span>
+                                    Not Created
+                                </span>
+                                @endif
+                            </td>
+
+                            <td class="px-6 py-4 text-body-sm text-secondary">
+                                {{ $booking->created_at?->format('M d, Y h:i A') }}
+                            </td>
+
+                            <td class="px-6 py-4 text-right">
+                                <div x-data="{ open: false }" class="relative inline-block text-left">
+                                    <button type="button" @click="open = !open"
+                                        class="text-slate-400 transition-colors hover:text-primary">
+                                        <span class="material-symbols-outlined">more_vert</span>
+                                    </button>
+
+                                    <div x-cloak x-show="open" @click.outside="open = false" x-transition
+                                        class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+
+                                        <a href="{{ route('admin.bookings.quote', $booking) }}" wire:navigate
+                                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span class="material-symbols-outlined text-[18px]">request_quote</span>
+                                            Edit / Send Quote
+                                        </a>
+
+                                        @if (!$booking->order && !in_array($booking->status, ['rejected', 'cancelled']))
+                                        <button type="button" wire:click="confirmToOrder({{ $booking->id }})"
+                                            wire:confirm="Confirm this booking and create an order?"
+                                            @click="open = false"
+                                            class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-emerald-700 transition hover:bg-emerald-50">
                                             <span
-                                                class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                                                Counter Offer
-                                                ৳{{ number_format((float) $booking->offer_price, 2) }}
-                                            </span>
-                                        </span>
-                                    @elseif ($booking->client_responded_at)
-                                        <span class="mt-1 block">
-                                            <span
-                                                class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                                                Client Responded
-                                            </span>
-                                        </span>
-                                    @endif
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    @if ($booking->order)
-                                        <span
-                                            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                                            <span class="material-symbols-outlined text-[14px]">verified</span>
-                                            {{ $booking->order->order_no }}
-                                        </span>
-                                    @else
-                                        <span
-                                            class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700">
-                                            <span class="material-symbols-outlined text-[14px]">hourglass_empty</span>
-                                            Not Created
-                                        </span>
-                                    @endif
-                                </td>
-
-                                <td class="px-6 py-4 text-body-sm text-secondary">
-                                    {{ $booking->created_at?->format('M d, Y h:i A') }}
-                                </td>
-
-                                <td class="px-6 py-4 text-right">
-                                    <div x-data="{ open: false }" class="relative inline-block text-left">
-                                        <button type="button" @click="open = !open"
-                                            class="text-slate-400 transition-colors hover:text-primary">
-                                            <span class="material-symbols-outlined">more_vert</span>
+                                                class="material-symbols-outlined text-[18px]">check_circle</span>
+                                            Confirm & Create Order
                                         </button>
 
-                                        <div x-cloak x-show="open" @click.outside="open = false" x-transition
-                                            class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                                        <div class="my-1 border-t border-slate-100"></div>
+                                        @endif
 
-                                            <a href="{{ route('admin.bookings.quote', $booking) }}" wire:navigate
-                                                class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
-                                                <span class="material-symbols-outlined text-[18px]">request_quote</span>
-                                                Edit / Send Quote
-                                            </a>
+                                        @if ($booking->status !== 'quoted' && !$booking->order)
+                                        <button type="button" wire:click="markAsQuoted({{ $booking->id }})"
+                                            @click="open = false"
+                                            class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span
+                                                class="material-symbols-outlined text-[18px]">request_quote</span>
+                                            Mark Quoted
+                                        </button>
+                                        @endif
 
-                                            @if (!$booking->order && !in_array($booking->status, ['rejected', 'cancelled']))
-                                                <button type="button" wire:click="confirmToOrder({{ $booking->id }})"
-                                                    wire:confirm="Confirm this booking and create an order?"
-                                                    @click="open = false"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-emerald-700 transition hover:bg-emerald-50">
-                                                    <span
-                                                        class="material-symbols-outlined text-[18px]">check_circle</span>
-                                                    Confirm & Create Order
-                                                </button>
+                                        @if ($booking->status !== 'rejected' && !$booking->order)
+                                        <button type="button" wire:click="markAsRejected({{ $booking->id }})"
+                                            @click="open = false"
+                                            class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span class="material-symbols-outlined text-[18px]">block</span>
+                                            Mark Rejected
+                                        </button>
+                                        @endif
 
-                                                <div class="my-1 border-t border-slate-100"></div>
-                                            @endif
+                                        @if ($booking->status !== 'cancelled' && !$booking->order)
+                                        <button type="button"
+                                            wire:click="markAsCancelled({{ $booking->id }})"
+                                            @click="open = false"
+                                            class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span class="material-symbols-outlined text-[18px]">cancel</span>
+                                            Mark Cancelled
+                                        </button>
+                                        @endif
 
-                                            @if ($booking->status !== 'quoted' && !$booking->order)
-                                                <button type="button" wire:click="markAsQuoted({{ $booking->id }})"
-                                                    @click="open = false"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
-                                                    <span
-                                                        class="material-symbols-outlined text-[18px]">request_quote</span>
-                                                    Mark Quoted
-                                                </button>
-                                            @endif
+                                        @if ($booking->phone || $booking->email)
+                                        <div class="my-1 border-t border-slate-100"></div>
+                                        @endif
 
-                                            @if ($booking->status !== 'rejected' && !$booking->order)
-                                                <button type="button" wire:click="markAsRejected({{ $booking->id }})"
-                                                    @click="open = false"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
-                                                    <span class="material-symbols-outlined text-[18px]">block</span>
-                                                    Mark Rejected
-                                                </button>
-                                            @endif
+                                        @if ($booking->phone)
+                                        <a href="tel:{{ preg_replace('/[^0-9+]/', '', $booking->phone) }}"
+                                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span class="material-symbols-outlined text-[18px]">phone</span>
+                                            Call Customer
+                                        </a>
+                                        @endif
 
-                                            @if ($booking->status !== 'cancelled' && !$booking->order)
-                                                <button type="button"
-                                                    wire:click="markAsCancelled({{ $booking->id }})"
-                                                    @click="open = false"
-                                                    class="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
-                                                    <span class="material-symbols-outlined text-[18px]">cancel</span>
-                                                    Mark Cancelled
-                                                </button>
-                                            @endif
+                                        @if ($booking->email)
+                                        <a href="mailto:{{ $booking->email }}"
+                                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                                            <span
+                                                class="material-symbols-outlined text-[18px]">outgoing_mail</span>
+                                            Send Email
+                                        </a>
+                                        @endif
 
-                                            @if ($booking->phone || $booking->email)
-                                                <div class="my-1 border-t border-slate-100"></div>
-                                            @endif
+                                        @if (!$booking->order)
+                                        <div class="my-1 border-t border-slate-100"></div>
 
-                                            @if ($booking->phone)
-                                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $booking->phone) }}"
-                                                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
-                                                    <span class="material-symbols-outlined text-[18px]">phone</span>
-                                                    Call Customer
-                                                </a>
-                                            @endif
-
-                                            @if ($booking->email)
-                                                <a href="mailto:{{ $booking->email }}"
-                                                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
-                                                    <span
-                                                        class="material-symbols-outlined text-[18px]">outgoing_mail</span>
-                                                    Send Email
-                                                </a>
-                                            @endif
-
-                                            @if (!$booking->order)
-                                                <div class="my-1 border-t border-slate-100"></div>
-
-                                                <button type="button" wire:click="delete({{ $booking->id }})"
-                                                    wire:confirm="Are you sure you want to delete this booking?"
-                                                    @click="open = false"
-                                                    class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 cursor-pointer">
-                                                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                                                    Delete
-                                                </button>
-                                            @endif
-                                        </div>
+                                        <button type="button" wire:click="delete({{ $booking->id }})"
+                                            wire:confirm="Are you sure you want to delete this booking?"
+                                            @click="open = false"
+                                            class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 cursor-pointer">
+                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                            Delete
+                                        </button>
+                                        @endif
                                     </div>
-                                </td>
-                            </tr>
+                                </div>
+                            </td>
+                        </tr>
                         @empty
-                            <tr>
-                                <td colspan="9" class="px-6 py-14 text-center">
-                                    <div class="mx-auto flex max-w-sm flex-col items-center">
-                                        <div
-                                            class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                                            <span class="material-symbols-outlined">support_agent</span>
-                                        </div>
-
-                                        <h3 class="text-base font-semibold text-on-surface">
-                                            No bookings found
-                                        </h3>
-
-                                        <p class="mt-1 text-sm text-secondary">
-                                            Customer booking requests will appear here.
-                                        </p>
+                        <tr>
+                            <td colspan="11" class="px-6 py-14 text-center">
+                                <div class="mx-auto flex max-w-sm flex-col items-center">
+                                    <div
+                                        class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                                        <span class="material-symbols-outlined">support_agent</span>
                                     </div>
-                                </td>
-                            </tr>
+
+                                    <h3 class="text-base font-semibold text-on-surface">
+                                        No bookings found
+                                    </h3>
+
+                                    <p class="mt-1 text-sm text-secondary">
+                                        Customer booking requests will appear here.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
                         @endforelse
                     </tbody>
                 </table>

@@ -14,6 +14,8 @@ class ServiceRenewalManualPayment
 {
     public function submit(Order $renewal, array $details): void
     {
+        SiteSetting::current()->requireBkashAvailable();
+
         try {
             DB::transaction(function () use ($renewal, $details): void {
                 $root = Order::query()->lockForUpdate()->findOrFail($renewal->renewal_of_id);
@@ -63,7 +65,7 @@ class ServiceRenewalManualPayment
                 throw ValidationException::withMessages(['payment_status' => 'No manual payment details have been submitted.']);
             }
             $order->setPaymentStatus('paid');
-            $order->forceFill(['renewal_manual_verified_at' => now(), 'renewal_paid_at' => now()])->save();
+            $order->forceFill(['payment_method' => 'manual', 'renewal_manual_verified_at' => now(), 'renewal_paid_at' => now()])->save();
             app(ServiceRenewalNotifications::class)->queue($order, 'confirmed');
         });
         $renewal->refresh();
