@@ -1,0 +1,51 @@
+ADMIN STORAGE SETUP GUIDE
+
+Choose the Render Platform in Admin > Storage, then save. Public uploads load directly from the selected provider. Sync existing files before switching platforms.
+
+AWS S3 - Access Key ID
+AWS Console → IAM → Users → your storage user → Security credentials → Create access key. Copy the Access key ID. The user needs access to your S3 bucket.
+
+AWS S3 - Secret Access Key
+Copy the Secret access key shown when you create the IAM access key, or from its downloaded CSV. AWS shows it only once; create a new key if lost. Use the eye icon to view or replace the key saved here.
+
+AWS S3 - Region
+AWS Console → S3 → Buckets → find your bucket's AWS Region. Enter its region code, for example ap-southeast-1, rather than the region name.
+
+AWS S3 - Bucket
+AWS Console → S3 → Buckets. Copy the exact bucket name, without s3://, a URL, or a folder path.
+
+AWS S3 - Custom Endpoint
+Leave empty for standard Amazon S3. For another S3-compatible service, copy its S3 API endpoint from that provider's dashboard or documentation.
+
+AWS S3 - Public URL / CDN
+Optional. For CloudFront, open AWS Console → CloudFront → your distribution and copy its domain name with https://, or use its configured custom domain. Leave empty to use the S3 bucket URL. Enter the base URL without /uploads or a filename; the uploaded files must be readable through it.
+
+AWS S3 - Use path-style endpoint
+Normally leave unchecked for AWS S3. Enable only if your S3-compatible provider requires URLs with the bucket name in the path.
+
+Cloudflare R2 - Access Key ID
+Cloudflare Dashboard → R2 → Overview → Manage R2 API Tokens → Create API token. Grant Object Read & Write for this bucket, then copy the Access Key ID from the S3 client credentials.
+
+Cloudflare R2 - Secret Access Key
+Copy the Secret Access Key from the same R2 token creation screen. Use the S3 client secret, not the API token value. Save it when created; generate new credentials if lost. Use the eye icon to view or replace the key saved here.
+
+Cloudflare R2 - Region
+Enter auto in lowercase. R2 uses this value for its S3-compatible API; do not enter your bucket's geographic location.
+
+Cloudflare R2 - Bucket
+Cloudflare Dashboard → R2 → Overview. Copy the exact bucket name from the bucket list, without a URL or folder path.
+
+Cloudflare R2 - Endpoint
+Copy the S3 API endpoint from R2 Overview or the token creation screen, usually https://<account-id>.r2.cloudflarestorage.com. Use the endpoint provided for your bucket's jurisdiction. Do not append the bucket name or /uploads. This address is used for uploading and managing files.
+
+Cloudflare R2 - Public URL / Custom Domain
+Cloudflare Dashboard → R2 → your bucket → Settings. Connect a Custom Domain for production, or enable Public Development URL and copy its https://pub-….r2.dev address for testing. Enter only the public base URL, without the bucket name or /uploads. Required for direct R2 image rendering; the S3 API endpoint cannot serve unsigned public images.
+
+Cloudflare R2 - Use path-style endpoint
+Enable to put the bucket name in S3 API request paths. This affects upload requests, not the public URL used to display images.
+
+Official references:
+https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+https://developers.cloudflare.com/r2/api/tokens/
+https://developers.cloudflare.com/r2/get-started/s3/
+https://developers.cloudflare.com/r2/buckets/public-buckets/

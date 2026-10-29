@@ -16,6 +16,7 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
 
     public string $s3_key = '';
     public string $s3_secret = '';
+    public bool $s3_secret_visible = false;
     public string $s3_region = '';
     public string $s3_bucket = '';
     public string $s3_endpoint = '';
@@ -24,6 +25,7 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
 
     public string $r2_key = '';
     public string $r2_secret = '';
+    public bool $r2_secret_visible = false;
     public string $r2_region = 'auto';
     public string $r2_bucket = '';
     public string $r2_endpoint = '';
@@ -50,8 +52,30 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
         $this->r2_url = $this->setting->r2_url ?? '';
         $this->r2_path_style = (bool) $this->setting->r2_path_style;
 
-        // Secrets are intentionally never loaded into component state so they
-        // never reach the Livewire snapshot. A blank secret keeps the stored one.
+        // Saved secrets enter component state only when explicitly revealed.
+        // A blank secret keeps the stored one.
+    }
+
+    public function toggleSecretVisibility(string $provider): void
+    {
+        abort_unless(in_array(auth()->user()?->role?->value, ['admin', 'manager', 'staff', 'admin_manager'], true), 403);
+        abort_unless(in_array($provider, [StorageSetting::SOURCE_S3, StorageSetting::SOURCE_R2], true), 422);
+
+        $secret = $provider . '_secret';
+        $visible = $provider . '_secret_visible';
+        $stored = StorageSetting::current()->{$secret} ?? '';
+
+        if ($this->{$visible}) {
+            if ($this->{$secret} === $stored) {
+                $this->{$secret} = '';
+            }
+            $this->{$visible} = false;
+        } else {
+            if (blank($this->{$secret})) {
+                $this->{$secret} = $stored;
+            }
+            $this->{$visible} = true;
+        }
     }
 
     protected function rules(): array
@@ -113,6 +137,8 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
 
         $this->s3_secret = '';
         $this->r2_secret = '';
+        $this->s3_secret_visible = false;
+        $this->r2_secret_visible = false;
 
         $this->dispatch('toast', message: 'Storage settings updated.', type: 'success');
     }
@@ -254,13 +280,21 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
 
 ?>
 
-<div>
+<div x-data="{ guideProvider: 's3' }">
     <div class="mx-auto w-full space-y-8">
-        <div>
-            <h1 class="text-h1 font-h1 text-on-surface">Storage Settings</h1>
-            <p class="mt-1 text-body-md text-secondary">
-                Uploads are stored on AWS S3 and Cloudflare R2 at the same time. Choose which platform serves files on the site.
-            </p>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h1 class="text-h1 font-h1 text-on-surface">Storage Settings</h1>
+                <p class="mt-1 text-body-md text-secondary">
+                    Uploads are stored on AWS S3 and Cloudflare R2 at the same time. Choose which platform serves files on the site.
+                </p>
+            </div>
+            <button type="button" @click="$refs.credentialsGuide.showModal()"
+                aria-haspopup="dialog" aria-controls="storage-credentials-guide"
+                class="inline-flex shrink-0 items-center gap-2 self-start rounded-lg border border-outline-variant bg-white px-3 py-2 text-label-md text-on-surface hover:bg-slate-50 cursor-pointer">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">help_outline</span>
+                Credentials help
+            </button>
         </div>
 
         <form wire:submit.prevent="save" class="space-y-6">
@@ -270,7 +304,7 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
                     Render Platform
                 </h3>
                 <p class="mb-6 text-body-sm font-body-sm text-secondary">
-                    Every upload is written to both platforms. The selected platform is used to serve and render files on the site.
+                    Every upload is written to both configured platforms. Public files load directly from the selected platform's public URL without passing through this site. Sync existing files before switching platforms.
                 </p>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -339,9 +373,23 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
 
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Secret Access Key<span class="text-red-500 relative -top-1">*</span></label>
-                            <input type="password" wire:model.blur="s3_secret" autocomplete="new-password"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                placeholder="{{ $setting->s3_secret ? '•••••••• (stored — leave blank to keep)' : 'Enter secret key' }}" />
+                            <div class="flex items-stretch gap-2">
+                                @if (! $s3_secret_visible && blank($s3_secret) && filled($setting->s3_secret))
+                                <input id="s3-secret" wire:key="s3-secret-masked" type="text" value="****************" readonly
+                                    aria-label="Amazon S3 secret access key, hidden" title="Click the eye icon to view or edit the saved key"
+                                    class="min-w-0 flex-1 rounded border border-outline-variant px-4 py-2.5" />
+                                @else
+                                <input id="s3-secret" wire:key="s3-secret-editable" type="{{ $s3_secret_visible ? 'text' : 'password' }}" wire:model.blur="s3_secret" autocomplete="new-password"
+                                    class="min-w-0 flex-1 rounded border border-outline-variant px-4 py-2.5"
+                                    placeholder="Enter secret key" />
+                                @endif
+                                <button type="button" wire:click="toggleSecretVisibility('s3')" wire:loading.attr="disabled" wire:target="toggleSecretVisibility"
+                                    aria-controls="s3-secret" aria-label="{{ $s3_secret_visible ? 'Hide Amazon S3 secret access key' : 'Show Amazon S3 secret access key' }}" aria-pressed="{{ $s3_secret_visible ? 'true' : 'false' }}"
+                                    title="{{ $s3_secret_visible ? 'Hide secret key' : 'Show secret key' }}"
+                                    class="inline-flex w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-secondary hover:bg-slate-200 hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">{{ $s3_secret_visible ? 'visibility_off' : 'visibility' }}</span>
+                                </button>
+                            </div>
                             @error('s3_secret')
                             <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -378,7 +426,7 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
                         </div>
 
                         <div class="space-y-2 md:col-span-2">
-                            <label class="block font-label-md text-on-surface">CDN</span></label>
+                            <label class="block font-label-md text-on-surface">Public URL / CDN</label>
                             <input type="url" wire:model.blur="s3_url"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5"
                                 placeholder="https://cdn.example.com" />
@@ -438,9 +486,23 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
 
                         <div class="space-y-2">
                             <label class="block font-label-md text-on-surface">Secret Access Key<span class="text-red-500 relative -top-1">*</span></label>
-                            <input type="password" wire:model.blur="r2_secret" autocomplete="new-password"
-                                class="w-full rounded border border-outline-variant px-4 py-2.5"
-                                placeholder="{{ $setting->r2_secret ? '•••••••• (stored — leave blank to keep)' : 'Enter secret key' }}" />
+                            <div class="flex items-stretch gap-2">
+                                @if (! $r2_secret_visible && blank($r2_secret) && filled($setting->r2_secret))
+                                <input id="r2-secret" wire:key="r2-secret-masked" type="text" value="****************" readonly
+                                    aria-label="Cloudflare R2 secret access key, hidden" title="Click the eye icon to view or edit the saved key"
+                                    class="min-w-0 flex-1 rounded border border-outline-variant px-4 py-2.5" />
+                                @else
+                                <input id="r2-secret" wire:key="r2-secret-editable" type="{{ $r2_secret_visible ? 'text' : 'password' }}" wire:model.blur="r2_secret" autocomplete="new-password"
+                                    class="min-w-0 flex-1 rounded border border-outline-variant px-4 py-2.5"
+                                    placeholder="Enter secret key" />
+                                @endif
+                                <button type="button" wire:click="toggleSecretVisibility('r2')" wire:loading.attr="disabled" wire:target="toggleSecretVisibility"
+                                    aria-controls="r2-secret" aria-label="{{ $r2_secret_visible ? 'Hide Cloudflare R2 secret access key' : 'Show Cloudflare R2 secret access key' }}" aria-pressed="{{ $r2_secret_visible ? 'true' : 'false' }}"
+                                    title="{{ $r2_secret_visible ? 'Hide secret key' : 'Show secret key' }}"
+                                    class="inline-flex w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-secondary hover:bg-slate-200 hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">{{ $r2_secret_visible ? 'visibility_off' : 'visibility' }}</span>
+                                </button>
+                            </div>
                             @error('r2_secret')
                             <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -474,11 +536,10 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
                             @error('r2_endpoint')
                             <p class="text-sm text-red-500">{{ $message }}</p>
                             @enderror
-                            <p class="text-xs text-secondary">Found in the Cloudflare R2 API token / bucket endpoint settings.</p>
                         </div>
 
                         <div class="space-y-2 md:col-span-2">
-                            <label class="block font-label-md text-on-surface">Custom Domain</label>
+                            <label class="block font-label-md text-on-surface">Public URL / Custom Domain<span class="text-red-500 relative -top-1">*</span></label>
                             <input type="url" wire:model.blur="r2_url"
                                 class="w-full rounded border border-outline-variant px-4 py-2.5"
                                 placeholder="https://pub-xxxx.r2.dev or your domain" />
@@ -547,4 +608,50 @@ new #[Layout('layouts.admin-app')] #[Title('Storage Settings')] class extends Co
             </div>
         </form>
     </div>
+    <dialog id="storage-credentials-guide" x-ref="credentialsGuide" aria-labelledby="storage-credentials-title"
+        @click="if ($event.target === $refs.credentialsGuide) $refs.credentialsGuide.close()"
+        class="m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-3xl rounded-2xl border border-slate-200 bg-white p-0 text-on-surface shadow-xl backdrop:bg-black/40">
+        <div class="flex max-h-[85vh] flex-col">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
+                <div>
+                    <h2 id="storage-credentials-title" class="text-h3 font-h2">Storage credentials</h2>
+                    <p class="mt-1 text-body-sm text-secondary">Where to find each AWS S3 and Cloudflare R2 setting.</p>
+                </div>
+                <button type="button" @click="$refs.credentialsGuide.close()" aria-label="Close credentials help"
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg hover:bg-slate-100 cursor-pointer">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </div>
+            <div class="flex gap-2 border-b border-slate-200 px-6 py-3">
+                <button type="button" @click="guideProvider = 's3'" :aria-pressed="guideProvider === 's3'"
+                    :class="guideProvider === 's3' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-secondary hover:bg-slate-50'"
+                    class="flex-1 rounded-lg border px-3 py-2 text-label-md cursor-pointer">
+                    AWS S3 setup
+                </button>
+                <button type="button" @click="guideProvider = 'r2'" :aria-pressed="guideProvider === 'r2'"
+                    :class="guideProvider === 'r2' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-secondary hover:bg-slate-50'"
+                    class="flex-1 rounded-lg border px-3 py-2 text-label-md cursor-pointer">
+                    Cloudflare R2 setup
+                </button>
+            </div>
+            @php
+            $credentialsGuide = file_get_contents(base_path('storage-setup-instructions.txt'));
+            $s3Guide = 'AWS S3 - Access Key ID'.Str::before(Str::after($credentialsGuide, 'AWS S3 - Access Key ID'), 'Cloudflare R2 - Access Key ID');
+            $r2Guide = 'Cloudflare R2 - Access Key ID'.Str::before(Str::after($credentialsGuide, 'Cloudflare R2 - Access Key ID'), 'Official references:');
+            @endphp
+            <div class="overflow-y-auto px-6 py-5 text-body-sm leading-relaxed">
+                <section x-show="guideProvider === 's3'" aria-label="AWS S3 setup instructions">
+                    <div class="whitespace-pre-wrap break-words">{{ trim($s3Guide) }}</div>
+                    <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html" target="_blank" rel="noopener" class="mt-4 inline-block text-primary hover:underline">AWS credentials documentation</a>
+                </section>
+                <section x-show="guideProvider === 'r2'" aria-label="Cloudflare R2 setup instructions">
+                    <div class="whitespace-pre-wrap break-words">{{ trim($r2Guide) }}</div>
+                    <div class="mt-4 flex flex-wrap gap-4">
+                        <a href="https://developers.cloudflare.com/r2/api/tokens/" target="_blank" rel="noopener" class="text-primary hover:underline">R2 credentials documentation</a>
+                        <a href="https://developers.cloudflare.com/r2/buckets/public-buckets/" target="_blank" rel="noopener" class="text-primary hover:underline">R2 public URL documentation</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </dialog>
 </div>

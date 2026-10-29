@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Services\Storage\DualFilesystemAdapter;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 
 class UploadStorage
@@ -27,7 +26,7 @@ class UploadStorage
             $path = rawurldecode(substr($urlPath, strlen('/storage/')));
         }
 
-        return URL::signedRoute('uploads.show', ['path' => self::normalizePath($path)]);
+        return Storage::disk('public')->url(self::normalizePath($path));
     }
 
     public static function normalizePath(string $path): string
