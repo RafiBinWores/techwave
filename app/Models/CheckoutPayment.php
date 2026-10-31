@@ -18,6 +18,7 @@ class CheckoutPayment extends Model
 
     public function payable(): MorphTo
     {
-        return $this->morphTo();
+        // Keep financial history resolvable after a related purchase is archived.
+        return $this->morphTo()->withTrashed();
     }
 }

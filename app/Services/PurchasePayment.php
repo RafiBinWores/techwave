@@ -7,8 +7,10 @@ use App\Models\Booking;
 use App\Models\CheckoutPayment;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\ProductPurchase;
 use App\Models\ToolSubscription;
 use App\Models\User;
+use App\Services\Products\ProductPurchases;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -23,14 +25,17 @@ class PurchasePayment
     public function start(Model $payable, array $customer): string
     {
         app(SslCommerzSettings::class)->requireAvailable();
-        if (! ($payable instanceof Booking || $payable instanceof ToolSubscription)
+        if (! ($payable instanceof Booking || $payable instanceof ToolSubscription || $payable instanceof ProductPurchase)
             || ! Auth::check() || (int) $payable->user_id !== (int) Auth::id()) {
             throw ValidationException::withMessages(['payment' => 'This purchase is not available for payment.']);
         }
 
         return DB::transaction(function () use ($payable, $customer): string {
             User::query()->lockForUpdate()->findOrFail($payable->user_id);
-            $payable = $payable->newQuery()->lockForUpdate()->findOrFail($payable->id);
+            $payable = $payable->newQuery()->when($payable instanceof ProductPurchase, fn ($query) => $query->withTrashed())->lockForUpdate()->findOrFail($payable->id);
+            if ($payable instanceof ProductPurchase) {
+                app(ProductPurchases::class)->assertPayable($payable);
+            }
             $payments = CheckoutPayment::whereMorphedTo('payable', $payable);
             $amount = $payable instanceof Booking ? $payable->final_price : $payable->amount;
             if ($payable->payment_method !== 'sslcommerz' || $payable->status !== 'pending'
@@ -59,8 +64,8 @@ class PurchasePayment
                 'cus_phone' => $customer['phone'], 'cus_add1' => $customer['address'],
                 'cus_city' => 'Dhaka', 'cus_postcode' => '1200', 'cus_country' => 'Bangladesh',
                 'shipping_method' => 'NO', 'num_of_item' => 1,
-                'product_name' => $payable instanceof Booking ? $payable->plan_name : ($payable->toolPlan?->name ?? 'Tool subscription'),
-                'product_category' => $payable instanceof Booking ? 'Service' : 'Tool Subscription',
+                'product_name' => $payable instanceof Booking ? $payable->plan_name : ($payable instanceof ProductPurchase ? $payable->product_name.' — '.$payable->plan_name : ($payable->toolPlan?->name ?? 'Tool subscription')),
+                'product_category' => $payable instanceof Booking ? 'Service' : ($payable instanceof ProductPurchase ? 'Software' : 'Tool Subscription'),
                 'product_profile' => 'non-physical-goods',
             ];
             try {
@@ -111,10 +116,10 @@ class PurchasePayment
         return DB::transaction(function () use ($payment, $validationId): bool {
             User::query()->lockForUpdate()->findOrFail($payment->user_id);
             $payable = $payment->payable()->first();
-            if (! ($payable instanceof Booking || $payable instanceof ToolSubscription)) {
+            if (! ($payable instanceof Booking || $payable instanceof ToolSubscription || $payable instanceof ProductPurchase)) {
                 return false;
             }
-            $payable = $payable->newQuery()->lockForUpdate()->findOrFail($payable->id);
+            $payable = $payable->newQuery()->when($payable instanceof ProductPurchase, fn ($query) => $query->withTrashed())->lockForUpdate()->findOrFail($payable->id);
             $payment = CheckoutPayment::query()->lockForUpdate()->findOrFail($payment->id);
             if ($payment->status === 'paid') {
                 return $payment->validation_id === $validationId;
@@ -124,6 +129,7 @@ class PurchasePayment
                 return false;
             }
             $needsReview = $otherPaid
+                || ($payable instanceof ProductPurchase && ($payable->trashed() || $payable->status !== 'pending' || app(ProductPurchases::class)->overlapping($payable)))
                 || ($payable instanceof Booking && in_array($payable->status, ['cancelled', 'rejected'], true))
                 || ($payable instanceof ToolSubscription && ($payable->status !== 'pending'
                     || ToolSubscription::where('user_id', $payable->user_id)->where('tool_category_id', $payable->tool_category_id)
@@ -140,7 +146,9 @@ class PurchasePayment
 
                 return true;
             }
-            if ($payable instanceof Booking) {
+            if ($payable instanceof ProductPurchase) {
+                app(ProductPurchases::class)->activate($payable, $payment->transaction_id);
+            } elseif ($payable instanceof Booking) {
                 $payable->update(['payment_status' => 'paid', 'transaction_id' => $payment->transaction_id]);
                 $this->confirmServiceBooking($payable, $payment);
             } else {

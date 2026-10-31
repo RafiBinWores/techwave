@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\CheckoutPayment;
+use App\Models\ProductPurchase;
 use App\Services\PurchasePayment;
 use Illuminate\Http\Request;
 
@@ -36,6 +37,8 @@ class PurchasePaymentController extends Controller
     public function show(Request $request, CheckoutPayment $payment)
     {
         abort_unless((int) $payment->user_id === (int) $request->user()->id, 404);
+
+        abort_if($payment->payable instanceof ProductPurchase && $payment->payable->trashed(), 404);
 
         return view('pages.client.checkout.payment-status', ['payment' => $payment->load('payable'),
             'servicePurchase' => $payment->payable instanceof Booking]);

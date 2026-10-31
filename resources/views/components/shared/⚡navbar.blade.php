@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\Service;
 use App\Models\SiteSetting;
 use App\Models\SupportTicket;
 use App\Models\ToolCategory;
 use App\Models\UserNotification;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -27,6 +29,11 @@ new class extends Component {
 
     public array $toolCategories = [];
 
+    public function getNavbarProductsProperty(): Collection
+    {
+        return Product::published()->where('show_in_navbar', true)->orderBy('sort_order')->orderBy('id')->get(['name', 'slug', 'summary', 'cover_path']);
+    }
+
     public function mount(): void
     {
         $this->loadClientNotifications();
@@ -40,6 +47,7 @@ new class extends Component {
     {
         $categories = ToolCategory::query()
             ->where('is_active', true)
+            ->whereNotIn('slug', ['netwatch', 'techwave-netwatch'])
             ->with(['tools' => fn($q) => $q->where('is_active', true)])
             ->orderBy('sort_order')
             ->get();
@@ -243,7 +251,8 @@ new class extends Component {
 };
 ?>
 
-<div class="relative" x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false, servicesMega: false, toolsMega: false, mobileServicesOpen: false, mobileToolsOpen: false, scrolled: false }"
+<div class="relative" x-data="{ mobileMenu: false, userMenu: false, notificationOpen: false, servicesMega: false, productsMega: false, productsCloseTimer: null, toolsMega: false, mobileServicesOpen: false, mobileProductsOpen: false, mobileToolsOpen: false, scrolled: false }"
+    @keydown.escape.window="productsMega = false; servicesMega = false; toolsMega = false; mobileMenu = false"
     x-init="window.addEventListener('scroll', () => { scrolled = window.scrollY > 20 })">
     <nav :class="scrolled ? 'bg-white/10 backdrop-blur-md border border-white/12' : 'border border-white/8 bg-white/5 backdrop-blur-sm'"
         class="relative rounded-2xl px-4 py-4 sm:px-6 transition-all duration-300">
@@ -265,7 +274,7 @@ new class extends Component {
                 @endif
             </a>
 
-            <div class="hidden items-center gap-8 text-sm font-medium text-blue-50/85 lg:flex">
+            <div class="hidden items-center gap-5 text-sm font-medium text-blue-50/85 lg:flex xl:gap-8">
                 <a href="{{ route('home') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                     <span class="relative z-10">Home</span>
@@ -275,9 +284,9 @@ new class extends Component {
                 </a>
 
                 {{-- Services Mega Menu --}}
-                <div @mouseenter="servicesMega = true; toolsMega = false"
+                <div @mouseenter="servicesMega = true; toolsMega = false; productsMega = false"
                     @mouseleave="servicesMega = false">
-                    <button type="button" @click="servicesMega = !servicesMega"
+                    <button type="button" @click="servicesMega = !servicesMega; productsMega = false; toolsMega = false"
                         class="group cursor-pointer relative flex items-center gap-1 px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                         <span class="relative z-10">Services</span>
                         <svg class="h-3.5 w-3.5 transition-transform duration-200" :class="{ 'rotate-180': servicesMega }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -375,10 +384,134 @@ new class extends Component {
                     </div>
                 </div>
 
+                {{-- Products Mega Menu --}}
+                {{-- Padding bridges the hover gap; delayed closing also allows entry into the panel. --}}
+                <div
+                    class="-my-6 py-6"
+                    @mouseenter="clearTimeout(productsCloseTimer); productsMega = true; servicesMega = false; toolsMega = false"
+                    @mouseleave="productsCloseTimer = setTimeout(() => productsMega = false, 150)"
+                    @focusout="if (!$el.contains($event.relatedTarget)) productsMega = false"
+                >
+                    <button
+                        type="button"
+                        id="desktop-products-trigger"
+                        @click="productsMega = !productsMega; servicesMega = false; toolsMega = false"
+                        @keydown.arrow-down.prevent="productsMega = true; $nextTick(() => $refs.productLinks.querySelector('a')?.focus())"
+                        :aria-expanded="productsMega"
+                        aria-controls="desktop-products"
+                        @class(['group relative flex cursor-pointer items-center gap-1 px-1 py-2 transition hover:text-white', 'text-white' => request()->routeIs('client.products.*')])
+                    >
+                        <span>
+                            Products
+                        </span>
+                        <span
+                            class="material-symbols-outlined text-base transition-transform"
+                            :class="{ 'rotate-180': productsMega }"
+                        >
+                            expand_more
+                        </span>
+                        <span
+                            class="absolute inset-x-0 -bottom-0.5 h-px scale-x-0 bg-linear-to-r from-transparent via-cyan-300 to-transparent transition-transform group-hover:scale-x-100"
+                        >
+                        </span>
+                    </button>
+                    <div
+                        id="desktop-products"
+                        x-ref="productLinks"
+                        x-show="productsMega"
+                        x-cloak
+                        x-transition.opacity
+                        @mouseenter="clearTimeout(productsCloseTimer)"
+                        @click.outside="productsMega = false"
+                        @keydown.escape.stop="productsMega = false; document.getElementById('desktop-products-trigger').focus()"
+                        class="absolute inset-x-0 top-full z-9999 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 shadow-2xl shadow-blue-950/40 backdrop-blur-2xl"
+                    >
+                        <div class="grid max-h-125 grid-cols-12 overflow-y-auto">
+                            <div
+                                class="col-span-4 border-r border-white/8 bg-linear-to-br from-blue-500/10 to-transparent p-6"
+                            >
+                                <span
+                                    class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
+                                >
+                                    <span class="material-symbols-outlined">
+                                        deployed_code
+                                    </span>
+                                </span>
+                                <p class="mt-5 text-xl font-semibold text-white">
+                                    Software by Techwave
+                                </p>
+                                <p class="mt-2 text-sm leading-relaxed text-blue-100/55">
+                                    Explore our products, see what they do and find the right fit for you.
+                                </p>
+                                <a
+                                    href="{{ route('client.products.index') }}"
+                                    wire:navigate
+                                    @click="productsMega = false"
+                                    class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-white"
+                                >
+                                    View all products
+                                    <span class="material-symbols-outlined text-base">
+                                        arrow_forward
+                                    </span>
+                                </a>
+                            </div>
+                            <div class="col-span-8 p-6">
+                                <p
+                                    class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40"
+                                >
+                                    Our products
+                                </p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    @forelse ($this->navbarProducts as $navProduct)
+                                        <a
+                                            href="{{ route('client.products.show', $navProduct->slug) }}"
+                                            wire:navigate
+                                            @click="productsMega = false"
+                                            class="group flex items-start gap-3 rounded-xl border border-white/5 bg-white/5 p-3.5 transition hover:border-cyan-400/20 hover:bg-white/8"
+                                        >
+                                            @if ($navProduct->cover_path)
+                                                <img
+                                                    src="{{ \App\Services\UploadStorage::url($navProduct->cover_path) }}"
+                                                    alt=""
+                                                    class="h-12 w-12 shrink-0 rounded-xl border border-white/10 object-cover"
+                                                >
+                                            @else
+                                                <span
+                                                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-500/10 bg-blue-500/15 text-cyan-300"
+                                                >
+                                                    <span class="material-symbols-outlined">
+                                                        deployed_code
+                                                    </span>
+                                                </span>
+                                            @endif
+                                            <span class="min-w-0">
+                                                <span
+                                                    class="block text-sm font-semibold text-white group-hover:text-cyan-200"
+                                                >
+                                                    {{ $navProduct->name }}
+                                                </span>
+                                                <span
+                                                    class="mt-1 line-clamp-2 block text-xs leading-relaxed text-blue-100/45"
+                                                >
+                                                    {{ $navProduct->summary }}
+                                                </span>
+                                            </span>
+                                        </a>
+                                    @empty
+                                        <p class="col-span-2 py-6 text-sm text-blue-100/45">
+                                            New software is on the way. Check back soon.
+                                        </p>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Tools Mega Menu --}}
-                <div @mouseenter="toolsMega = true; servicesMega = false"
+                <div @mouseenter="toolsMega = true; servicesMega = false; productsMega = false"
                     @mouseleave="toolsMega = false">
-                    <button type="button" @click="toolsMega = !toolsMega"
+                    <button type="button" @click="toolsMega = !toolsMega; servicesMega = false; productsMega = false"
                         class="group cursor-pointer relative flex items-center gap-1 px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                         <span class="relative z-10">Tools</span>
                         <svg class="h-3.5 w-3.5 transition-transform duration-200" :class="{ 'rotate-180': toolsMega }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -452,7 +585,7 @@ new class extends Component {
                     </span>
                 </a>
                 @endif
-
+{{-- 
                 <a href="{{ route('client.blogs') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
                     <span class="relative z-10">Blogs</span>
@@ -467,7 +600,7 @@ new class extends Component {
                     <span
                         class="absolute inset-x-0 -bottom-0.5 h-px bg-linear-to-r from-transparent via-cyan-300 to-transparent scale-x-0 transition-transform duration-300 group-hover:scale-x-100 group-[.text-white]:scale-x-100">
                     </span>
-                </a>
+                </a> --}}
 
                 <a href="{{ route('client.contact') }}" wire:navigate wire:current.exact="text-white"
                     class="group relative px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white">
@@ -853,7 +986,7 @@ new class extends Component {
 
                     {{-- Mobile Services --}}
                     <div class="rounded-xl overflow-hidden">
-                        <button type="button" @click="mobileServicesOpen = !mobileServicesOpen"
+                        <button type="button" @click="mobileServicesOpen = !mobileServicesOpen; mobileProductsOpen = false; mobileToolsOpen = false"
                             class="flex w-full items-center justify-between px-4 py-3 transition hover:bg-white/8">
                             <span>Services</span>
                             <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': mobileServicesOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -894,9 +1027,75 @@ new class extends Component {
                         </div>
                     </div>
 
+                    {{-- Mobile Products --}}
+                    <div class="overflow-hidden rounded-xl">
+                        <button
+                            type="button"
+                            @click="mobileProductsOpen = !mobileProductsOpen; mobileServicesOpen = false; mobileToolsOpen = false"
+                            :aria-expanded="mobileProductsOpen"
+                            aria-controls="mobile-products"
+                            class="flex w-full items-center justify-between px-4 py-3 transition hover:bg-white/8"
+                        >
+                            <span>
+                                Products
+                            </span>
+                            <span
+                                class="material-symbols-outlined text-lg transition-transform"
+                                :class="{ 'rotate-180': mobileProductsOpen }"
+                            >
+                                expand_more
+                            </span>
+                        </button>
+                        <div
+                            id="mobile-products"
+                            x-show="mobileProductsOpen"
+                            x-cloak
+                        >
+                            <div class="space-y-2 border-t border-white/8 px-3 pb-3 pt-2">
+                                @forelse ($this->navbarProducts as $navProduct)
+                                    <a
+                                        href="{{ route('client.products.show', $navProduct->slug) }}"
+                                        wire:navigate
+                                        @click="mobileMenu = false; mobileProductsOpen = false"
+                                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-blue-100/75 transition hover:bg-white/5 hover:text-white"
+                                    >
+                                        @if ($navProduct->cover_path)
+                                            <img
+                                                src="{{ \App\Services\UploadStorage::url($navProduct->cover_path) }}"
+                                                alt=""
+                                                class="h-9 w-9 shrink-0 rounded-lg object-cover"
+                                            >
+                                        @else
+                                            <span
+                                                class="material-symbols-outlined flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-cyan-300"
+                                            >
+                                                deployed_code
+                                            </span>
+                                        @endif
+                                        <span>
+                                            {{ $navProduct->name }}
+                                        </span>
+                                    </a>
+                                @empty
+                                    <p class="px-3 py-2 text-xs text-blue-100/45">
+                                        New products coming soon.
+                                    </p>
+                                @endforelse
+                                <a
+                                    href="{{ route('client.products.index') }}"
+                                    wire:navigate
+                                    @click="mobileMenu = false; mobileProductsOpen = false"
+                                    class="block rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center text-sm font-semibold text-cyan-300 transition hover:bg-white/10"
+                                >
+                                    View all products
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Mobile Tools --}}
                     <div class="rounded-xl overflow-hidden">
-                        <button type="button" @click="mobileToolsOpen = !mobileToolsOpen"
+                        <button type="button" @click="mobileToolsOpen = !mobileToolsOpen; mobileProductsOpen = false; mobileServicesOpen = false"
                             class="flex w-full items-center justify-between px-4 py-3 transition hover:bg-white/8">
                             <span>Tools</span>
                             <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': mobileToolsOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

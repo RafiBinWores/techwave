@@ -183,7 +183,12 @@ new class extends Component {
                             <span>Services / Plans</span>
                         </a>
 
-                        <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
+                <a href="{{ route('account.products') }}" wire:navigate
+                    wire:current.exact="client-dash-link-active" class="client-dash-link">
+                    <span class="client-dash-icon"><span class="material-symbols-outlined text-lg">inventory_2</span></span>
+                    <span>My Products</span>
+                </a>
+                <a href="{{ route('account.tool-subscriptions') }}" wire:navigate
                             wire:current.exact="client-dash-link-active" class="client-dash-link">
                             <span class="client-dash-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"

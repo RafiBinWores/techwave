@@ -147,7 +147,7 @@ return [
         'rules' => [
             'required',
             'file',
-            'max:51200',
+            'max:256000',
         ],
         'directory' => 'livewire-tmp',
         'middleware' => null,
@@ -170,7 +170,7 @@ return [
             'wma',
             'pdf',
         ],
-        'max_upload_time' => 30,
+        'max_upload_time' => 300,
         'cleanup' => true,
     ],
 

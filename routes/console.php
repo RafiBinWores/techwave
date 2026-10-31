@@ -10,3 +10,4 @@ Schedule::command('pdf-files:cleanup')->dailyAt('03:30');
 Schedule::command('accounts:purge-scheduled')->dailyAt('04:00');
 Schedule::command('subscriptions:auto-expire')->everyMinute()->withoutOverlapping();
 Schedule::command('service-orders:send-renewal-notices')->dailyAt('04:30')->withoutOverlapping();
+Schedule::command('products:send-renewal-reminders')->everyMinute()->withoutOverlapping();

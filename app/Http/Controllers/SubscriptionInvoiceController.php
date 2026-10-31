@@ -7,12 +7,14 @@ use App\Models\InvoiceTemplate;
 use App\Models\SiteSetting;
 use App\Support\PdfFonts;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
 
 class SubscriptionInvoiceController extends Controller
 {
     public function download(Invoice $invoice)
     {
+        // Authorize before sending response headers or starting the PDF stream.
+        abort_unless($invoice->user_id === auth()->id(), 403);
+
         return response()->streamDownload(
             function () use ($invoice) {
                 echo $this->renderPdf($invoice)->output();
@@ -24,8 +26,6 @@ class SubscriptionInvoiceController extends Controller
 
     private function renderPdf(Invoice $invoice)
     {
-        abort_unless($invoice->user_id === auth()->id(), 403);
-
         $invoice->loadMissing('items');
 
         $template = InvoiceTemplate::activeTemplate();

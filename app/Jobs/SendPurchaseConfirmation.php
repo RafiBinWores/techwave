@@ -8,6 +8,7 @@ use App\Mail\OrderConfirmedMail;
 use App\Mail\ToolSubscriptionConfirmedMail;
 use App\Models\Booking;
 use App\Models\CheckoutPayment;
+use App\Models\ProductPurchase;
 use App\Models\ToolSubscription;
 use App\Services\UserNotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -42,7 +43,9 @@ class SendPurchaseConfirmation implements ShouldQueue
 
             return;
         }
-        if ($purchase instanceof ToolSubscription) {
+        if ($purchase instanceof ProductPurchase) {
+            SendProductPurchaseConfirmation::dispatch($purchase->id);
+        } elseif ($purchase instanceof ToolSubscription) {
             ToolSubscriptionUpdated::dispatch($purchase);
             UserNotificationService::notifyUser($purchase->user_id, 'Subscription Confirmed',
                 'Your tool subscription is active. Your invoice is available in My Subscriptions.',

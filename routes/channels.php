@@ -69,7 +69,6 @@ Broadcast::channel('user.{userId}.chat', function ($user, $userId) use ($adminRo
         && (int) $user->id === (int) $userId;
 });
 
-
 Broadcast::channel('user.{userId}.notifications', function ($user, $userId) {
     return $user && (int) $user->id === (int) $userId;
 });
@@ -98,4 +97,8 @@ Broadcast::channel('project.{projectId}.messages', function ($user, $projectId) 
     }
 
     return $project->members()->where('users.id', $user->id)->exists();
+});
+
+Broadcast::channel('admin.product-purchases', function ($user) {
+    return $user && in_array($user->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true);
 });

@@ -2,32 +2,38 @@
 
 use App\Models\Booking;
 use App\Models\ContactMessage;
+use App\Models\ProductPurchase;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
 use App\Models\ToolSubscription;
 use App\Models\UserNotification;
 use App\Services\AdminNotificationService;
+use App\Services\Products\ProductContent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
-new class extends Component {
+new class extends Component
+{
     public int $notificationRefreshKey = 0;
 
     public function getListeners(): array
     {
         $authId = Auth::id();
-
-        if (!$authId) {
+        if (! $authId) {
             return [];
         }
-
-        return [
+        $listeners = [
             "echo-private:user.{$authId}.notifications,.user.notification" => 'refreshUserNotifications',
         ];
+        if (AdminNotificationService::canViewProductPurchases()) {
+            $listeners['echo-private:admin.product-purchases,.product-purchase.updated'] = 'refreshProductPurchaseNotifications';
+        }
+
+        return $listeners;
     }
 
     public function refreshUserNotifications(): void
@@ -147,6 +153,22 @@ new class extends Component {
             ->count();
     }
 
+    public function refreshProductPurchaseNotifications(array $event = []): void
+    {
+        if (! AdminNotificationService::canViewProductPurchases()) {
+            return;
+        }
+        $this->notificationRefreshKey++;
+        $this->dispatch('toast', message: ($event['status'] ?? '') === 'active'
+            ? 'Product payment confirmed.' : 'New product checkout received.', type: 'info');
+    }
+
+    public function unreadProductPurchaseCount(): int
+    {
+        return AdminNotificationService::canViewProductPurchases()
+            ? ProductPurchase::whereNull('admin_read_at')->count() : 0;
+    }
+
     public function unreadUserNotificationCount(): int
     {
         return UserNotification::query()->forUser(Auth::id())->unread()->count();
@@ -154,7 +176,7 @@ new class extends Component {
 
     public function totalUnreadCount(): int
     {
-        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount() + $this->unreadProposalCommentCount() + $this->unreadProposalStatusCount() + $this->unreadToolSubscriptionCount() + $this->unreadUserNotificationCount();
+        return $this->unreadTicketCount() + $this->unreadContactMessageCount() + $this->unreadBookingCount() + $this->unreadProposalCommentCount() + $this->unreadProposalStatusCount() + $this->unreadToolSubscriptionCount() + $this->unreadProductPurchaseCount() + $this->unreadUserNotificationCount();
     }
 
     public function latestNotifications()
@@ -162,9 +184,9 @@ new class extends Component {
         $adminNotifications = collect(AdminNotificationService::notifications(limit: 10, unreadOnly: true));
 
         $userNotifications = UserNotification::query()->forUser(Auth::id())->unread()->latest()->limit(10)->get()->toBase()->map(
-            fn($n) => [
+            fn ($n) => [
                 'type' => $n->type,
-                'id' => 'user-' . $n->id,
+                'id' => 'user-'.$n->id,
                 'title' => $n->title,
                 'subject' => $n->subject,
                 'from' => $n->from,
@@ -181,6 +203,12 @@ new class extends Component {
     public function openNotification(string $id, ?string $url = null): void
     {
         $target = $url ?: route('admin.workspace.projects.index');
+
+        if (str_starts_with($id, 'product-')) {
+            ProductContent::authorizeAdmin();
+            ProductPurchase::whereKey((int) substr($id, 8))->update(['admin_read_at' => now()]);
+            $target = route('admin.products.purchases');
+        }
 
         if (str_starts_with($id, 'user-')) {
             UserNotification::query()
@@ -236,6 +264,10 @@ new class extends Component {
                 'admin_read_at' => now(),
             ]);
 
+        if (AdminNotificationService::canViewProductPurchases()) {
+            ProductPurchase::whereNull('admin_read_at')->update(['admin_read_at' => now()]);
+        }
+
         UserNotification::query()
             ->forUser(Auth::id())
             ->unread()
@@ -256,6 +288,7 @@ new class extends Component {
             'booking' => 'event_note',
             'proposal' => 'rate_review',
             'tool-subscription' => 'subscriptions',
+            'product-purchase' => 'inventory_2',
             'project' => 'space_dashboard',
             'issue' => 'rule',
             default => 'notifications',
@@ -270,6 +303,7 @@ new class extends Component {
             'booking' => 'bg-amber-100 text-amber-700',
             'proposal' => 'bg-violet-100 text-violet-700',
             'tool-subscription' => 'bg-indigo-100 text-indigo-700',
+            'product-purchase' => 'bg-blue-100 text-blue-700',
             'project' => 'bg-cyan-100 text-cyan-700',
             'issue' => 'bg-rose-100 text-rose-700',
             default => 'bg-slate-100 text-slate-700',
@@ -284,6 +318,7 @@ new class extends Component {
             'booking' => 'bg-amber-50 text-amber-700',
             'proposal' => 'bg-violet-50 text-violet-700',
             'tool-subscription' => 'bg-indigo-50 text-indigo-700',
+            'product-purchase' => 'bg-blue-50 text-blue-700',
             'project' => 'bg-cyan-50 text-cyan-700',
             'issue' => 'bg-rose-50 text-rose-700',
             default => 'bg-slate-50 text-slate-700',
@@ -355,6 +390,7 @@ new class extends Component {
             $unreadProposalCommentCount = $this->unreadProposalCommentCount();
             $unreadProposalStatusCount = $this->unreadProposalStatusCount();
             $unreadToolSubscriptionCount = $this->unreadToolSubscriptionCount();
+            $unreadProductPurchaseCount = $this->unreadProductPurchaseCount();
             $unreadUserNotificationCount = $this->unreadUserNotificationCount();
             $totalUnreadCount = $this->totalUnreadCount();
             $notifications = $this->latestNotifications();
@@ -395,6 +431,7 @@ new class extends Component {
                             update{{ $unreadProposalStatusCount === 1 ? '' : 's' }},
                             {{ $unreadToolSubscriptionCount }}
                             subscription{{ $unreadToolSubscriptionCount === 1 ? '' : 's' }},
+                            {{ $unreadProductPurchaseCount }} product purchase{{ $unreadProductPurchaseCount === 1 ? '' : 's' }},
                             {{ $unreadUserNotificationCount }}
                             workspace{{ $unreadUserNotificationCount === 1 ? '' : 's' }}
                         </p>
@@ -410,7 +447,7 @@ new class extends Component {
                 <div wire:key="admin-notification-list-{{ $notificationRefreshKey }}"
                     class="max-h-88 divide-y divide-slate-100 overflow-y-auto">
                     @forelse ($notifications as $notification)
-                    @if (str_starts_with($notification['id'], 'user-'))
+                    @if ((str_starts_with($notification['id'], 'user-') || str_starts_with($notification['id'], 'product-')))
                     <button type="button" @click.stop="notificationOpen = false"
                         wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
                         class="flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
@@ -450,7 +487,7 @@ new class extends Component {
                                     {{ $notification['time']?->diffForHumans() }}
                                 </p>
                             </div>
-                            @if (str_starts_with($notification['id'], 'user-'))
+                            @if ((str_starts_with($notification['id'], 'user-') || str_starts_with($notification['id'], 'product-')))
                     </button>
                     @else
                     </a>

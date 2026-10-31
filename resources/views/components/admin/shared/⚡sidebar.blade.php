@@ -129,6 +129,26 @@ new class extends Component {
                 </span>
             </a>
 
+            @if (in_array(auth()->user()?->role, [\App\Enums\UserRole::ADMIN, \App\Enums\UserRole::ADMIN_MANAGER], true))
+                <a href="{{ route('admin.products.index') }}" wire:navigate
+                    @class(['flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all duration-150 hover:bg-slate-100', 'bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm' => (request()->routeIs('admin.products.*') && !request()->routeIs('admin.products.purchases', 'admin.products.licenses*')), 'text-slate-600' => !request()->routeIs('admin.products.*')])>
+                    <span class="material-symbols-outlined shrink-0">inventory_2</span>
+                    <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">All Products</span>
+                </a>
+                <a href="{{ route('admin.products.purchases') }}" wire:navigate
+                    wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition hover:bg-slate-100">
+                    <span class="material-symbols-outlined shrink-0">receipt_long</span>
+                    <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">Product Purchases</span>
+                </a>
+                <a href="{{ route('admin.products.licenses') }}" wire:navigate
+                    wire:current.exact="bg-white text-blue-700 border-l-4 border-blue-700 font-semibold shadow-sm"
+                    class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 transition hover:bg-slate-100">
+                    <span class="material-symbols-outlined shrink-0">key</span>
+                    <span x-show="!sidebarCollapsed" class="font-manrope text-sm font-medium">NetWatch Licenses</span>
+                </a>
+            @endif
+
             {{-- WHMCS Dropdown --}}
             <div x-data="{ open: {{ request()->routeIs('admin.whmcs.*') ? 'true' : 'false' }} }" class="space-y-1">
                 <button type="button" @click="open = !open"

@@ -108,7 +108,12 @@ class DualStorageDriver
     {
         try {
             /** @var FilesystemAdapter $disk */
-            $disk = Storage::build([...$config, 'root' => $root]);
+            // Private installers must start streaming without buffering the entire cloud object first.
+            $disk = Storage::build([
+                ...$config,
+                'root' => $root,
+                'stream_reads' => $root === 'documents',
+            ]);
 
             return $disk;
         } catch (Throwable $exception) {

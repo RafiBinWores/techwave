@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\Booking;
 use App\Models\ContactMessage;
+use App\Models\ProductPurchase;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
@@ -155,14 +157,40 @@ class AdminNotificationService
                 ]);
         }
 
+        $productPurchases = collect();
+
+        if (static::canViewProductPurchases() && ($type === null || $type === 'product-purchase')) {
+            $productPurchases = ProductPurchase::query()
+                ->with('user')
+                ->when($unreadOnly, fn ($query) => $query->whereNull('admin_read_at'))
+                ->latest()->limit($limit)->get()->toBase()
+                ->map(fn ($purchase) => [
+                    'type' => 'product-purchase', 'id' => 'product-'.$purchase->id,
+                    'title' => $purchase->status === 'active'
+                        ? ($purchase->renewal_of_id ? 'Product subscription renewed' : 'Product purchase confirmed')
+                        : ($purchase->payment_method === 'manual' && $purchase->status === 'pending' ? 'New product payment request' : 'Product checkout update'),
+                    'subject' => $purchase->product_name.' · '.$purchase->plan_name.' · '.ucfirst(str_replace('_', '-', $purchase->billing_cycle)),
+                    'from' => $purchase->customer['name'] ?? $purchase->user?->name ?? 'Customer',
+                    'priority' => $purchase->status, 'time' => $purchase->verified_at ?? $purchase->created_at,
+                    'read' => $purchase->admin_read_at !== null,
+                    'url' => Route::has('admin.products.purchases') ? route('admin.products.purchases') : '#',
+                ]);
+        }
+
         return $tickets
             ->merge($contacts)
             ->merge($bookings)
             ->merge($proposalComments)
             ->merge($toolSubscriptions)
+            ->merge($productPurchases)
             ->sortByDesc('time')
             ->values()
             ->take($limit);
+    }
+
+    public static function canViewProductPurchases(): bool
+    {
+        return auth()->check() && in_array(auth()->user()->role, [UserRole::ADMIN, UserRole::ADMIN_MANAGER], true);
     }
 
     public static function bookingTitle($booking): string

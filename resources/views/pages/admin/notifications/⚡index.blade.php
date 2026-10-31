@@ -2,12 +2,14 @@
 
 use App\Models\Booking;
 use App\Models\ContactMessage;
+use App\Models\ProductPurchase;
 use App\Models\Proposal;
 use App\Models\ProposalComment;
 use App\Models\SupportTicket;
 use App\Models\ToolSubscription;
 use App\Models\UserNotification;
 use App\Services\AdminNotificationService;
+use App\Services\Products\ProductContent;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Livewire\Attributes\Layout;
@@ -15,19 +17,31 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Component {
+new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Component
+{
     use WithPagination;
 
     public string $tab = 'all';
 
     public int $perPage = 15;
 
+    public function getListeners(): array
+    {
+        return AdminNotificationService::canViewProductPurchases()
+            ? ['echo-private:admin.product-purchases,.product-purchase.updated' => 'refreshProductPurchases'] : [];
+    }
+
+    public function refreshProductPurchases(): void
+    {
+        $this->resetPage();
+    }
+
     public function notifications(): LengthAwarePaginator
     {
         $items = AdminNotificationService::notifications(
             limit: 500,
             unreadOnly: $this->tab === 'unread',
-            type: in_array($this->tab, ['ticket', 'contact', 'booking', 'proposal', 'tool-subscription'], true) ? $this->tab : null,
+            type: in_array($this->tab, ['ticket', 'contact', 'booking', 'proposal', 'tool-subscription', 'product-purchase'], true) ? $this->tab : null,
         );
 
         $userItems = collect();
@@ -99,6 +113,10 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             ->whereNull('admin_read_at')
             ->update(['admin_read_at' => now()]);
         ToolSubscription::query()->whereNull('admin_read_at')->update(['admin_read_at' => now()]);
+        if (AdminNotificationService::canViewProductPurchases()) {
+            ProductPurchase::whereNull('admin_read_at')->update(['admin_read_at' => now()]);
+        }
+
         UserNotification::query()->forUser(auth()->id())->unread()->update(['read_at' => now()]);
 
         $this->dispatch('toast', message: 'All notifications marked as read.', type: 'success');
@@ -107,6 +125,12 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
     public function openNotification(string $id, ?string $url = null): void
     {
         $target = $url ?: route('admin.workspace.projects.index');
+
+        if (str_starts_with($id, 'product-')) {
+            ProductContent::authorizeAdmin();
+            ProductPurchase::whereKey((int) substr($id, 8))->update(['admin_read_at' => now()]);
+            $target = route('admin.products.purchases');
+        }
 
         if (str_starts_with($id, 'user-')) {
             UserNotification::query()
@@ -127,6 +151,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'booking' => 'event_note',
             'proposal' => 'rate_review',
             'tool-subscription' => 'subscriptions',
+            'product-purchase' => 'inventory_2',
             'project' => 'space_dashboard',
             'issue' => 'rule',
             default => 'notifications',
@@ -141,6 +166,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'booking' => 'bg-amber-100 text-amber-700',
             'proposal' => 'bg-violet-100 text-violet-700',
             'tool-subscription' => 'bg-indigo-100 text-indigo-700',
+            'product-purchase' => 'bg-blue-100 text-blue-700',
             'project' => 'bg-cyan-100 text-cyan-700',
             'issue' => 'bg-rose-100 text-rose-700',
             default => 'bg-slate-100 text-slate-700',
@@ -155,6 +181,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
             'booking' => 'bg-amber-50 text-amber-700',
             'proposal' => 'bg-violet-50 text-violet-700',
             'tool-subscription' => 'bg-indigo-50 text-indigo-700',
+            'product-purchase' => 'bg-blue-50 text-blue-700',
             'project' => 'bg-cyan-50 text-cyan-700',
             'issue' => 'bg-rose-50 text-rose-700',
             default => 'bg-slate-50 text-slate-700',
@@ -186,6 +213,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
                     'booking' => 'Bookings',
                     'proposal' => 'Proposals',
                     'tool-subscription' => 'Subscriptions',
+                    'product-purchase' => 'Products',
                     'workspace' => 'Workspace',
                 ] as $key => $label)
                     <button type="button" wire:click="$set('tab', '{{ $key }}')"
@@ -211,7 +239,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
 
     <div class="space-y-3">
         @forelse ($this->notifications() as $notification)
-            @if (str_starts_with($notification['id'], 'user-'))
+            @if ((str_starts_with($notification['id'], 'user-') || str_starts_with($notification['id'], 'product-')))
             <button type="button"
                 wire:click="openNotification('{{ $notification['id'] }}', '{{ $notification['url'] }}')"
                 @class([
@@ -269,7 +297,7 @@ new #[Layout('layouts.admin-app')] #[Title('Notifications')] class extends Compo
                         </div>
                     </div>
                 </div>
-            @if (str_starts_with($notification['id'], 'user-'))
+            @if ((str_starts_with($notification['id'], 'user-') || str_starts_with($notification['id'], 'product-')))
             </button>
             @else
             </a>

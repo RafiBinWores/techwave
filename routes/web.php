@@ -3,8 +3,10 @@
 use App\Http\Controllers\AdminInvoicePdfController;
 use App\Http\Controllers\BgRemovedImageController;
 use App\Http\Controllers\CompressedImageController;
+use App\Http\Controllers\NetworkLicenseController;
 use App\Http\Controllers\PlanOrderInvoiceController;
 use App\Http\Controllers\PricingCheckoutController;
+use App\Http\Controllers\ProductDownloadController;
 use App\Http\Controllers\ProposalPdfController;
 use App\Http\Controllers\PurchasePaymentController;
 use App\Http\Controllers\QrPreviewController;
@@ -170,6 +172,20 @@ Route::livewire('/proposal/{proposal}/respond', 'pages::client.proposals.respond
 Route::livewire('/terms-and-conditions', 'pages::client.legal-pages.terms-conditions')->name('client.terms-conditions');
 Route::livewire('/privacy-policy', 'pages::client.legal-pages.privacy-policy')->name('client.privacy-policy');
 
+// Software products
+Route::livewire('/products', 'pages::client.products.index')->name('client.products.index');
+Route::livewire('/products/{slug}', 'pages::client.products.show')->name('client.products.show');
+
+// Keep installer storage private; download access is rechecked by the controller.
+Route::get('/products/{slug}/download', [ProductDownloadController::class, 'download'])
+    ->middleware('auth')->name('client.products.download');
+Route::livewire('/products/{slug}/download/setup', 'pages::client.products.download')
+    ->middleware(['auth', 'cache.headers:private;no_store'])->name('client.products.download.setup');
+Route::get('/products/{slug}/installer', [ProductDownloadController::class, 'installer'])
+    ->middleware('auth')->name('client.products.installer');
+Route::livewire('/products/{slug}/plans/{plan}/purchase/{cycle}', 'pages::client.checkout.product')
+    ->whereNumber('plan')->whereIn('cycle', ['monthly', 'yearly', 'one_time'])->name('client.products.purchase');
+
 /*
 |--------------------------------------------------------------------------
 | Client protected routes
@@ -230,8 +246,9 @@ Route::middleware(['auth', 'verified', 'role:client,admin'])->group(function () 
     // Account subscriptions
     Route::livewire('/account/tool-subscriptions', 'pages::client.account.tool-subscriptions')->name('account.tool-subscriptions');
     Route::livewire('/account/invoices', 'pages::client.account.invoices')->name('account.invoices');
-    Route::get('/account/tool-subscriptions/invoice/{invoice}/download', [SubscriptionInvoiceController::class, 'download'])
-        ->name('account.tool-subscription.invoice.download');
+    Route::get('/account/tool-subscriptions/invoice/{invoice}/download', [SubscriptionInvoiceController::class, 'download'])->name('account.tool-subscription.invoice.download');
+    Route::get('/account/products/invoices/{invoice}/download', [SubscriptionInvoiceController::class, 'download'])->name('account.products.invoice.download');
+    Route::livewire('/account/products', 'pages::client.account.products')->name('account.products');
 
     // BG removed images backup
     Route::livewire('/account/bg-removed-images', 'pages::client.account.backup.bg-removed-images')->name('account.bg-removed-images');
@@ -483,4 +500,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::livewire('/workspace/projects/{project}/list', 'pages::admin.workspace.projects.list.show')->name('workspace.projects.show.list');
     Route::livewire('/workspace/tasks/{task}', 'pages::admin.workspace.tasks.show')->name('workspace.tasks.show');
     Route::livewire('/workspace/projects/{project}/discussion', 'pages::admin.workspace.projects.discussion.show')->name('workspace.projects.show.discussion');
+
+    // Product management
+    Route::livewire('/products', 'pages::admin.products.index')->name('products.index');
+    Route::livewire('/network-licenses', 'pages::admin.products.licenses')->name('products.licenses');
+    Route::get('/network-licenses/public-key', [NetworkLicenseController::class, 'publicKey'])->name('products.licenses.public-key');
+    Route::livewire('/product-purchases', 'pages::admin.products.purchases')->name('products.purchases');
+    Route::livewire('/products/create', 'pages::admin.products.form')->name('products.create');
+    Route::livewire('/products/{product}/edit', 'pages::admin.products.form')->name('products.edit');
+    Route::livewire('/products/{product}/plans', 'pages::admin.products.plans')->name('products.plans');
 });
