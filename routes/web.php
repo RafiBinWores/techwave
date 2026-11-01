@@ -13,6 +13,7 @@ use App\Http\Controllers\QrPreviewController;
 use App\Http\Controllers\QrRecordImageController;
 use App\Http\Controllers\QrScanController;
 use App\Http\Controllers\ResizedImageController;
+use App\Http\Controllers\SeoReportPdfController;
 use App\Http\Controllers\ServiceRenewalPaymentController;
 use App\Http\Controllers\SubscriptionInvoiceController;
 use App\Http\Controllers\TempMailAttachmentController;
@@ -148,6 +149,10 @@ Route::livewire('/tools/header-analyzer', 'pages::client.tools.email.header-anal
 
 // Network tools
 Route::livewire('/tools/speed-test', 'pages::client.tools.network.speed-test')->name('client.tools.speed-test');
+
+// SEO tools
+Route::livewire('/tools/seo-checker', 'pages::client.tools.seo.seo-checker')->name('client.tools.seo-checker');
+Route::get('/account/seo-reports/{seoReport}/pdf', SeoReportPdfController::class)->middleware(['auth', 'throttle:20,1'])->name('client.tools.seo-report.pdf');
 
 // Blogs
 Route::livewire('/blogs', 'pages::client.blogs.index')->name('client.blogs');

@@ -11,3 +11,4 @@ Schedule::command('accounts:purge-scheduled')->dailyAt('04:00');
 Schedule::command('subscriptions:auto-expire')->everyMinute()->withoutOverlapping();
 Schedule::command('service-orders:send-renewal-notices')->dailyAt('04:30')->withoutOverlapping();
 Schedule::command('products:send-renewal-reminders')->everyMinute()->withoutOverlapping();
+Schedule::command('seo-reports:prune')->dailyAt('03:40')->withoutOverlapping();
