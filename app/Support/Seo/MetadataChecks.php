@@ -10,12 +10,13 @@ final class MetadataChecks
         $make = fn ($id, $label, $checks, $details = [], $priority = 2) => Finding::make($id, 'Metadata', $label, $checks, false, $details, $priority);
         $title = $page->text('//title');
         $titleLength = mb_strlen($title);
+        preg_match_all('/[\p{L}\p{N}]{3,}/u', mb_strtolower($title), $titleWords);
+        $repeatedTitleWords = count($titleWords[0]) - count(array_unique($titleWords[0]));
         $description = $page->meta('description');
         $descriptionLength = mb_strlen($description);
         $canonical = $page->text($page->rel('canonical').'/@href');
         $canonicalUrl = $canonical !== '' ? $page->url($canonical, $page->base()) : null;
         $language = $page->text('//html/@lang');
-        $directives = trim(strtolower($page->meta('robots').' '.$page->meta('googlebot').' '.($page->response->headers['x-robots-tag'] ?? '')));
         $hreflangRows = [];
         $invalidHreflang = 0;
         $duplicateHreflang = 0;
@@ -47,21 +48,18 @@ final class MetadataChecks
 
         return [
             $make('title', 'Title', [
-                $r('Present', $title !== '', 'A page title is present.', 'No title was found.', 'Add a descriptive page title.', 'fail'),
-                $r('Unique declaration', $page->nodes('//title')->length <= 1, 'Only one title element is declared.', 'Multiple title elements were found.', 'Keep one title element in the document head.'),
+                $r('Present', $title !== '' && $page->nodes('//title')->length === 1 && $page->nodes('//head/title')->length === 1, 'One page title is present in the document head.', 'A single nonempty title in the document head is missing.', 'Add one descriptive page title in the document head.', 'fail'),
                 $r('Title length', $titleLength >= 30 && $titleLength <= 60, $titleLength.' characters; within the preview guideline.', $titleLength.' characters; review the search preview length.', 'Use a clear title; 30–60 characters is a useful preview guideline.'),
-                $r('Title placement', $page->nodes('//head/title')->length > 0, 'The title is in the document head.', 'No title was found in the document head.', 'Place the title in the document head.'),
+                $r('Repeated words', $repeatedTitleWords === 0, 'No repeated significant words were found in the title.', $repeatedTitleWords.' repeated significant title words were found.', 'Avoid unnecessary repetition in the page title.'),
             ], [['title' => $title, 'characters' => $titleLength]], 1),
             $make('description', 'Meta description', [
                 $r('Present', $description !== '', 'A meta description is present.', 'The meta description is missing or empty.', 'Write a useful description of what this page offers.', 'fail'),
-                $r('Length', $descriptionLength >= 70 && $descriptionLength <= 160, $descriptionLength.' characters; within the preview guideline.', $descriptionLength.' characters; review the snippet length.', 'Use a useful description; 70–160 characters is a preview guideline.'),
-                $r('Unique declaration', $page->nodes('//meta[translate(@name,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="description"]')->length <= 1, 'The description is declared at most once.', 'Multiple descriptions were found.', 'Keep one relevant meta description.'),
+                ...($description === '' ? [] : [
+                    $r('Length', $descriptionLength >= 70 && $descriptionLength <= 160, $descriptionLength.' characters; within the preview guideline.', $descriptionLength.' characters; review the snippet length.', 'Use a useful description; 70–160 characters is a preview guideline.'),
+                    $r('Unique declaration', $page->nodes('//meta[translate(@name,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="description"]')->length <= 1, 'The description is declared at most once.', 'Multiple descriptions were found.', 'Keep one relevant meta description.'),
+                ]),
             ], [['description' => $description, 'characters' => $descriptionLength]], 1),
-            $make('robots', 'Crawlability and indexing', [
-                $r('Indexing', ! preg_match('/\b(noindex|none)\b/', $directives), 'No noindex directive was observed.', 'A noindex directive is present.', 'Remove noindex only if this page should be searchable.', 'fail'),
-                $r('Link following', ! preg_match('/\b(nofollow|none)\b/', $directives), 'No page-wide nofollow directive was observed.', 'Page-wide nofollow is present.', 'Review whether search engines should follow this page’s links.'),
-                Finding::check('Robots source', 'unknown', 'Observed directives: '.($directives ?: 'none').'. robots.txt access rules require the separate robots-file probe.'),
-            ], [], 1),
+            (new CrawlabilityChecks)->inspect($page->response),
             $make('canonical', 'Canonical link', [
                 $r('Declaration', $canonical !== '', 'A canonical link is declared.', 'No canonical link is declared.', 'Declare the preferred canonical version of this page.'),
                 $r('Valid URL', $canonicalUrl !== null, 'The canonical resolves to a valid web URL.', 'The canonical is missing or uses an invalid URL.', 'Use a valid HTTP or HTTPS canonical URL.'),
@@ -87,7 +85,6 @@ final class MetadataChecks
             $make('other-meta', 'Other meta tags', [
                 $r('Meta refresh', $page->nodes('//meta[translate(@http-equiv,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="refresh"]')->length === 0, 'No meta-refresh redirect was found.', 'A meta-refresh redirect is declared.', 'Prefer a server-side redirect for permanently moved pages.'),
                 $r('Legacy keywords', $page->meta('keywords') === '', 'No legacy keywords tag is used.', 'A legacy meta keywords tag is present; it is not a Google ranking signal.', 'Focus on useful page content rather than keyword meta tags.'),
-                Finding::check('Metadata inventory', 'pass', count($page->metadata()).' meta declarations inventoried (up to 100 shown).'),
             ], $page->metadata(), 4),
             $make('domain', 'Domain', [
                 $r('Domain length', strlen($host) <= 63, 'The hostname length is reasonable.', 'The hostname is long.', 'Prefer a clear, recognizable domain when choosing a new site address.'),

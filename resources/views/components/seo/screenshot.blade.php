@@ -1,6 +1,6 @@
 @props(['report', 'screenshotState'])
 
-<div x-data="{ state: 'loading' }" class="relative flex h-36 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-950/35 text-center">
+<div x-data="{ state: 'loading' }" class="relative flex h-36 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-950 text-center">
     @if(in_array($screenshotState, ['connected', 'ready'], true) && !empty($report['integrations']['screenshot']['image_url']))
         <img src="{{ $report['integrations']['screenshot']['image_url'] }}"
             alt="Screenshot of the inspected page" loading="lazy" decoding="async" referrerpolicy="no-referrer"

@@ -11,7 +11,7 @@ final class ReportGroups
             'charset' => ['Metadata', 'Charset encoding', ['charset']],
             'content-length' => ['Content', 'Content', ['content-length', 'duplicate-content', 'resource-counts']],
             'frames' => ['Content', 'Frames', ['frames']],
-            'image-alt' => ['Content', 'Image SEO', ['image-alt', 'image-layout']],
+            'image-alt' => ['Content', 'Image SEO', ['image-alt']],
             'social' => ['Content', 'Social media', ['social', 'social-profiles']],
             'structured-data' => ['Content', 'Additional markup', ['structured-data']],
             'https' => ['Content', 'HTTPS', ['https', 'mixed-content']],

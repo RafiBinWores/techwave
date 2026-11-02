@@ -4,7 +4,17 @@ namespace App\Support\Seo;
 
 final class ReportScores
 {
-    public const VERSION = 'weighted-v1';
+    public const VERSION = 'weighted-v4';
+
+    public const CATEGORIES = ['Metadata', 'Content', 'Others', 'Structure', 'Technical'];
+
+    public const CATEGORY_LABELS = [
+        'Metadata' => 'Meta data',
+        'Content' => 'Page quality',
+        'Others' => 'Others',
+        'Structure' => 'Link structure',
+        'Technical' => 'Server configuration',
+    ];
 
     private const CATEGORY_WEIGHTS = ['Metadata' => 30, 'Content' => 25, 'Others' => 15, 'Structure' => 15, 'Technical' => 15];
 
@@ -40,7 +50,7 @@ final class ReportScores
             $checkTotal = 0;
             $checkEarned = 0;
             foreach ($finding['checks'] ?? [$finding] as $check) {
-                if ($check['status'] === 'unknown') {
+                if ($check['status'] === 'unknown' && ! in_array($finding['id'], ['http-redirects', 'robots'], true)) {
                     continue;
                 }
                 $checkTotal++;
@@ -50,8 +60,14 @@ final class ReportScores
             }
             if ($checkTotal > 0) {
                 $weight = self::PRIORITY_WEIGHTS[$finding['priority'] ?? 2] ?? 4;
+                $groupScore = $checkEarned / $checkTotal;
+                $groupScore = match ($finding['status']) {
+                    'fail' => 0,
+                    'warning' => min(0.25, $groupScore),
+                    default => $groupScore,
+                };
                 $total += $weight;
-                $earned += ($checkEarned / $checkTotal) * $weight;
+                $earned += $groupScore * $weight;
             }
         }
 

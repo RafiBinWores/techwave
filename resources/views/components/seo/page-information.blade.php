@@ -4,7 +4,7 @@
     $page = $report['page'] ?? [];
     $screenshotState = $report['integrations']['screenshot']['status'] ?? 'not_connected';
 @endphp
-<section class="overflow-hidden rounded-2xl border border-white/10 bg-white/6 backdrop-blur-2xl" aria-labelledby="seo-page-information">
+<section class="overflow-hidden rounded-2xl border border-white/10 bg-slate-900 backdrop-blur-2xl" aria-labelledby="seo-page-information">
     <header class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4 sm:px-6">
         <h2 id="seo-page-information" class="flex items-center gap-2 text-base font-extrabold text-white"><span class="material-symbols-outlined text-xl text-cyan-300" aria-hidden="true">html</span>Page information</h2>
         <a href="{{ $report['url'] }}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-white/15 px-3 py-2 text-xs font-bold text-blue-100 transition hover:border-cyan-300/30 hover:text-cyan-200">Show page ↗</a>

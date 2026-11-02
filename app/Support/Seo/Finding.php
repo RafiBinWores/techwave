@@ -18,6 +18,9 @@ final class Finding
     {
         $states = array_column($checks, 'status');
         $status = in_array('fail', $states, true) ? 'fail' : (in_array('warning', $states, true) ? 'warning' : (count(array_filter($states, fn ($state) => $state !== 'unknown')) === 0 ? 'unknown' : 'pass'));
+        if (in_array($id, ['http-redirects', 'robots'], true) && $status === 'pass' && in_array('unknown', $states, true)) {
+            $status = 'unknown';
+        }
         $recommendation = '';
         foreach ($checks as $check) {
             if (in_array($check['status'], ['fail', 'warning'], true) && $check['recommendation'] !== '') {
@@ -30,7 +33,7 @@ final class Finding
         return compact('id', 'category', 'label', 'status', 'premium', 'checks', 'priority', 'weight', 'recommendation') + [
             'evidence' => mb_substr($evidence, 0, 2000), 'details' => array_slice($details, 0, 50),
             'detail_count' => count($details), 'passed' => count(array_filter($states, fn ($state) => $state === 'pass')),
-            'total' => count(array_filter($states, fn ($state) => $state !== 'unknown')),
+            'total' => in_array($id, ['http-redirects', 'robots'], true) ? count($states) : count(array_filter($states, fn ($state) => $state !== 'unknown')),
         ];
     }
 }

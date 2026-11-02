@@ -9,7 +9,7 @@ class AuditRunner
 {
     public function __construct(private PublicUrl $urls, private SafeFetcher $fetcher, private DailyQuota $quota, private Entitlements $entitlements, private Analyzer $analyzer, private ReportPresenter $presenter) {}
 
-    public function run(string $url, ?User $user, string $ip): array
+    public function run(string $url, ?User $user, string $ip, ?array $categories = null): array
     {
         $deadline = microtime(true) + (float) config('seo.audit_seconds', 20);
         $target = $this->urls->resolve($url, $deadline);
@@ -17,8 +17,14 @@ class AuditRunner
         $page = $this->fetcher->fetch($target['url'], (int) config('seo.html_bytes', 2097152), $deadline, true, fn () => $this->quota->reserve($user, $ip));
         $report = $this->analyzer->analyze($page);
         $report['requested_url'] = $target['url'];
-        $report['findings'] = collect($report['findings'])->keyBy('id')
+        $findings = collect($report['findings'])->keyBy('id')
             ->merge(collect((new ServerProbes($this->fetcher))->inspect($page, $deadline))->keyBy('id'))->values()->all();
+        $selected = $this->selectedCategories($categories);
+        $report['selected_categories'] = $selected;
+        $report['findings'] = array_values(array_filter(
+            $findings,
+            fn (array $finding) => in_array($finding['category'], $selected, true) || $finding['category'] === 'External factors',
+        ));
         $report = array_replace($report, ReportScores::summarize($report['findings']));
         if ($premium) {
             $report['integrations'] = (new ExternalSignals($this->fetcher, $this->urls))->inspect($page->finalUrl, $deadline);
@@ -56,5 +62,16 @@ class AuditRunner
         }
 
         return $this->presenter->present($report, $premium);
+    }
+
+    private function selectedCategories(?array $categories): array
+    {
+        if ($categories === null) {
+            return ReportScores::CATEGORIES;
+        }
+
+        $selected = array_values(array_intersect(ReportScores::CATEGORIES, $categories));
+
+        return $selected === [] ? ReportScores::CATEGORIES : $selected;
     }
 }

@@ -8,7 +8,7 @@
     $help = [
         'title' => 'Use a descriptive title that identifies this page. Length checks are review guidelines; search engines may rewrite or truncate titles.',
         'description' => 'Summarize the page in its meta description. Search engines can use different text for different searches.',
-        'robots' => 'These checks inspect indexing directives and the fetched response. Search engines make their own indexing decisions.',
+        'robots' => 'One combined check evaluates indexing directives and whether robots.txt permits Googlebot, Bingbot and general crawlers to access this URL. Matching Allow and Disallow rules are listed in the evidence. Unverified access earns no passing credit. A crawl block is a very important issue even when index, follow is declared.',
         'canonical' => 'A canonical link identifies the preferred URL for similar content. It is a hint to search engines, not a guaranteed instruction.',
         'language' => 'Declare the language of the page so browsers and assistive technologies can interpret the content.',
         'hreflang' => 'Hreflang links identify language and regional alternatives. They should point to the corresponding translated pages.',
@@ -27,12 +27,12 @@
         'performance' => 'The timing guideline is 0.4 seconds; the HTML size guideline is 512 kB. Timing includes the server-side transfer and redirects, not isolated TTFB or browser load time. HTML size is measured after decompression.',
     ];
 @endphp
-<article id="seo-finding-{{ $finding['id'] }}" class="scroll-mt-36 overflow-hidden rounded-xl border border-white/10 border-l-[3px] bg-white/4 {{ $colors[$status] }}">
+<article id="seo-finding-{{ $finding['id'] }}" class="scroll-mt-36 overflow-hidden rounded-xl border border-white/10 border-l-[3px] bg-slate-900 {{ $colors[$status] }}">
     @foreach($finding['source_ids'] ?? [] as $sourceId)
         @if($sourceId !== $finding['id'])<span id="seo-finding-{{ $sourceId }}" class="block scroll-mt-36"></span>@endif
     @endforeach
     <div class="grid sm:grid-cols-[200px_minmax(0,1fr)] lg:grid-cols-[230px_minmax(0,1fr)]">
-        <header class="border-b border-white/10 bg-white/3 p-4 sm:border-r sm:border-b-0 sm:p-5">
+        <header class="border-b border-white/10 bg-slate-800 p-4 sm:border-r sm:border-b-0 sm:p-5">
             <h3 class="text-sm font-extrabold text-white">{{ $finding['label'] }}</h3>
             <details class="mt-2 text-xs leading-6 text-blue-100/60">
                 <summary class="cursor-pointer font-semibold text-cyan-300">Learn more</summary>
@@ -40,7 +40,7 @@
             </details>
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 @if($status !== 'pass')
-                    <span class="rounded-md bg-white/6 px-2 py-1 text-[10px] font-bold {{ $iconColors[$status] }}">{{ ['warning' => 'Warning', 'fail' => 'Errors', 'unknown' => 'Unverified'][$status] }}</span>
+                    <span class="rounded-md bg-slate-900 px-2 py-1 text-[10px] font-bold {{ $iconColors[$status] }}">{{ ['warning' => 'Warning', 'fail' => 'Errors', 'unknown' => 'Unverified'][$status] }}</span>
                 @endif
                 <span class="text-sm font-bold tabular-nums text-blue-100">{{ $finding['passed'] }}<span class="text-blue-100/40"> / {{ $finding['total'] }}</span></span>
             </div>

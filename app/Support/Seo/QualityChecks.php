@@ -42,7 +42,8 @@ final class QualityChecks
         $missingSource = 0;
         foreach ($page->nodes('//img') as $node) {
             $alt = $node->getAttribute('alt');
-            if (! $node->hasAttribute('alt')) {
+            $decorative = strtolower($node->getAttribute('role')) === 'presentation' || strtolower($node->getAttribute('role')) === 'none' || strtolower($node->getAttribute('aria-hidden')) === 'true';
+            if (! $node->hasAttribute('alt') || (trim($alt) === '' && ! $decorative)) {
                 $missingAlt++;
             }
             if (mb_strlen($alt) > 150) {
@@ -114,7 +115,7 @@ final class QualityChecks
             ]),
             $make('viewport', 'Mobile optimization', [
                 $r('Device viewport', (bool) preg_match('/width\s*=\s*device-width/i', $viewport), 'The viewport adapts to device width.', 'A device-width viewport is missing.', 'Set width=device-width in the viewport declaration.'),
-                $r('Zoom accessibility', ! preg_match('/user-scalable\s*=\s*(?:no|0)|maximum-scale\s*=\s*1(?:\.0)?(?:\s*[,;]|$)/i', $viewport), 'The viewport does not explicitly prevent zooming.', 'The viewport restricts user zoom.', 'Allow visitors to zoom the page.'),
+                $r('Apple touch icon', $page->text($page->rel('apple-touch-icon').'/@href') !== '', 'An Apple touch icon is specified.', 'No Apple touch icon is specified.', 'Declare an apple-touch-icon for saved mobile shortcuts.'),
                 Finding::check('Rendered mobile layout', 'unknown', 'Viewport markup was inspected. Touch targets and rendered overflow need a browser/mobile rendering test.'),
             ]),
             $make('strong-bold', 'Strong and bold tags', [
@@ -122,10 +123,8 @@ final class QualityChecks
                 $r('Emphasis density', $emphasisLength <= max(80, mb_strlen($visible) * 0.35), 'Bold text does not dominate the visible content.', 'A large share of the visible text is emphasized.', 'Reduce excessive bold text so important information stands out.'),
             ], $emphasized, 4),
             $make('image-alt', 'Image SEO', [
-                $r('Alt attributes', $missingAlt === 0, 'All '.$page->nodes('//img')->length.' images have alt attributes.', $missingAlt.' images lack alt attributes.', 'Add useful alt text to meaningful images; use empty alt for decorative images.'),
-                $r('Concise alternatives', $longAlt === 0, 'Image alternatives are concise where provided.', $longAlt.' images have very long alternatives.', 'Keep alt text focused on the image’s meaning and purpose.'),
-                $r('Image sources', $missingSource === 0, 'Image elements have source attributes.', $missingSource.' images have no src or srcset.', 'Provide a valid source for content images.'),
-            ], $images),
+                $r('Image alternatives', $missingAlt === 0 && $longAlt === 0 && $missingSource === 0, 'All '.$page->nodes('//img')->length.' images have suitable alternative attributes and sources.', $missingAlt.' images have missing or empty alternatives; '.$longAlt.' have unusually long alternatives and '.$missingSource.' have no source. Empty alternatives should be reviewed to confirm the images are decorative.', 'Add useful alt text to meaningful images and valid image sources; explicitly mark decorative images when appropriate.'),
+            ], $images, 3),
             $make('image-layout', 'Image dimensions and layout', [
                 $r('Reserved dimensions', $missingDimensions === 0, 'Images declare width and height attributes.', $missingDimensions.' images lack explicit width or height attributes.', 'Reserve image space using dimensions or CSS aspect-ratio to reduce layout movement.'),
                 Finding::check('Image delivery', 'unknown', 'Image URLs and attributes were inspected; files were not downloaded to measure format, compression or rendered layout shift.'),
@@ -152,29 +151,11 @@ final class QualityChecks
         $r = fn (...$args) => Finding::rule(...$args);
         $rows = $page->headings();
         $h1s = array_values(array_filter($rows, fn ($row) => $row['level'] === 'H1'));
-        $last = 0;
-        $skips = 0;
         $empty = 0;
-        $long = 0;
-        $duplicates = 0;
-        $seen = [];
         foreach ($rows as $row) {
-            $level = (int) substr($row['level'], 1);
-            if ($level > $last + 1) {
-                $skips++;
-            }
-            $last = $level;
             if ($row['text'] === '') {
                 $empty++;
             }
-            if (mb_strlen($row['text']) > 100) {
-                $long++;
-            }
-            $key = mb_strtolower($row['text']);
-            if ($key !== '' && isset($seen[$key])) {
-                $duplicates++;
-            }
-            $seen[$key] = true;
         }
 
         return [
@@ -184,10 +165,8 @@ final class QualityChecks
                 $r('H1 text', count($h1s) > 0 && $h1s[0]['text'] !== '' && mb_strlen($h1s[0]['text']) <= 100, 'The first H1 has concise text.', 'The first H1 is missing, empty or unusually long.', 'Use a concise, descriptive H1.'),
             ], false, $h1s, 1),
             Finding::make('headings', 'Others', 'Headings', [
-                $r('Hierarchy', $skips === 0, 'Headings follow a logical level sequence.', $skips.' skipped heading levels were found.', 'Use heading levels in a logical sequence.'),
                 $r('Nonempty headings', $empty === 0, 'No empty headings were found.', $empty.' headings are empty.', 'Remove empty headings or provide meaningful text.'),
-                $r('Distinct headings', $duplicates === 0, 'Heading text is not duplicated.', $duplicates.' duplicate heading occurrences were found.', 'Use distinct headings that describe each section.'),
-                $r('Concise headings', $long === 0, 'Heading text lengths are reasonable.', $long.' headings exceed 100 characters.', 'Keep headings concise and move long explanations into paragraphs.'),
+                $r('Heading density', count($rows) <= max(1, (int) floor($page->words() / 100)), count($rows).' headings are proportionate to the page text.', count($rows).' headings for '.$page->words().' words; the heading count is high relative to the text.', 'Use headings for substantive sections; review the guideline of approximately 100 words per heading.'),
             ], false, $rows, 2),
         ];
     }
