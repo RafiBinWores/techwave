@@ -399,63 +399,60 @@ new class extends Component {
                         @keydown.arrow-down.prevent="productsMega = true; $nextTick(() => $refs.productLinks.querySelector('a')?.focus())"
                         :aria-expanded="productsMega"
                         aria-controls="desktop-products"
-                        @class(['group relative flex cursor-pointer items-center gap-1 px-1 py-2 transition hover:text-white', 'text-white' => request()->routeIs('client.products.*')])
+                        @class(['group cursor-pointer relative flex items-center gap-1 px-1 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:text-white', 'text-white' => request()->routeIs('client.products.*')])
                     >
-                        <span>
-                            Products
-                        </span>
-                        <span
-                            class="material-symbols-outlined text-base transition-transform"
-                            :class="{ 'rotate-180': productsMega }"
-                        >
-                            expand_more
-                        </span>
-                        <span
-                            class="absolute inset-x-0 -bottom-0.5 h-px scale-x-0 bg-linear-to-r from-transparent via-cyan-300 to-transparent transition-transform group-hover:scale-x-100"
-                        >
-                        </span>
+                        <span class="relative z-10">Products</span>
+                        <svg class="h-3.5 w-3.5 transition-transform duration-200" :class="{ 'rotate-180': productsMega }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <span class="absolute inset-x-0 -bottom-0.5 h-px bg-linear-to-r from-transparent via-cyan-300 to-transparent scale-x-0 transition-transform duration-300 group-hover:scale-x-100 group-[.text-white]:scale-x-100"></span>
                     </button>
                     <div
                         id="desktop-products"
                         x-ref="productLinks"
                         x-show="productsMega"
-                        x-cloak
-                        x-transition.opacity
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 translate-y-2 scale-[0.98]"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                         @mouseenter="clearTimeout(productsCloseTimer)"
                         @click.outside="productsMega = false"
                         @keydown.escape.stop="productsMega = false; document.getElementById('desktop-products-trigger').focus()"
-                        class="absolute inset-x-0 top-full z-9999 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 shadow-2xl shadow-blue-950/40 backdrop-blur-2xl"
+                        style="display: none;"
+                        class="absolute inset-x-0 top-full z-9999 mt-2 max-h-125 overflow-hidden rounded-2xl border border-white/16 bg-slate-950/98 backdrop-blur-2xl shadow-2xl shadow-blue-950/40"
                     >
-                        <div class="grid max-h-125 grid-cols-12 overflow-y-auto">
+                        <div class="grid max-h-125 grid-cols-12 gap-0 overflow-y-auto">
                             <div
-                                class="col-span-4 border-r border-white/8 bg-linear-to-br from-blue-500/10 to-transparent p-6"
+                                class="col-span-3 border-r border-white/8 p-6"
                             >
                                 <span
-                                    class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
+                                    class="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/10 bg-linear-to-br from-cyan-500/20 to-blue-500/20 text-cyan-300"
                                 >
-                                    <span class="material-symbols-outlined">
+                                    <span class="material-symbols-outlined text-[22px]">
                                         deployed_code
                                     </span>
                                 </span>
                                 <p class="mt-5 text-xl font-semibold text-white">
                                     Software by Techwave
                                 </p>
-                                <p class="mt-2 text-sm leading-relaxed text-blue-100/55">
+                                <p class="mt-2 text-sm leading-relaxed text-blue-100/45">
                                     Explore our products, see what they do and find the right fit for you.
                                 </p>
                                 <a
                                     href="{{ route('client.products.index') }}"
                                     wire:navigate
                                     @click="productsMega = false"
-                                    class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-white"
+                                    class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10"
                                 >
-                                    View all products
-                                    <span class="material-symbols-outlined text-base">
+                                    View All Products
+                                    <span class="material-symbols-outlined text-[16px]">
                                         arrow_forward
                                     </span>
                                 </a>
                             </div>
-                            <div class="col-span-8 p-6">
+                            <div class="col-span-9 p-6">
                                 <p
                                     class="mb-4 text-[11px] font-bold uppercase tracking-widest text-blue-100/40"
                                 >
@@ -467,7 +464,7 @@ new class extends Component {
                                             href="{{ route('client.products.show', $navProduct->slug) }}"
                                             wire:navigate
                                             @click="productsMega = false"
-                                            class="group flex items-start gap-3 rounded-xl border border-white/5 bg-white/5 p-3.5 transition hover:border-cyan-400/20 hover:bg-white/8"
+                                            class="group flex items-start gap-3.5 rounded-xl border border-white/5 bg-white/5 p-3.5 transition duration-200 hover:border-cyan-400/20 hover:bg-white/8"
                                         >
                                             @if ($navProduct->cover_path)
                                                 <img
@@ -1036,20 +1033,16 @@ new class extends Component {
                             aria-controls="mobile-products"
                             class="flex w-full items-center justify-between px-4 py-3 transition hover:bg-white/8"
                         >
-                            <span>
-                                Products
-                            </span>
-                            <span
-                                class="material-symbols-outlined text-lg transition-transform"
-                                :class="{ 'rotate-180': mobileProductsOpen }"
-                            >
-                                expand_more
-                            </span>
+                            <span>Products</span>
+                            <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': mobileProductsOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
                         </button>
                         <div
                             id="mobile-products"
                             x-show="mobileProductsOpen"
-                            x-cloak
+                            x-collapse
+                            style="display: none;"
                         >
                             <div class="space-y-2 border-t border-white/8 px-3 pb-3 pt-2">
                                 @forelse ($this->navbarProducts as $navProduct)
@@ -1087,7 +1080,7 @@ new class extends Component {
                                     @click="mobileMenu = false; mobileProductsOpen = false"
                                     class="block rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center text-sm font-semibold text-cyan-300 transition hover:bg-white/10"
                                 >
-                                    View all products
+                                    View All Products
                                 </a>
                             </div>
                         </div>
