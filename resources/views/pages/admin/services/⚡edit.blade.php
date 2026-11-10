@@ -554,21 +554,11 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         <label class="block font-label-md text-on-surface">Service Overview</label>
 
                         <div wire:ignore x-data="{
-                            quill: null,
                             value: @entangle('overview'),
                         
-                            cleanEditorValue() {
-                                const text = this.quill.getText().trim();
-                        
-                                if (!text.length) {
-                                    return '';
-                                }
-                        
-                                return this.quill.root.innerHTML;
-                            },
-                        
                             init() {
-                                this.quill = new Quill(this.$refs.editor, {
+                                // Keep Quill outside Alpine reactive state: its internals require raw instances.
+                                const quill = new Quill(this.$refs.editor, {
                                     theme: 'snow',
                                     placeholder: 'Describe the service technical architecture and business value...',
                                     modules: {
@@ -587,18 +577,28 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 });
                         
                                 if (this.value && this.value !== '<p><br></p>') {
-                                    this.quill.clipboard.dangerouslyPasteHTML(this.value);
+                                    quill.clipboard.dangerouslyPasteHTML(this.value);
                                 }
+
+                                const cleanEditorValue = () => quill.getText().trim().length
+                                    ? quill.root.innerHTML
+                                    : '';
+                                let restoring = false;
                         
-                                this.quill.on('text-change', () => {
-                                    this.value = this.cleanEditorValue();
+                                quill.on('text-change', () => {
+                                    if (!restoring) this.value = cleanEditorValue();
                                 });
                         
                                 this.$watch('value', (newValue) => {
                                     const cleanValue = newValue === '<p><br></p>' ? '' : newValue;
                         
-                                    if (this.quill.root.innerHTML !== cleanValue) {
-                                        this.quill.clipboard.dangerouslyPasteHTML(cleanValue || '');
+                                    if (cleanEditorValue() !== (cleanValue || '')) {
+                                        restoring = true;
+                                        try {
+                                            quill.clipboard.dangerouslyPasteHTML(cleanValue || '');
+                                        } finally {
+                                            restoring = false;
+                                        }
                                     }
                                 });
                             }
