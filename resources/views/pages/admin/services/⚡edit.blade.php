@@ -554,8 +554,6 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                         <label class="block font-label-md text-on-surface">Service Overview</label>
 
                         <div wire:ignore x-data="{
-                            value: @entangle('overview'),
-                        
                             init() {
                                 // Keep Quill outside Alpine reactive state: its internals require raw instances.
                                 const quill = new Quill(this.$refs.editor, {
@@ -576,8 +574,9 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                     }
                                 });
                         
-                                if (this.value && this.value !== '<p><br></p>') {
-                                    quill.clipboard.dangerouslyPasteHTML(this.value);
+                                const initialValue = this.$wire.overview;
+                                if (initialValue && initialValue !== '<p><br></p>') {
+                                    quill.clipboard.dangerouslyPasteHTML(initialValue);
                                 }
 
                                 const cleanEditorValue = () => quill.getText().trim().length
@@ -586,10 +585,10 @@ new #[Layout('layouts.admin-app')] #[Title('Edit Service')] class extends Compon
                                 let restoring = false;
                         
                                 quill.on('text-change', () => {
-                                    if (!restoring) this.value = cleanEditorValue();
+                                    if (!restoring) this.$wire.$set('overview', cleanEditorValue(), false);
                                 });
                         
-                                this.$watch('value', (newValue) => {
+                                this.$watch('$wire.overview', (newValue) => {
                                     const cleanValue = newValue === '<p><br></p>' ? '' : newValue;
                         
                                     if (cleanEditorValue() !== (cleanValue || '')) {
