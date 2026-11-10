@@ -2,12 +2,18 @@
 .service-rich-content {
     color: rgb(219 234 254 / 0.82);
     font-size: 1rem;
-    line-height: 1.8;
+    line-height: 1.5;
     overflow-wrap: anywhere;
 }
 
-.service-rich-content :is(p, ul, ol, blockquote, pre, .ql-code-block-container) {
+.service-rich-content :is(ul, ol, blockquote, pre, .ql-code-block-container) {
     margin-block: 0 1rem;
+}
+
+/* Quill uses <p><br></p> for an intentional blank line. Paragraph margins
+   would add another gap both before and after that line. */
+.service-rich-content p {
+    margin-block: 0;
 }
 
 .service-rich-content :is(h1, h2, h3, h4, h5, h6) {
